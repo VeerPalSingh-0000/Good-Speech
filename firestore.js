@@ -5,14 +5,19 @@ import {
   doc, 
   updateDoc, 
   deleteDoc,
-  onSnapshot 
+  onSnapshot,
+  query,
+  where,
+  orderBy 
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-// Add data to Firestore
-export const addResult = async (data) => {
+// Add data to Firestore with user ID
+export const addResult = async (userId, type, data) => {
   try {
     const docRef = await addDoc(collection(db, 'results'), {
+      userId,
+      type, // 'sounds', 'varnmala', or 'stories'
       ...data,
       timestamp: new Date()
     });
@@ -24,14 +29,28 @@ export const addResult = async (data) => {
   }
 };
 
-// Get all results
-export const getResults = async () => {
+// Get all results for a specific user
+export const getResults = async (userId) => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'results'));
-    const results = [];
+    const q = query(
+      collection(db, 'results'), 
+      where('userId', '==', userId),
+      orderBy('timestamp', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    const results = {
+      sounds: [],
+      varnmala: [],
+      stories: []
+    };
+    
     querySnapshot.forEach((doc) => {
-      results.push({ id: doc.id, ...doc.data() });
+      const data = { id: doc.id, ...doc.data() };
+      if (data.type && results[data.type]) {
+        results[data.type].push(data);
+      }
     });
+    
     return results;
   } catch (error) {
     console.error('Error getting documents: ', error);
@@ -62,13 +81,49 @@ export const deleteResult = async (id) => {
   }
 };
 
-// Real-time listener
-export const subscribeToResults = (callback) => {
-  return onSnapshot(collection(db, 'results'), (querySnapshot) => {
-    const results = [];
-    querySnapshot.forEach((doc) => {
-      results.push({ id: doc.id, ...doc.data() });
+// Real-time listener with proper error handling
+export const subscribeToResults = (userId, callback) => {
+  // Add validation for callback function
+  if (typeof callback !== 'function') {
+    console.error('Callback must be a function');
+    return () => {};
+  }
+
+  if (!userId) {
+    console.error('User ID is required');
+    callback({ sounds: [], varnmala: [], stories: [] });
+    return () => {};
+  }
+
+  try {
+    const q = query(
+      collection(db, 'results'), 
+      where('userId', '==', userId),
+      orderBy('timestamp', 'desc')
+    );
+
+    return onSnapshot(q, (querySnapshot) => {
+      const results = {
+        sounds: [],
+        varnmala: [],
+        stories: []
+      };
+      
+      querySnapshot.forEach((doc) => {
+        const data = { id: doc.id, ...doc.data() };
+        if (data.type && results[data.type]) {
+          results[data.type].push(data);
+        }
+      });
+      
+      callback(results);
+    }, (error) => {
+      console.error('Error in real-time listener: ', error);
+      callback({ sounds: [], varnmala: [], stories: [] });
     });
-    callback(results);
-  });
+  } catch (error) {
+    console.error('Error setting up listener: ', error);
+    callback({ sounds: [], varnmala: [], stories: [] });
+    return () => {};
+  }
 };
