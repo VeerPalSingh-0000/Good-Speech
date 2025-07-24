@@ -1,129 +1,116 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  updateDoc, 
+// firestoreService.js
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
   deleteDoc,
   onSnapshot,
   query,
   where,
-  orderBy 
+  orderBy,
+  serverTimestamp,
+  Timestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-// Add data to Firestore with user ID
+/* ---------- helpers ---------- */
+
+export const toDate = (ts) => {
+  if (!ts) return null;
+  if (ts instanceof Date) return ts;
+  if (ts instanceof Timestamp) return ts.toDate();
+  if (ts.seconds) return new Date(ts.seconds * 1000);    // plain object
+  return new Date(ts);                                   // string / number
+};
+
+export const formatTime = (date) =>
+  date ? date.toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+
+export const formatDate = (date) =>
+  date ? date.toLocaleDateString('hi-IN') : '';
+
+/* ---------- CRUD ---------- */
+
 export const addResult = async (userId, type, data) => {
-  try {
-    const docRef = await addDoc(collection(db, 'results'), {
-      userId,
-      type, // 'sounds', 'varnmala', or 'stories'
-      ...data,
-      timestamp: new Date()
-    });
-    console.log('Document written with ID: ', docRef.id);
-    return docRef.id;
-  } catch (error) {
-    console.error('Error adding document: ', error);
-    throw error;
+  const valid = ['sounds', 'varnmala', 'stories'];
+  if (!userId || !valid.includes(type)) {
+    throw new Error('Invalid user or type');
   }
+
+  const ref = await addDoc(collection(db, 'results'), {
+    userId,
+    type,
+    ...data,
+    timestamp: serverTimestamp()
+  });
+
+  return ref.id;
 };
 
-// Get all results for a specific user
-export const getResults = async (userId) => {
-  try {
-    const q = query(
-      collection(db, 'results'), 
-      where('userId', '==', userId),
-      orderBy('timestamp', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    const results = {
-      sounds: [],
-      varnmala: [],
-      stories: []
+export const updateResult = (id, data) =>
+  updateDoc(doc(db, 'results', id), { ...data, updatedAt: serverTimestamp() });
+
+export const deleteResult = (id) => deleteDoc(doc(db, 'results', id));
+
+/* ---------- read helpers (shared by get + realtime) ---------- */
+
+const massageSnapshot = (snap) => {
+  const results = { sounds: [], varnmala: [], stories: [] };
+
+  snap.forEach((d) => {
+    const raw = d.data();
+    const dateObj = toDate(raw.timestamp);
+
+    const record = {
+      id: d.id,
+      ...raw,
+      // derived / formatted fields used by the UI
+      timestampMs: dateObj ? dateObj.getTime() : 0,
+      formattedTime: formatTime(dateObj),
+      date: formatDate(dateObj)
     };
-    
-    querySnapshot.forEach((doc) => {
-      const data = { id: doc.id, ...doc.data() };
-      if (data.type && results[data.type]) {
-        results[data.type].push(data);
-      }
-    });
-    
-    return results;
-  } catch (error) {
-    console.error('Error getting documents: ', error);
-    throw error;
-  }
+
+    if (results[record.type]) results[record.type].push(record);
+  });
+
+  return results;
 };
 
-// Update a result
-export const updateResult = async (id, data) => {
-  try {
-    const docRef = doc(db, 'results', id);
-    await updateDoc(docRef, data);
-    console.log('Document updated');
-  } catch (error) {
-    console.error('Error updating document: ', error);
-    throw error;
-  }
+/* ---------- one-off read ---------- */
+
+export const getResults = async (userId) => {
+  const q = query(
+    collection(db, 'results'),
+    where('userId', '==', userId),
+    orderBy('timestamp', 'desc')
+  );
+  const snap = await getDocs(q);
+  return massageSnapshot(snap);
 };
 
-// Delete a result
-export const deleteResult = async (id) => {
-  try {
-    await deleteDoc(doc(db, 'results', id));
-    console.log('Document deleted');
-  } catch (error) {
-    console.error('Error deleting document: ', error);
-    throw error;
-  }
-};
+/* ---------- realtime listener ---------- */
 
-// Real-time listener with proper error handling
-export const subscribeToResults = (userId, callback) => {
-  // Add validation for callback function
-  if (typeof callback !== 'function') {
-    console.error('Callback must be a function');
-    return () => {};
-  }
-
+export const subscribeToResults = (userId, cb) => {
+  if (typeof cb !== 'function') return () => {};
   if (!userId) {
-    console.error('User ID is required');
-    callback({ sounds: [], varnmala: [], stories: [] });
+    cb({ sounds: [], varnmala: [], stories: [] });
     return () => {};
   }
 
-  try {
-    const q = query(
-      collection(db, 'results'), 
-      where('userId', '==', userId),
-      orderBy('timestamp', 'desc')
-    );
+  const q = query(
+    collection(db, 'results'),
+    where('userId', '==', userId),
+    orderBy('timestamp', 'desc')
+  );
 
-    return onSnapshot(q, (querySnapshot) => {
-      const results = {
-        sounds: [],
-        varnmala: [],
-        stories: []
-      };
-      
-      querySnapshot.forEach((doc) => {
-        const data = { id: doc.id, ...doc.data() };
-        if (data.type && results[data.type]) {
-          results[data.type].push(data);
-        }
-      });
-      
-      callback(results);
-    }, (error) => {
-      console.error('Error in real-time listener: ', error);
-      callback({ sounds: [], varnmala: [], stories: [] });
-    });
-  } catch (error) {
-    console.error('Error setting up listener: ', error);
-    callback({ sounds: [], varnmala: [], stories: [] });
-    return () => {};
-  }
+  return onSnapshot(
+    q,
+    (snap) => cb(massageSnapshot(snap)),
+    (err) => {
+      console.error(err);
+      cb({ sounds: [], varnmala: [], stories: [] });
+    }
+  );
 };
