@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { addResult, getResults, subscribeToResults } from "../../firestore";
+import { addResult, getResults, subscribeToResults, deleteResult } from "../../firestore";
 const Hindi = ({ user, onLogout }) => {
   // Global state for timers
   const [soundTimers, setSoundTimers] = useState({
@@ -19,11 +19,11 @@ const Hindi = ({ user, onLogout }) => {
 
   // Add this story collection
   const hindiStories = {
-  short: [
-    {
-      id: 1,
-      title: "दोस्ती की शक्ति",
-      content: `एक छोटे से गाँव में राम और श्याम नाम के दो मित्र रहते थे। वे बचपन से ही अच्छे दोस्त थे। राम का परिवार गरीब था लेकिन वह पढ़ने में बहुत तेज़ था। श्याम का परिवार अमीर था लेकिन उसे पढ़ाई में कठिनाई होती थी।
+    short: [
+      {
+        id: 1,
+        title: "दोस्ती की शक्ति",
+        content: `एक छोटे से गाँव में राम और श्याम नाम के दो मित्र रहते थे। वे बचपन से ही अच्छे दोस्त थे। राम का परिवार गरीब था लेकिन वह पढ़ने में बहुत तेज़ था। श्याम का परिवार अमीर था लेकिन उसे पढ़ाई में कठिनाई होती थी।
 
 एक दिन स्कूल में एक महत्वपूर्ण परीक्षा की घोषणा हुई। श्याम बहुत परेशान हो गया क्योंकि उसे लगता था कि वह फेल हो जाएगा। राम ने अपने दोस्त की मदद करने का फैसला किया।
 
@@ -33,12 +33,12 @@ const Hindi = ({ user, onLogout }) => {
 
 बाद में जब राम के पिता बीमार पड़े और इलाज के लिए पैसों की जरूरत थी, तो श्याम ने बिना कुछ कहे अपनी सारी जमा पूंजी राम को दे दी। इस तरह दोनों दोस्तों ने एक-दूसरे की मुश्किल वक्त में मदद की।
 
-इस कहानी से हमें सीख मिलती है कि सच्ची दोस्ती में स्वार्थ नहीं होता। एक अच्छा दोस्त हमेशा मुश्किल समय में साथ खड़ा रहता है।`
-    },
-    {
-      id: 2,
-      title: "मेहनत का फल",
-      content: `किसी गाँव में सुरेश नाम का एक किसान रहता था। वह बहुत मेहनती था लेकिन उसकी फसल हमेशा कम होती थी। गाँव के दूसरे किसान उसका मजाक उड़ाते थे।
+इस कहानी से हमें सीख मिलती है कि सच्ची दोस्ती में स्वार्थ नहीं होता। एक अच्छा दोस्त हमेशा मुश्किल समय में साथ खड़ा रहता है।`,
+      },
+      {
+        id: 2,
+        title: "मेहनत का फल",
+        content: `किसी गाँव में सुरेश नाम का एक किसान रहता था। वह बहुत मेहनती था लेकिन उसकी फसल हमेशा कम होती थी। गाँव के दूसरे किसान उसका मजाक उड़ाते थे।
 
 एक दिन गाँव में एक बुजुर्ग व्यक्ति आया। उसने सुरेश की मेहनत देखी और उससे कहा कि वह सही तरीके से खेती नहीं कर रहा। बुजुर्ग ने उसे नई तकनीकें सिखाईं।
 
@@ -48,14 +48,14 @@ const Hindi = ({ user, onLogout }) => {
 
 सुरेश ने अपनी सफलता का राज सभी के साथ बांटा। उसने बताया कि मेहनत के साथ-साथ सही जानकारी और तकनीक का उपयोग भी जरूरी है।
 
-इस कहानी से हमें पता चलता है कि केवल मेहनत से काम नहीं चलता, बल्कि सही दिशा में की गई मेहनत ही सफलता दिलाती है।`
-    }
-  ],
-  medium: [
-    {
-      id: 3,
-      title: "समय की कीमत",
-      content: `रोहित एक प्रतिभाशाली छात्र था लेकिन वह समय की कीमत नहीं समझता था। वह हमेशा काम को कल पर टालता रहता था। उसके शिक्षक और माता-पिता उसे समझाते रहते थे लेकिन वह नहीं मानता था।
+इस कहानी से हमें पता चलता है कि केवल मेहनत से काम नहीं चलता, बल्कि सही दिशा में की गई मेहनत ही सफलता दिलाती है।`,
+      },
+    ],
+    medium: [
+      {
+        id: 3,
+        title: "समय की कीमत",
+        content: `रोहित एक प्रतिभाशाली छात्र था लेकिन वह समय की कीमत नहीं समझता था। वह हमेशा काम को कल पर टालता रहता था। उसके शिक्षक और माता-पिता उसे समझाते रहते थे लेकिन वह नहीं मानता था।
 
 कॉलेज में एक महत्वपूर्ण प्रोजेक्ट दिया गया था जिसे पूरा करने के लिए तीन महीने का समय था। रोहित ने सोचा कि अभी तो बहुत समय है, बाद में कर लूंगा। वह दोस्तों के साथ मौज-मस्ती में व्यस्त रहा।
 
@@ -67,14 +67,14 @@ const Hindi = ({ user, onLogout }) => {
 
 इस घटना के बाद रोहित ने अपनी गलती को समझा। उसने तय किया कि अब वह कभी भी काम को टालेगा नहीं। उसने एक टाइम टेबल बनाया और हर काम को समय पर करने लगा।
 
-अगले साल रोहित ने अपनी मेहनत और समय के सदुपयोग से टॉप किया। उसे एहसास हो गया था कि समय ही सबसे बड़ा धन है और जो इसकी कीमत समझता है, वही जीवन में सफल होता है।`
-    }
-  ],
-  long: [
-    {
-      id: 4,
-      title: "एक युवा का संघर्ष और सफलता की कहानी",
-      content: `विकास नाम का एक युवक एक छोटे शहर में रहता था। उसके पिता एक छोटी दुकान चलाते थे और माता एक स्कूल में पढ़ाती थी। परिवार की आर्थिक स्थिति ठीक नहीं थी लेकिन विकास के सपने बड़े थे। वह एक सफल इंजीनियर बनना चाहता था।
+अगले साल रोहित ने अपनी मेहनत और समय के सदुपयोग से टॉप किया। उसे एहसास हो गया था कि समय ही सबसे बड़ा धन है और जो इसकी कीमत समझता है, वही जीवन में सफल होता है।`,
+      },
+    ],
+    long: [
+      {
+        id: 4,
+        title: "एक युवा का संघर्ष और सफलता की कहानी",
+        content: `विकास नाम का एक युवक एक छोटे शहर में रहता था। उसके पिता एक छोटी दुकान चलाते थे और माता एक स्कूल में पढ़ाती थी। परिवार की आर्थिक स्थिति ठीक नहीं थी लेकिन विकास के सपने बड़े थे। वह एक सफल इंजीनियर बनना चाहता था।
 
 विकास पढ़ाई में बहुत तेज़ था और हमेशा क्लास में टॉप करता था। लेकिन जब वह 12वीं में पहुंचा तो उसे एहसास हुआ कि इंजीनियरिंग की तैयारी के लिए कोचिंग की जरूरत होगी। शहर में अच्छी कोचिंग थी लेकिन फीस बहुत ज्यादा थी।
 
@@ -96,14 +96,15 @@ const Hindi = ({ user, onLogout }) => {
 
 आज विकास एक सफल इंजीनियर है। उसने अपने माता-पिता के सपनों को पूरा किया है और अपने छोटे भाई-बहनों की पढ़ाई का खर्च भी उठाता है। वह अक्सर अपने जूनियर्स को प्रेरणा देता है और कहता है कि मेहनत, धैर्य और सही दिशा में लगन से कोई भी लक्ष्य हासिल किया जा सकता है।
 
-विकास की कहानी हमें सिखाती है कि जीवन में आने वाली चुनौतियां हमें कमजोर नहीं बल्कि मजबूत बनाती हैं। जो व्यक्ति अपने सपनों के लिए संघर्ष करता है, वह एक दिन जरूर सफल होता है।`
-    }
-  ],
-  extended: [
-    {
-      id: 5,
-      title: "अंतरिक्ष यात्री का सपना - डॉ. कल्पना चावला की प्रेरणादायक कहानी",
-      content: `कल्पना चावला का जन्म हरियाणा के करनाल में एक साधारण परिवार में हुआ था। बचपन से ही उसे आसमान में उड़ने वाले हवाई जहाज देखकर बहुत खुशी होती थी। वह घंटों छत पर बैठकर तारे देखती रहती और सोचती कि क्या कभी वह भी इन तारों के पास जा पाएगी।
+विकास की कहानी हमें सिखाती है कि जीवन में आने वाली चुनौतियां हमें कमजोर नहीं बल्कि मजबूत बनाती हैं। जो व्यक्ति अपने सपनों के लिए संघर्ष करता है, वह एक दिन जरूर सफल होता है।`,
+      },
+    ],
+    extended: [
+      {
+        id: 5,
+        title:
+          "अंतरिक्ष यात्री का सपना - डॉ. कल्पना चावला की प्रेरणादायक कहानी",
+        content: `कल्पना चावला का जन्म हरियाणा के करनाल में एक साधारण परिवार में हुआ था। बचपन से ही उसे आसमान में उड़ने वाले हवाई जहाज देखकर बहुत खुशी होती थी। वह घंटों छत पर बैठकर तारे देखती रहती और सोचती कि क्या कभी वह भी इन तारों के पास जा पाएगी।
 
 उस समय भारत में लड़कियों के लिए इंजीनियरिंग पढ़ना बहुत मुश्किल था। समाज में यह धारणा थी कि तकनीकी क्षेत्र सिर्फ लड़कों के लिए है। लेकिन कल्पना के पिता ने उसका साथ दिया और उसे एरोनॉटिकल इंजीनियरिंग पढ़ने के लिए प्रेरित किया।
 
@@ -133,12 +134,12 @@ const Hindi = ({ user, onLogout }) => {
 
 आज भारत में कई लड़कियां इंजीनियरिंग और विज्ञान पढ़ रही हैं। इसरो जैसी संस्थाओं में महिला वैज्ञानिक काम कर रही हैं। यह सब कल्पना चावला जैसे लोगों की वजह से संभव हुआ है।
 
-कल्पना चावला की कहानी हमें सिखाती है कि सपने वही पूरे होते हैं जिन्हें पूरा करने के लिए हम कड़ी मेहनत करते हैं। बाधाएं हमें रोक नहीं सकतीं अगर हमारा इरादा पक्का हो। वह हमेशा तारों के बीच जीवित रहेगी।`
-    },
-    {
-      id: 6,
-      title: "नारुतो की निन्जा पथ की शुरुआत - एक दृढ़ संकल्प की कहानी",
-      content: `कोनोहा गाकुरे नो सातो (हिडन लीफ विलेज) में एक अनाथ बच्चा रहता था जिसका नाम नारुतो उज़ुमाकी था। गाँव के लोग उससे नफरत करते थे क्योंकि उसके अंदर नाइन-टेल्ड फॉक्स दानव सील था। लेकिन नारुतो नहीं जानता था कि लोग उससे क्यों इतनी नफरत करते हैं।
+कल्पना चावला की कहानी हमें सिखाती है कि सपने वही पूरे होते हैं जिन्हें पूरा करने के लिए हम कड़ी मेहनत करते हैं। बाधाएं हमें रोक नहीं सकतीं अगर हमारा इरादा पक्का हो। वह हमेशा तारों के बीच जीवित रहेगी।`,
+      },
+      {
+        id: 6,
+        title: "नारुतो की निन्जा पथ की शुरुआत - एक दृढ़ संकल्प की कहानी",
+        content: `कोनोहा गाकुरे नो सातो (हिडन लीफ विलेज) में एक अनाथ बच्चा रहता था जिसका नाम नारुतो उज़ुमाकी था। गाँव के लोग उससे नफरत करते थे क्योंकि उसके अंदर नाइन-टेल्ड फॉक्स दानव सील था। लेकिन नारुतो नहीं जानता था कि लोग उससे क्यों इतनी नफरत करते हैं।
 
 बचपन से ही नारुतो का सपना था कि वह होकागे (गाँव का मुखिया) बने। वह चाहता था कि सभी लोग उसे पहचानें और उसका सम्मान करें। लेकिन निन्जा एकेडमी में उसके अंक हमेशा कम आते थे और वह अक्सर फेल हो जाता था।
 
@@ -172,11 +173,10 @@ const Hindi = ({ user, onLogout }) => {
 
 नारुतो की कहानी हमें सिखाती है कि प्रतिभा से ज्यादा मेहनत और दृढ़ संकल्प महत्वपूर्ण है। भले ही लोग आपको कमजोर समझें, लेकिन अगर आप हार न मानें और लगातार कोशिश करते रहें तो एक दिन आप अपने सपने जरूर पूरे कर सकते हैं।
 
-नारुतो का मंत्र था 'दत्तेबायो' और उसका सबसे बड़ा सपना था कि वह होकागे बने। उसकी यात्रा दिखाती है कि सबसे कमजोर व्यक्ति भी अपनी मेहनत से सबसे मजबूत बन सकता है।`
-    }
-  ]
-};
-
+नारुतो का मंत्र था 'दत्तेबायो' और उसका सबसे बड़ा सपना था कि वह होकागे बने। उसकी यात्रा दिखाती है कि सबसे कमजोर व्यक्ति भी अपनी मेहनत से सबसे मजबूत बन सकता है।`,
+      },
+    ],
+  };
 
   const [varnmalaTimer, setVarnmalaTimer] = useState({
     time: 0,
@@ -559,7 +559,8 @@ const Hindi = ({ user, onLogout }) => {
         formattedTime: formatTime(currentTime),
         date: new Date().toLocaleDateString("hi-IN"),
         improvement: improvement,
-        timestamp: Date.now(),
+        timestamp: Date.now(), // Always use this
+        date: new Date().toLocaleDateString("hi-IN"),
         isNewBest: isNewBest,
         sessionCount: soundTimers[sound].sessions + 1,
       };
@@ -570,7 +571,8 @@ const Hindi = ({ user, onLogout }) => {
       }));
 
       // Save to Firebase - ADD THIS INSIDE THE FUNCTION
-      saveToFirebase("sound", {
+      saveToFirebase("sounds", {
+        // ✅ Use plural "sounds"
         sound: sound,
         time: currentTime,
         formattedTime: formatTime(currentTime),
@@ -666,9 +668,9 @@ const Hindi = ({ user, onLogout }) => {
       session: records.varnmala.length + 1,
       time: currentTime,
       formattedTime: formatTime(currentTime),
-      date: new Date().toLocaleDateString("hi-IN"),
       quality: quality,
-      timestamp: Date.now(),
+      timestamp: Date.now(), // Always use this
+      date: new Date().toLocaleDateString("hi-IN"),
       laps: varnmalaTimer.laps,
     };
 
@@ -687,6 +689,7 @@ const Hindi = ({ user, onLogout }) => {
     playFeedbackSound(quality === "उत्कृष्ट" ? 659 : 523, 200);
 
     saveToFirebase("varnmala", {
+      // ✅ This is correct
       time: currentTime,
       laps: varnmalaTimer.laps,
       formattedTime: formatTime(currentTime),
@@ -807,10 +810,10 @@ const Hindi = ({ user, onLogout }) => {
       time: currentTime,
       formattedTime: formatTime(currentTime),
       target: formatTime(targetTime),
-      date: new Date().toLocaleDateString("hi-IN"),
       score: score,
       percentage: Math.round(percentage),
-      timestamp: Date.now(),
+      timestamp: Date.now(), // Always use this
+      date: new Date().toLocaleDateString("hi-IN"),
     };
 
     setRecords((prev) => ({
@@ -831,7 +834,8 @@ const Hindi = ({ user, onLogout }) => {
     showNotification(`पठन अभ्यास रिकॉर्ड किया गया! ${score}`, "success");
     playFeedbackSound(percentage >= 80 ? 659 : 523, 300);
 
-    saveToFirebase("reading", {
+    saveToFirebase("stories", {
+      // ✅ Use "stories"
       storyType: storyTimer.currentStory,
       storyTitle: currentStory?.title,
       time: currentTime,
@@ -1171,50 +1175,50 @@ const Hindi = ({ user, onLogout }) => {
     );
   }
   // Story Display Component
-    // Story Display Component
-    const StoryDisplay = ({ story, onClose }) => {
-      if (!story) return null;
+  // Story Display Component
+  const StoryDisplay = ({ story, onClose }) => {
+    if (!story) return null;
 
-      return (
-        <div
-          className={`mt-8 p-6 md:p-8 rounded-3xl shadow-2xl border ${
-            theme === "dark"
-              ? "bg-gray-800/50 border-gray-700/20"
-              : "bg-white/50 border-gray-200/20"
-          } backdrop-blur-xl`}
-        >
-          <div className="text-center mb-6 relative">
-            <button
-              onClick={onClose}
-              className="absolute top-0 right-4 w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-all duration-200"
-              title="कहानी बंद करें"
-            >
-              <i className="fas fa-times"></i>
-            </button>
+    return (
+      <div
+        className={`mt-8 p-6 md:p-8 rounded-3xl shadow-2xl border ${
+          theme === "dark"
+            ? "bg-gray-800/50 border-gray-700/20"
+            : "bg-white/50 border-gray-200/20"
+        } backdrop-blur-xl`}
+      >
+        <div className="text-center mb-6 relative">
+          <button
+            onClick={onClose}
+            className="absolute top-0 right-4 w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-all duration-200"
+            title="कहानी बंद करें"
+          >
+            <i className="fas fa-times"></i>
+          </button>
 
-            <h4 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              {story.title}
-            </h4>
-            <div className="w-32 h-1 bg-gradient-to-r from-green-500 to-blue-500 mx-auto rounded-full mt-4"></div>
-          </div>
+          <h4 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            {story.title}
+          </h4>
+          <div className="w-32 h-1 bg-gradient-to-r from-green-500 to-blue-500 mx-auto rounded-full mt-4"></div>
+        </div>
 
-          <div className="prose prose-lg max-w-none prose-gray dark:prose-invert">
-            <div className="text-base md:text-lg leading-relaxed whitespace-pre-line">
-              {story.content}
-            </div>
-          </div>
-
-          <div className="mt-8 p-4 bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900/30 dark:to-blue-900/30 rounded-2xl border border-green-200 dark:border-green-600/30">
-            <div className="text-center">
-              <i className="fas fa-book-open text-green-600 dark:text-green-400 text-2xl mb-2"></i>
-              <p className="text-green-800 dark:text-green-300 font-medium">
-                इस कहानी को धीरे-धीरे और स्पष्ट उच्चारण के साथ पढ़ें
-              </p>
-            </div>
+        <div className="prose prose-lg max-w-none prose-gray dark:prose-invert">
+          <div className="text-base md:text-lg leading-relaxed whitespace-pre-line">
+            {story.content}
           </div>
         </div>
-      );
-    };
+
+        <div className="mt-8 p-4 bg-gradient-to-r from-green-100 to-blue-100 dark:from-green-900/30 dark:to-blue-900/30 rounded-2xl border border-green-200 dark:border-green-600/30">
+          <div className="text-center">
+            <i className="fas fa-book-open text-green-600 dark:text-green-400 text-2xl mb-2"></i>
+            <p className="text-green-800 dark:text-green-300 font-medium">
+              इस कहानी को धीरे-धीरे और स्पष्ट उच्चारण के साथ पढ़ें
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
   // Hindi Varnmala Display Component
   const VarnmalaDisplay = () => {
     const hindiVarnmala = [
@@ -1271,8 +1275,6 @@ const Hindi = ({ user, onLogout }) => {
       { char: "त्र", type: "consonant" },
       { char: "ज्ञ", type: "consonant" },
     ];
-
-    
 
     return (
       <div
@@ -1664,7 +1666,6 @@ const Hindi = ({ user, onLogout }) => {
                       </span>
                     </h1>
                     <div className="prose prose-lg max-w-none prose-gray dark:prose-invert">
-
                       Advanced timer-based speech therapy exercises designed to
                       help you overcome stuttering with scientific precision and
                       personal tracking.
@@ -2198,7 +2199,8 @@ const Hindi = ({ user, onLogout }) => {
               </h2>
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
                 Timed reading sessions to improve fluency and confidence. Choose
-                your story length and track your progress. Just speak as slow as possible.
+                your story length and track your progress. Just speak as slow as
+                possible.
               </p>
               <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div>
             </div>
@@ -2278,7 +2280,9 @@ const Hindi = ({ user, onLogout }) => {
 
               {/* Story Selection */}
               <div className="text-center space-y-6">
-                <h3 className="text-2xl p-4 md:text-3xl font-bold">कहानी चुनें:</h3>
+                <h3 className="text-2xl p-4 md:text-3xl font-bold">
+                  कहानी चुनें:
+                </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {Object.keys(storyTargets).map((storyType) => (
                     <button
@@ -2513,7 +2517,12 @@ const Hindi = ({ user, onLogout }) => {
                                 </div>
                               </td>
                               <td className="px-4 md:px-6 py-4 text-sm md:text-lg">
-                                {record.date}
+                                {record.date ||
+                                  (record.timestamp
+                                    ? new Date(
+                                        record.timestamp
+                                      ).toLocaleDateString("hi-IN")
+                                    : "N/A")}
                               </td>
                               <td
                                 className={`px-4 md:px-6 py-4 font-bold text-sm md:text-lg ${
@@ -2533,9 +2542,7 @@ const Hindi = ({ user, onLogout }) => {
                               <td className="px-4 md:px-6 py-4">
                                 <button
                                   className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
-                                  onClick={() =>
-                                    deleteRecord("sounds", record.timestamp)
-                                  }
+                                  onClick={() => deleteResult(record.id)}
                                   title="रिकॉर्ड हटाएं"
                                 >
                                   <i className="fas fa-trash text-lg md:text-xl"></i>
@@ -2767,9 +2774,7 @@ const Hindi = ({ user, onLogout }) => {
                               <td className="px-4 md:px-6 py-4">
                                 <button
                                   className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
-                                  onClick={() =>
-                                    deleteRecord("varnmala", record.timestamp)
-                                  }
+                                  onClick={() => deleteResult(record.id)}  
                                   title="रिकॉर्ड हटाएं"
                                 >
                                   <i className="fas fa-trash text-lg md:text-xl"></i>
@@ -2890,9 +2895,7 @@ const Hindi = ({ user, onLogout }) => {
                               <td className="px-4 md:px-6 py-4">
                                 <button
                                   className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
-                                  onClick={() =>
-                                    deleteRecord("stories", record.timestamp)
-                                  }
+                                  onClick={() => deleteResult(record.id)}  
                                   title="रिकॉर्ड हटाएं"
                                 >
                                   <i className="fas fa-trash text-lg md:text-xl"></i>
@@ -2922,6 +2925,59 @@ const Hindi = ({ user, onLogout }) => {
               <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div>
             </div>
 
+            {/* Helper function for safe date formatting */}
+            {(() => {
+              const formatSafeDate = (record) => {
+                if (record.date && record.date !== "N/A") {
+                  return record.date;
+                }
+                if (record.timestamp) {
+                  try {
+                    if (
+                      typeof record.timestamp === "object" &&
+                      record.timestamp.seconds
+                    ) {
+                      return new Date(
+                        record.timestamp.seconds * 1000
+                      ).toLocaleDateString("hi-IN");
+                    }
+                    return new Date(record.timestamp).toLocaleDateString(
+                      "hi-IN"
+                    );
+                  } catch (e) {
+                    return "N/A";
+                  }
+                }
+                return "N/A";
+              };
+
+              const formatSafeTime = (record) => {
+                if (record.formattedTime && record.formattedTime !== "N/A") {
+                  return record.formattedTime;
+                }
+                if (record.timestamp) {
+                  try {
+                    if (
+                      typeof record.timestamp === "object" &&
+                      record.timestamp.seconds
+                    ) {
+                      return new Date(
+                        record.timestamp.seconds * 1000
+                      ).toLocaleTimeString("hi-IN");
+                    }
+                    return new Date(record.timestamp).toLocaleTimeString(
+                      "hi-IN"
+                    );
+                  } catch (e) {
+                    return "N/A";
+                  }
+                }
+                return "N/A";
+              };
+
+              return null; // This is just to define the functions
+            })()}
+
             {/* Overall Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {[
@@ -2941,7 +2997,7 @@ const Hindi = ({ user, onLogout }) => {
                       ...records.sounds,
                       ...records.varnmala,
                       ...records.stories,
-                    ].reduce((sum, r) => sum + r.time, 0)
+                    ].reduce((sum, r) => sum + (r.time || 0), 0)
                   ),
                   icon: "fas fa-clock",
                   color: "from-green-500 to-emerald-500",
@@ -2951,7 +3007,7 @@ const Hindi = ({ user, onLogout }) => {
                   value:
                     records.sounds.length > 0
                       ? formatTime(
-                          Math.max(...records.sounds.map((r) => r.time))
+                          Math.max(...records.sounds.map((r) => r.time || 0))
                         )
                       : "00.00",
                   icon: "fas fa-trophy",
@@ -2964,10 +3020,22 @@ const Hindi = ({ user, onLogout }) => {
                     ...records.varnmala,
                     ...records.stories,
                   ].filter((r) => {
-                    const recordDate = new Date(r.timestamp);
-                    const weekAgo = new Date();
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    return recordDate >= weekAgo;
+                    try {
+                      let recordDate;
+                      if (
+                        typeof r.timestamp === "object" &&
+                        r.timestamp.seconds
+                      ) {
+                        recordDate = new Date(r.timestamp.seconds * 1000);
+                      } else {
+                        recordDate = new Date(r.timestamp);
+                      }
+                      const weekAgo = new Date();
+                      weekAgo.setDate(weekAgo.getDate() - 7);
+                      return recordDate >= weekAgo;
+                    } catch (e) {
+                      return false;
+                    }
                   }).length,
                   icon: "fas fa-chart-line",
                   color: "from-orange-500 to-red-500",
@@ -2996,169 +3064,156 @@ const Hindi = ({ user, onLogout }) => {
               ))}
             </div>
 
-            {/* ----------  Detailed Sound Records  ---------- */}
+            {/* Sound Records with Fixed Date Display */}
 
-            <div className="space-y-6">
-              <h3 className="text-2xl font-bold flex items-center gap-2">
-                <i className="fas fa-microphone text-blue-500"></i>
-                स्वर अभ्यास (सत्र अनुसार)
-              </h3>
+<div className="space-y-6">
+  <h3 className="text-2xl font-bold flex items-center gap-2">
+    <i className="fas fa-microphone text-blue-500"></i>
+    स्वर अभ्यास (सत्र अनुसार)
+  </h3>
 
-              {Object.keys(soundRoundsByDate)
-                .sort((a, b) => new Date(b) - new Date(a)) // Latest date first
-                .map((date) => {
-                  // Collect all sessions for this date
-                  const allSessionsForDate = records.sounds
-                    .filter((r) => {
-                      const recordDate = new Date(
-                        r.timestamp
-                      ).toLocaleDateString("hi-IN");
-                      return recordDate === date;
-                    })
-                    .sort((a, b) => b.timestamp - a.timestamp); // Latest sessions first
+  {Object.keys(soundRoundsByDate)
+    .sort((a, b) => new Date(b) - new Date(a)) // Latest date first
+    .map((date) => {
+      const roundsForDate = soundRoundsByDate[date];
 
-                  // Group sessions by sound, maintaining chronological order for each sound
-                  const sessionsBySound = {};
-                  allSessionsForDate.forEach((session) => {
-                    if (!sessionsBySound[session.sound]) {
-                      sessionsBySound[session.sound] = [];
-                    }
-                    sessionsBySound[session.sound].push(session);
-                  });
+      // 1. Get all unique sounds for this date
+      const allSoundsForDate = new Set();
+      Object.values(roundsForDate).forEach((soundsData) => {
+        if (soundsData) {
+          Object.keys(soundsData).forEach((sound) => allSoundsForDate.add(sound));
+        }
+      });
+      const soundsArray = Array.from(allSoundsForDate).sort();
 
-                  // Reverse each sound's sessions so latest appears first
-                  Object.keys(sessionsBySound).forEach((sound) => {
-                    sessionsBySound[sound].reverse();
-                  });
+      // 2. Create column-based data structure - each sound gets its own sorted array
+      const columnRecords = {};
+      soundsArray.forEach(sound => {
+        columnRecords[sound] = [];
+      });
 
-                  // Find the maximum number of sessions for any sound on this date
-                  const maxSessions = Math.max(
-                    ...Object.values(sessionsBySound).map(
-                      (sessions) => sessions.length
-                    ),
-                    0
-                  );
+      // 3. Collect all records for each sound and sort them
+      Object.values(roundsForDate).forEach((soundsData) => {
+        if (soundsData) {
+          Object.entries(soundsData).forEach(([sound, record]) => {
+            if (columnRecords[sound] && record) {
+              columnRecords[sound].push(record);
+            }
+          });
+        }
+      });
 
-                  if (maxSessions === 0) return null;
+      // 4. Sort each column by timestamp (NEWEST FIRST - descending order)
+      soundsArray.forEach(sound => {
+        columnRecords[sound].sort((a, b) => {
+          const aTime = a.timestampMs || a.timestamp || 0;
+          const bTime = b.timestampMs || b.timestamp || 0;
+          return bTime - aTime; // Newest first (descending)
+        });
+      });
+
+      // 5. Find the maximum number of records in any column
+      const maxRows = Math.max(...soundsArray.map(sound => columnRecords[sound].length), 0);
+
+      if (maxRows === 0) {
+        return null;
+      }
+
+      // 6. Render the table
+      return (
+        <div
+          key={date}
+          className="p-4 rounded-xl shadow-lg border backdrop-blur-xl bg-white/50 dark:bg-gray-800/50"
+        >
+          <div className="mb-4 text-lg font-bold text-gray-700 dark:text-gray-300">
+            {date}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-bold rounded-tl-2xl">
+                    सत्र #
+                  </th>
+                  {soundsArray.map((sound) => (
+                    <th key={sound} className="px-4 py-3 text-center text-sm font-bold">
+                      {sound}
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-center text-sm font-bold rounded-tr-2xl">
+                    स्थिति
+                  </th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${theme === "dark" ? "divide-gray-700" : "divide-gray-200"}`}>
+                {/* Render rows based on maximum column length */}
+                {Array.from({ length: maxRows }, (_, rowIndex) => {
+                  let hasNewRecordInRow = false;
 
                   return (
-                    <div
-                      key={date}
-                      className="p-4 rounded-xl shadow-lg border backdrop-blur-xl bg-white/50 dark:bg-gray-800/50"
+                    <tr
+                      key={`${date}-row-${rowIndex}`}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
-                      <div className="mb-4 text-lg font-bold text-gray-700 dark:text-gray-300">
-                        {date}
-                      </div>
+                      <td className="px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">
+                        #{rowIndex + 1}
+                      </td>
+                      
+                      {soundsArray.map((sound) => {
+                        const record = columnRecords[sound][rowIndex]; // Get record at this row index
+                        if (record?.isNewBest) hasNewRecordInRow = true;
 
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                            <tr>
-                              <th className="px-4 py-3 text-left text-sm font-bold rounded-tl-2xl">
-                                सत्र #
-                              </th>
-                              {allSounds.map((sound) => (
-                                <th
-                                  key={sound}
-                                  className="px-4 py-3 text-center text-sm font-bold"
-                                >
-                                  {sound}
-                                </th>
-                              ))}
-                              <th className="px-4 py-3 text-center text-sm font-bold rounded-tr-2xl">
-                                स्थिति
-                              </th>
-                            </tr>
-                          </thead>
-
-                          <tbody
-                            className={`divide-y ${
-                              theme === "dark"
-                                ? "divide-gray-700"
-                                : "divide-gray-200"
-                            }`}
-                          >
-                            {Array.from(
-                              { length: maxSessions },
-                              (_, rowIndex) => {
-                                const sessionNum = rowIndex + 1;
-                                const rowSessions = {};
-                                let hasNewRecord = false;
-
-                                // For each sound, get the session at this row position
-                                allSounds.forEach((sound) => {
-                                  if (
-                                    sessionsBySound[sound] &&
-                                    sessionsBySound[sound][rowIndex]
-                                  ) {
-                                    const session =
-                                      sessionsBySound[sound][rowIndex];
-                                    rowSessions[sound] = session;
-                                    if (session.isNewBest) hasNewRecord = true;
-                                  }
-                                });
-
-                                // Skip empty rows
-                                if (Object.keys(rowSessions).length === 0)
-                                  return null;
-
-                                return (
-                                  <tr
-                                    key={sessionNum}
-                                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                  >
-                                    <td className="px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">
-                                      #{sessionNum}
-                                    </td>
-
-                                    {allSounds.map((sound) => {
-                                      const session = rowSessions[sound];
-                                      return (
-                                        <td
-                                          key={sound}
-                                          className="px-4 py-3 text-center"
-                                        >
-                                          {session ? (
-                                            <div className="flex flex-col items-center gap-1">
-                                              <span className="text-lg font-mono font-bold">
-                                                {(session.time / 10).toFixed(2)}
-                                              </span>
-                                              {session.isNewBest && (
-                                                <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                                                  🏆
-                                                </span>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            <span className="text-gray-400">
-                                              --
-                                            </span>
-                                          )}
-                                        </td>
-                                      );
-                                    })}
-
-                                    <td className="px-4 py-3 text-center">
-                                      {hasNewRecord && (
-                                        <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-full text-xs font-bold">
-                                          रिकॉर्ड
-                                        </span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              }
-                            ).filter(Boolean)}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+                        return (
+                          <td key={sound} className="px-4 py-3 text-center">
+                            {record ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-lg font-mono font-bold">
+                                  {((record.time || 0) / 10).toFixed(2)}
+                                </span>
+                                {record.isNewBest && (
+                                  <span className="text-xs text-yellow-600 dark:text-yellow-400">🏆</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">--</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      
+                      <td className="px-4 py-3 text-center">
+                        {hasNewRecordInRow && (
+                          <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-full text-xs font-bold">
+                            रिकॉर्ड
+                          </span>
+                        )}
+                      </td>
+                    </tr>
                   );
-                })
-                .filter(Boolean)}
-            </div>
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    })
+    .filter(Boolean)}
 
-            {/* Detailed Varnmala Records */}
+  {/* Show message if no sound records at all */}
+  {Object.keys(soundRoundsByDate).length === 0 && (
+    <div className="text-center py-12">
+      <i className="fas fa-microphone text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+      <p className="text-xl text-gray-500 dark:text-gray-400">
+        अभी तक कोई स्वर अभ्यास रिकॉर्ड नहीं है
+      </p>
+    </div>
+  )}
+</div>
+
+
+
+            {/* Detailed Varnmala Records - FIXED DATE/TIME DISPLAY */}
             <div
               className={`p-8 rounded-3xl shadow-2xl border ${
                 theme === "dark"
@@ -3199,33 +3254,76 @@ const Hindi = ({ user, onLogout }) => {
                       }`}
                     >
                       {records.varnmala
-                        .sort((a, b) => b.timestamp - a.timestamp)
+                        .sort((a, b) => {
+                          const aTime =
+                            typeof a.timestamp === "object" &&
+                            a.timestamp.seconds
+                              ? a.timestamp.seconds * 1000
+                              : a.timestamp;
+                          const bTime =
+                            typeof b.timestamp === "object" &&
+                            b.timestamp.seconds
+                              ? b.timestamp.seconds * 1000
+                              : b.timestamp;
+                          return bTime - aTime;
+                        })
                         .map((record, index) => (
                           <tr
-                            key={record.timestamp}
+                            key={record.id || index}
                             className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           >
                             <td className="px-6 py-4">
                               <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                                सत्र #{record.session}
+                                सत्र #{record.session || index + 1}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <span className="text-xl font-mono font-bold">
-                                {(record.time / 10).toFixed(2)}
+                                {record.formattedTime ||
+                                  ((record.time || 0) / 10).toFixed(2)}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <div>
                                 <div className="font-medium">
-                                  {new Date(
-                                    record.timestamp
-                                  ).toLocaleDateString("hi-IN")}
+                                  {record.date ||
+                                    (() => {
+                                      try {
+                                        if (
+                                          typeof record.timestamp ===
+                                            "object" &&
+                                          record.timestamp.seconds
+                                        ) {
+                                          return new Date(
+                                            record.timestamp.seconds * 1000
+                                          ).toLocaleDateString("hi-IN");
+                                        }
+                                        return new Date(
+                                          record.timestamp
+                                        ).toLocaleDateString("hi-IN");
+                                      } catch (e) {
+                                        return "N/A";
+                                      }
+                                    })()}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {new Date(
-                                    record.timestamp
-                                  ).toLocaleTimeString("hi-IN")}
+                                  {(() => {
+                                    try {
+                                      if (
+                                        typeof record.timestamp === "object" &&
+                                        record.timestamp.seconds
+                                      ) {
+                                        return new Date(
+                                          record.timestamp.seconds * 1000
+                                        ).toLocaleTimeString("hi-IN");
+                                      }
+                                      return new Date(
+                                        record.timestamp
+                                      ).toLocaleTimeString("hi-IN");
+                                    } catch (e) {
+                                      return "N/A";
+                                    }
+                                  })()}
                                 </div>
                               </div>
                             </td>
@@ -3241,7 +3339,7 @@ const Hindi = ({ user, onLogout }) => {
                                     : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
                                 }`}
                               >
-                                {record.quality}
+                                {record.quality || "N/A"}
                               </span>
                             </td>
                             <td className="px-6 py-4 font-bold">
@@ -3262,7 +3360,7 @@ const Hindi = ({ user, onLogout }) => {
                                         >
                                           <span>लैप {lap.lapNumber}:</span>
                                           <span className="font-mono">
-                                            {(lap.time / 10).toFixed(2)}
+                                            {((lap.time || 0) / 10).toFixed(2)}
                                           </span>
                                         </div>
                                       ))}
@@ -3286,7 +3384,7 @@ const Hindi = ({ user, onLogout }) => {
               )}
             </div>
 
-            {/* Detailed Story Records */}
+            {/* Detailed Story Records - FIXED DATE/TIME DISPLAY */}
             <div
               className={`p-8 rounded-3xl shadow-2xl border ${
                 theme === "dark"
@@ -3326,40 +3424,53 @@ const Hindi = ({ user, onLogout }) => {
                       }`}
                     >
                       {records.stories
-                        .sort((a, b) => b.timestamp - a.timestamp)
+                        .sort((a, b) => {
+                          const aTime =
+                            typeof a.timestamp === "object" &&
+                            a.timestamp.seconds
+                              ? a.timestamp.seconds * 1000
+                              : a.timestamp;
+                          const bTime =
+                            typeof b.timestamp === "object" &&
+                            b.timestamp.seconds
+                              ? b.timestamp.seconds * 1000
+                              : b.timestamp;
+                          return bTime - aTime;
+                        })
                         .map((record, index) => (
                           <tr
-                            key={record.timestamp}
+                            key={record.id || index}
                             className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           >
                             <td className="px-6 py-4">
                               <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                                {record.storyType}
+                                {record.storyType || "N/A"}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <span className="text-xl font-mono font-bold">
-                                {(record.time / 10).toFixed(2)}
+                                {record.formattedTime ||
+                                  ((record.time || 0) / 10).toFixed(2)}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <span className="font-mono text-gray-600 dark:text-gray-400">
-                                {record.target}
+                                {record.target || "N/A"}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <span
                                 className={`text-lg ${
-                                  record.percentage >= 100
+                                  (record.percentage || 0) >= 100
                                     ? "text-green-600 dark:text-green-400"
-                                    : record.percentage >= 80
+                                    : (record.percentage || 0) >= 80
                                     ? "text-blue-600 dark:text-blue-400"
-                                    : record.percentage >= 60
+                                    : (record.percentage || 0) >= 60
                                     ? "text-yellow-600 dark:text-yellow-400"
                                     : "text-red-600 dark:text-red-400"
                                 }`}
                               >
-                                {record.score}
+                                {record.score || "N/A"}
                               </span>
                             </td>
                             <td className="px-6 py-4">
@@ -3367,38 +3478,68 @@ const Hindi = ({ user, onLogout }) => {
                                 <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                   <div
                                     className={`h-2 rounded-full ${
-                                      record.percentage >= 100
+                                      (record.percentage || 0) >= 100
                                         ? "bg-green-500"
-                                        : record.percentage >= 80
+                                        : (record.percentage || 0) >= 80
                                         ? "bg-blue-500"
-                                        : record.percentage >= 60
+                                        : (record.percentage || 0) >= 60
                                         ? "bg-yellow-500"
                                         : "bg-red-500"
                                     }`}
                                     style={{
                                       width: `${Math.min(
-                                        record.percentage,
+                                        record.percentage || 0,
                                         100
                                       )}%`,
                                     }}
                                   ></div>
                                 </div>
                                 <span className="font-bold">
-                                  {record.percentage}%
+                                  {record.percentage || 0}%
                                 </span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               <div>
                                 <div className="font-medium">
-                                  {new Date(
-                                    record.timestamp
-                                  ).toLocaleDateString("hi-IN")}
+                                  {record.date ||
+                                    (() => {
+                                      try {
+                                        if (
+                                          typeof record.timestamp ===
+                                            "object" &&
+                                          record.timestamp.seconds
+                                        ) {
+                                          return new Date(
+                                            record.timestamp.seconds * 1000
+                                          ).toLocaleDateString("hi-IN");
+                                        }
+                                        return new Date(
+                                          record.timestamp
+                                        ).toLocaleDateString("hi-IN");
+                                      } catch (e) {
+                                        return "N/A";
+                                      }
+                                    })()}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {new Date(
-                                    record.timestamp
-                                  ).toLocaleTimeString("hi-IN")}
+                                  {(() => {
+                                    try {
+                                      if (
+                                        typeof record.timestamp === "object" &&
+                                        record.timestamp.seconds
+                                      ) {
+                                        return new Date(
+                                          record.timestamp.seconds * 1000
+                                        ).toLocaleTimeString("hi-IN");
+                                      }
+                                      return new Date(
+                                        record.timestamp
+                                      ).toLocaleTimeString("hi-IN");
+                                    } catch (e) {
+                                      return "N/A";
+                                    }
+                                  })()}
                                 </div>
                               </div>
                             </td>
