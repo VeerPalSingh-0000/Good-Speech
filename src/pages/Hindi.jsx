@@ -5,7 +5,111 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { addResult, getResults, subscribeToResults, deleteResult } from "../../firestore";
+import {
+  addResult,
+  getResults,
+  subscribeToResults,
+  deleteResult,
+} from "../../firestore";
+
+// ✅ ADD THESE FUNCTIONS HERE - RIGHT AFTER IMPORTS
+const formatSafeDate = (record) => {
+  if (!record) return "N/A";
+
+  try {
+    let date;
+    if (record.timestamp?.seconds) {
+      date = new Date(record.timestamp.seconds * 1000);
+    } else if (record.timestamp) {
+      const timestamp =
+        typeof record.timestamp === "string"
+          ? parseInt(record.timestamp)
+          : record.timestamp;
+
+      date =
+        timestamp > 1000000000000
+          ? new Date(timestamp) // Milliseconds
+          : new Date(timestamp * 1000); // Seconds
+    } else {
+      return "N/A";
+    }
+
+    if (isNaN(date.getTime())) {
+      return "N/A";
+    }
+
+    return date.toLocaleDateString("hi-IN", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch (error) {
+    console.error("Date formatting error:", error, record);
+    return "N/A";
+  }
+};
+
+const formatSafeTime = (record) => {
+  if (!record) return "N/A";
+
+  try {
+    let date;
+    if (record.timestamp?.seconds) {
+      date = new Date(record.timestamp.seconds * 1000);
+    } else if (record.timestamp) {
+      const timestamp =
+        typeof record.timestamp === "string"
+          ? parseInt(record.timestamp)
+          : record.timestamp;
+
+      date =
+        timestamp > 1000000000000
+          ? new Date(timestamp)
+          : new Date(timestamp * 1000);
+    } else {
+      return "N/A";
+    }
+
+    if (isNaN(date.getTime())) {
+      return "N/A";
+    }
+
+    return date.toLocaleTimeString("hi-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch (error) {
+    console.error("Time formatting error:", error, record);
+    return "N/A";
+  }
+};
+// Add this after formatSafeDate and formatSafeTime
+const calculateQuality = (timeInSeconds) => {
+  if (timeInSeconds >= 120) {
+    return "उत्कृष्ट";
+  } else if (timeInSeconds >= 90) {
+    return "अच्छा";
+  } else if (timeInSeconds >= 60) {
+    return "सामान्य";
+  } else {
+    return "सुधार की आवश्यकता";
+  }
+};
+
+const getQualityWithFallback = (record) => {
+  if (record.quality) {
+    return record.quality;
+  }
+
+  // Calculate quality from time if missing
+  if (record.time) {
+    const timeInSeconds = record.time / 10;
+    return calculateQuality(timeInSeconds);
+  }
+
+  return "N/A";
+};
+
 const Hindi = ({ user, onLogout }) => {
   // Global state for timers
   const [soundTimers, setSoundTimers] = useState({
@@ -242,7 +346,66 @@ const Hindi = ({ user, onLogout }) => {
     }
     return seconds.padStart(5, "0");
   }, []);
+  // Add this after getQualityWithFallback function
+  const getTargetWithFallback = (record, storyType) => {
+    if (record.target) {
+      return record.target;
+    }
 
+    // Calculate target from story type if missing
+    const storyTargets = {
+      short: 300,
+      medium: 600,
+      long: 900,
+      extended: 1200,
+    };
+
+    const targetSeconds = storyTargets[storyType] || 300;
+    return formatTime(targetSeconds * 10);
+  };
+
+  const getScoreWithFallback = (record) => {
+    if (record.score) {
+      return record.score;
+    }
+
+    // Calculate score from percentage if missing
+    const percentage = record.percentage || 0;
+
+    if (percentage >= 100) {
+      return "⭐⭐⭐⭐⭐ (पूर्ण)";
+    } else if (percentage >= 80) {
+      return "⭐⭐⭐⭐ (उत्कृष्ट)";
+    } else if (percentage >= 60) {
+      return "⭐⭐⭐ (अच्छा)";
+    } else if (percentage >= 40) {
+      return "⭐⭐ (सामान्य)";
+    } else {
+      return "⭐ (सुधार की आवश्यकता)";
+    }
+  };
+
+  const getPercentageWithFallback = (record, storyType) => {
+    if (record.percentage !== undefined) {
+      return record.percentage;
+    }
+
+    // Calculate percentage from time if missing
+    if (record.time && storyType) {
+      const storyTargets = {
+        short: 300,
+        medium: 600,
+        long: 900,
+        extended: 1200,
+      };
+
+      const targetTime = (storyTargets[storyType] || 300) * 10;
+      const percentage = (record.time / targetTime) * 100;
+      return Math.round(percentage);
+    }
+
+    return 0;
+  };
   const getStoryName = useCallback((storyType) => {
     const names = {
       short: "छोटी कहानी",
@@ -557,7 +720,7 @@ const Hindi = ({ user, onLogout }) => {
         sound: sound,
         time: currentTime,
         formattedTime: formatTime(currentTime),
-        date: new Date().toLocaleDateString("hi-IN"),
+
         improvement: improvement,
         timestamp: Date.now(), // Always use this
         date: new Date().toLocaleDateString("hi-IN"),
@@ -688,11 +851,13 @@ const Hindi = ({ user, onLogout }) => {
     );
     playFeedbackSound(quality === "उत्कृष्ट" ? 659 : 523, 200);
 
+    // ✅ FIX: Add quality to Firebase save
     saveToFirebase("varnmala", {
-      // ✅ This is correct
       time: currentTime,
       laps: varnmalaTimer.laps,
       formattedTime: formatTime(currentTime),
+      quality: quality, // ✅ ADD THIS LINE
+      session: records.varnmala.length + 1, // ✅ ADD THIS TOO
       date: new Date(),
     });
 
@@ -834,12 +999,15 @@ const Hindi = ({ user, onLogout }) => {
     showNotification(`पठन अभ्यास रिकॉर्ड किया गया! ${score}`, "success");
     playFeedbackSound(percentage >= 80 ? 659 : 523, 300);
 
+    // ✅ FIX: Add missing fields to Firebase save
     saveToFirebase("stories", {
-      // ✅ Use "stories"
       storyType: storyTimer.currentStory,
       storyTitle: currentStory?.title,
       time: currentTime,
       formattedTime: formatTime(currentTime),
+      target: formatTime(targetTime), // ✅ ADD THIS LINE
+      score: score, // ✅ ADD THIS LINE
+      percentage: Math.round(percentage), // ✅ ADD THIS LINE
       date: new Date(),
     });
 
@@ -2496,7 +2664,6 @@ const Hindi = ({ user, onLogout }) => {
                       ) : (
                         records.sounds
                           .sort((a, b) => b.timestamp - a.timestamp)
-                          .slice(0, 15)
                           .map((record) => (
                             <tr
                               key={record.timestamp}
@@ -2517,12 +2684,7 @@ const Hindi = ({ user, onLogout }) => {
                                 </div>
                               </td>
                               <td className="px-4 md:px-6 py-4 text-sm md:text-lg">
-                                {record.date ||
-                                  (record.timestamp
-                                    ? new Date(
-                                        record.timestamp
-                                      ).toLocaleDateString("hi-IN")
-                                    : "N/A")}
+                                {record.date || formatSafeDate(record)}
                               </td>
                               <td
                                 className={`px-4 md:px-6 py-4 font-bold text-sm md:text-lg ${
@@ -2736,7 +2898,6 @@ const Hindi = ({ user, onLogout }) => {
                       ) : (
                         records.varnmala
                           .sort((a, b) => b.timestamp - a.timestamp)
-                          .slice(0, 10)
                           .map((record, index) => (
                             <tr
                               key={record.timestamp}
@@ -2756,7 +2917,7 @@ const Hindi = ({ user, onLogout }) => {
                                 {record.date}
                               </td>
                               <td
-                                className={`px-4 md:px-6 py-4 font-bold text-sm md:text-lg ${
+                                className={`px-4 md:px-6 py-4 text-center font-bold text-sm md:text-lg ${
                                   record.quality === "उत्कृष्ट"
                                     ? "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 md:px-3 py-1 rounded-full"
                                     : record.quality === "अच्छा"
@@ -2766,7 +2927,7 @@ const Hindi = ({ user, onLogout }) => {
                                     : "text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 md:px-3 py-1 rounded-full"
                                 }`}
                               >
-                                {record.quality}
+                                {getQualityWithFallback(record)}
                               </td>
                               <td className="px-4 md:px-6 py-4 text-sm md:text-lg">
                                 {record.laps?.length || 0}
@@ -2774,7 +2935,7 @@ const Hindi = ({ user, onLogout }) => {
                               <td className="px-4 md:px-6 py-4">
                                 <button
                                   className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
-                                  onClick={() => deleteResult(record.id)}  
+                                  onClick={() => deleteResult(record.id)}
                                   title="रिकॉर्ड हटाएं"
                                 >
                                   <i className="fas fa-trash text-lg md:text-xl"></i>
@@ -2820,6 +2981,9 @@ const Hindi = ({ user, onLogout }) => {
                           स्कोर
                         </th>
                         <th className="px-4 md:px-6 py-3 md:py-4 text-left text-base md:text-lg font-bold">
+                          प्रतिशत
+                        </th>
+                        <th className="px-4 md:px-6 py-3 md:py-4 text-left text-base md:text-lg font-bold">
                           दिनांक
                         </th>
                         <th className="px-4 md:px-6 py-3 md:py-4 text-left text-base md:text-lg font-bold rounded-tr-2xl">
@@ -2835,7 +2999,7 @@ const Hindi = ({ user, onLogout }) => {
                       {records.stories.length === 0 ? (
                         <tr>
                           <td
-                            colSpan="6"
+                            colSpan="7"
                             className="px-6 py-12 text-center text-lg md:text-xl text-gray-500 dark:text-gray-400"
                           >
                             <div className="space-y-4">
@@ -2850,59 +3014,101 @@ const Hindi = ({ user, onLogout }) => {
                       ) : (
                         records.stories
                           .sort((a, b) => b.timestamp - a.timestamp)
-                          .slice(0, 10)
-                          .map((record) => (
-                            <tr
-                              key={record.timestamp}
-                              className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                            >
-                              <td className="px-4 md:px-6 py-4">
-                                <div className="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">
-                                  {record.storyType}
-                                </div>
-                              </td>
-                              <td className="px-4 md:px-6 py-4">
-                                <div className="text-lg md:text-xl font-mono font-bold">
-                                  {record.formattedTime}
-                                </div>
-                              </td>
-                              <td className="px-4 md:px-6 py-4">
-                                <div className="text-sm md:text-lg font-mono">
-                                  {record.target}
-                                </div>
-                              </td>
-                              <td className="px-4 md:px-6 py-4">
-                                <div
-                                  className={`text-sm md:text-lg font-bold ${
-                                    record.percentage >= 100
-                                      ? "text-green-600 dark:text-green-400"
-                                      : record.percentage >= 80
-                                      ? "text-blue-600 dark:text-blue-400"
-                                      : record.percentage >= 60
-                                      ? "text-yellow-600 dark:text-yellow-400"
-                                      : "text-red-600 dark:text-red-400"
-                                  }`}
-                                >
-                                  {record.score}
-                                </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  {record.percentage}%
-                                </div>
-                              </td>
-                              <td className="px-4 md:px-6 py-4 text-sm md:text-lg">
-                                {record.date}
-                              </td>
-                              <td className="px-4 md:px-6 py-4">
-                                <button
-                                  className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
-                                  onClick={() => deleteResult(record.id)}  
-                                  title="रिकॉर्ड हटाएं"
-                                >
-                                  <i className="fas fa-trash text-lg md:text-xl"></i>
-                                </button>
-                              </td>
-                            </tr>
-                          ))
+                          .map((record) => {
+                            // ✅ Calculate fallback values for each record
+                            const currentPercentage =
+                              record.percentage !== undefined
+                                ? record.percentage
+                                : getPercentageWithFallback(
+                                    record,
+                                    record.storyType
+                                  );
+
+                            const currentTarget =
+                              record.target ||
+                              getTargetWithFallback(record, record.storyType);
+                            const currentScore =
+                              record.score || getScoreWithFallback(record);
+
+                            return (
+                              <tr
+                                key={record.timestamp}
+                                className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                              >
+                                <td className="px-4 md:px-6 py-4">
+                                  <div className="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">
+                                    {record.storyType}
+                                  </div>
+                                </td>
+                                <td className="px-4 md:px-6 py-4">
+                                  <div className="text-lg md:text-xl font-mono font-bold">
+                                    {record.formattedTime}
+                                  </div>
+                                </td>
+                                {/* ✅ Updated Target Cell */}
+                                <td className="px-4 md:px-6 py-4">
+                                  <div className="text-sm md:text-lg font-mono">
+                                    {currentTarget}
+                                  </div>
+                                </td>
+                                {/* ✅ Updated Score Cell */}
+                                <td className="px-4 md:px-6 py-4">
+                                  <div
+                                    className={`text-sm md:text-lg font-bold ${
+                                      currentPercentage >= 100
+                                        ? "text-green-600 dark:text-green-400"
+                                        : currentPercentage >= 80
+                                        ? "text-blue-600 dark:text-blue-400"
+                                        : currentPercentage >= 60
+                                        ? "text-yellow-600 dark:text-yellow-400"
+                                        : "text-red-600 dark:text-red-400"
+                                    }`}
+                                  >
+                                    {currentScore}
+                                  </div>
+                                </td>
+                                {/* ✅ New Percentage Cell with Progress Bar */}
+                                <td className="px-4 md:px-6 py-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                      <div
+                                        className={`h-2 rounded-full ${
+                                          currentPercentage >= 100
+                                            ? "bg-green-500"
+                                            : currentPercentage >= 80
+                                            ? "bg-blue-500"
+                                            : currentPercentage >= 60
+                                            ? "bg-yellow-500"
+                                            : "bg-red-500"
+                                        }`}
+                                        style={{
+                                          width: `${Math.min(
+                                            currentPercentage,
+                                            100
+                                          )}%`,
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <span className="font-bold text-sm">
+                                      {currentPercentage}%
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 md:px-6 py-4 text-sm md:text-lg">
+                                  {record.date}
+                                </td>
+                                <td className="px-4 md:px-6 py-4">
+                                  <button
+                                    className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
+                                    onClick={() => deleteResult(record.id)}
+                                    title="रिकॉर्ड हटाएं"
+                                  >
+                                    <i className="fas fa-trash text-lg md:text-xl"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
                       )}
                     </tbody>
                   </table>
@@ -2926,57 +3132,6 @@ const Hindi = ({ user, onLogout }) => {
             </div>
 
             {/* Helper function for safe date formatting */}
-            {(() => {
-              const formatSafeDate = (record) => {
-                if (record.date && record.date !== "N/A") {
-                  return record.date;
-                }
-                if (record.timestamp) {
-                  try {
-                    if (
-                      typeof record.timestamp === "object" &&
-                      record.timestamp.seconds
-                    ) {
-                      return new Date(
-                        record.timestamp.seconds * 1000
-                      ).toLocaleDateString("hi-IN");
-                    }
-                    return new Date(record.timestamp).toLocaleDateString(
-                      "hi-IN"
-                    );
-                  } catch (e) {
-                    return "N/A";
-                  }
-                }
-                return "N/A";
-              };
-
-              const formatSafeTime = (record) => {
-                if (record.formattedTime && record.formattedTime !== "N/A") {
-                  return record.formattedTime;
-                }
-                if (record.timestamp) {
-                  try {
-                    if (
-                      typeof record.timestamp === "object" &&
-                      record.timestamp.seconds
-                    ) {
-                      return new Date(
-                        record.timestamp.seconds * 1000
-                      ).toLocaleTimeString("hi-IN");
-                    }
-                    return new Date(record.timestamp).toLocaleTimeString(
-                      "hi-IN"
-                    );
-                  } catch (e) {
-                    return "N/A";
-                  }
-                }
-                return "N/A";
-              };
-
-              return null; // This is just to define the functions
-            })()}
 
             {/* Overall Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -3066,29 +3221,40 @@ const Hindi = ({ user, onLogout }) => {
 
             {/* Sound Records with Fixed Date Display */}
 
-<div className="space-y-6">
+            <div className="space-y-8"> {/* ✅ Increased spacing between date tables */}
   <h3 className="text-2xl font-bold flex items-center gap-2">
     <i className="fas fa-microphone text-blue-500"></i>
     स्वर अभ्यास (सत्र अनुसार)
   </h3>
 
   {Object.keys(soundRoundsByDate)
-    .sort((a, b) => new Date(b) - new Date(a)) // Latest date first
-    .map((date) => {
+    .sort((a, b) => {
+      // ✅ Enhanced date sorting with fallback
+      try {
+        const dateA = new Date(a);
+        const dateB = new Date(b);
+        return dateB.getTime() - dateA.getTime(); // Latest date first
+      } catch (error) {
+        return b.localeCompare(a); // Fallback string comparison
+      }
+    })
+    .map((date, dateIndex) => {
       const roundsForDate = soundRoundsByDate[date];
 
       // 1. Get all unique sounds for this date
       const allSoundsForDate = new Set();
       Object.values(roundsForDate).forEach((soundsData) => {
         if (soundsData) {
-          Object.keys(soundsData).forEach((sound) => allSoundsForDate.add(sound));
+          Object.keys(soundsData).forEach((sound) =>
+            allSoundsForDate.add(sound)
+          );
         }
       });
       const soundsArray = Array.from(allSoundsForDate).sort();
 
       // 2. Create column-based data structure - each sound gets its own sorted array
       const columnRecords = {};
-      soundsArray.forEach(sound => {
+      soundsArray.forEach((sound) => {
         columnRecords[sound] = [];
       });
 
@@ -3103,90 +3269,252 @@ const Hindi = ({ user, onLogout }) => {
         }
       });
 
-      // 4. Sort each column by timestamp (NEWEST FIRST - descending order)
-      soundsArray.forEach(sound => {
+      // 4. Sort each column by timestamp (OLDEST FIRST - ascending order)
+      soundsArray.forEach((sound) => {
         columnRecords[sound].sort((a, b) => {
-          const aTime = a.timestampMs || a.timestamp || 0;
-          const bTime = b.timestampMs || b.timestamp || 0;
-          return bTime - aTime; // Newest first (descending)
+          const aTime = a.timestamp?.seconds
+            ? a.timestamp.seconds * 1000
+            : a.timestamp || 0;
+          const bTime = b.timestamp?.seconds
+            ? b.timestamp.seconds * 1000
+            : b.timestamp || 0;
+          return aTime - bTime; // ✅ OLDEST FIRST (changed from bTime - aTime)
         });
       });
 
       // 5. Find the maximum number of records in any column
-      const maxRows = Math.max(...soundsArray.map(sound => columnRecords[sound].length), 0);
+      const maxRows = Math.max(
+        ...soundsArray.map((sound) => columnRecords[sound].length),
+        0
+      );
 
       if (maxRows === 0) {
         return null;
       }
 
-      // 6. Render the table
+      // 6. Render the table with enhanced visual separation
       return (
         <div
           key={date}
-          className="p-4 rounded-xl shadow-lg border backdrop-blur-xl bg-white/50 dark:bg-gray-800/50"
+          className={`relative p-6 rounded-2xl shadow-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:shadow-3xl ${
+            theme === "dark" 
+              ? "bg-gray-800/60 border-gray-600/40" 
+              : "bg-white/60 border-gray-300/40"
+          } ${dateIndex === 0 ? 'ring-2 ring-blue-400/50' : ''}`} // ✅ Highlight latest date
         >
-          <div className="mb-4 text-lg font-bold text-gray-700 dark:text-gray-300">
-            {date}
+          {/* ✅ Enhanced Date Header with Position Indicator */}
+          <div className="mb-6 p-5 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/40 dark:via-purple-900/40 dark:to-pink-900/40 rounded-xl border-2 border-blue-200/50 dark:border-blue-600/50 relative overflow-hidden">
+            {/* Latest Date Badge */}
+            {dateIndex === 0 && (
+              <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-bl-lg text-xs font-bold">
+                <i className="fas fa-crown mr-1"></i>
+                Latest
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                  dateIndex === 0 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' 
+                    : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                }`}>
+                  📅
+                </div>
+                <div>
+                  <h4 className={`text-2xl font-bold ${
+                    dateIndex === 0 
+                      ? 'text-blue-800 dark:text-blue-200' 
+                      : 'text-blue-700 dark:text-blue-300'
+                  }`}>
+                    {(() => {
+                      // Get any record from this date to format it properly
+                      const sampleRecord = Object.values(roundsForDate)[0]
+                        ? Object.values(Object.values(roundsForDate)[0])[0]
+                        : null;
+
+                      return formatSafeDate(sampleRecord) || date;
+                    })()}
+                  </h4>
+                  <div className="flex items-center gap-4 mt-2">
+                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      <i className="fas fa-database mr-1"></i>
+                      कुल रिकॉर्ड: {Object.values(columnRecords).reduce((sum, arr) => sum + arr.length, 0)}
+                    </p>
+                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                      <i className="fas fa-volume-up mr-1"></i>
+                      ध्वनियाँ: {soundsArray.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-600 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+                  <i className="fas fa-music mr-1"></i>
+                  {soundsArray.join(" • ")}
+                </div>
+                {/* ✅ Date Position Indicator */}
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  दिन #{dateIndex + 1}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Table with Enhanced Styling */}
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-600">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+              <thead className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-bold rounded-tl-2xl">
-                    सत्र #
+                  <th className="px-4 py-4 text-left text-sm font-bold rounded-tl-xl">
+                    <i className="fas fa-hashtag mr-2"></i>
+                    सत्र # ⬇️
                   </th>
                   {soundsArray.map((sound) => (
-                    <th key={sound} className="px-4 py-3 text-center text-sm font-bold">
-                      {sound}
+                    <th
+                      key={sound}
+                      className="px-4 py-4 text-center text-lg font-bold"
+                    >
+                      <div className="flex flex-col items-center">
+                        <span className="text-2xl">{sound}</span>
+                        <span className="text-xs opacity-75">
+                          {columnRecords[sound].length} रिकॉर्ड
+                        </span>
+                      </div>
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-center text-sm font-bold rounded-tr-2xl">
+                  <th className="px-4 py-4 text-center text-sm font-bold rounded-tr-xl">
+                    <i className="fas fa-trophy mr-2"></i>
                     स्थिति
                   </th>
                 </tr>
               </thead>
-              <tbody className={`divide-y ${theme === "dark" ? "divide-gray-700" : "divide-gray-200"}`}>
-                {/* Render rows based on maximum column length */}
+              <tbody
+                className={`divide-y-2 ${
+                  theme === "dark" ? "divide-gray-600" : "divide-gray-300"
+                }`}
+              >
+                {/* ✅ Data fills top to bottom, oldest first */}
                 {Array.from({ length: maxRows }, (_, rowIndex) => {
                   let hasNewRecordInRow = false;
 
                   return (
                     <tr
                       key={`${date}-row-${rowIndex}`}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      className={`hover:bg-gradient-to-r transition-all duration-200 ${
+                        theme === "dark" 
+                          ? "hover:from-gray-700/50 hover:to-purple-900/30" 
+                          : "hover:from-blue-50 hover:to-purple-50"
+                      }`}
                     >
-                      <td className="px-4 py-3 font-semibold text-purple-600 dark:text-purple-400">
-                        #{rowIndex + 1}
+                      <td className="px-4 py-4 font-bold text-purple-600 dark:text-purple-400 bg-gray-50 dark:bg-gray-800/50">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-sm font-bold">
+                            {rowIndex + 1}
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold">सत्र #{rowIndex + 1}</div>
+                            {/* ✅ Show actual time for this session */}
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              <i className="fas fa-clock mr-1"></i>
+                              {(() => {
+                                // Find the earliest record in this row to show time
+                                let earliestRecord = null;
+                                let earliestTime = Infinity;
+
+                                soundsArray.forEach((sound) => {
+                                  const record = columnRecords[sound][rowIndex];
+                                  if (record) {
+                                    const recordTime = record.timestamp?.seconds
+                                      ? record.timestamp.seconds * 1000
+                                      : record.timestamp || Infinity;
+                                    if (recordTime < earliestTime) {
+                                      earliestTime = recordTime;
+                                      earliestRecord = record;
+                                    }
+                                  }
+                                });
+
+                                if (earliestRecord) {
+                                  try {
+                                    const time = earliestRecord.timestamp?.seconds
+                                      ? new Date(earliestRecord.timestamp.seconds * 1000)
+                                      : new Date(earliestRecord.timestamp);
+                                    return time.toLocaleTimeString("hi-IN", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    });
+                                  } catch {
+                                    return "";
+                                  }
+                                }
+                                return "";
+                              })()}
+                            </div>
+                          </div>
+                        </div>
                       </td>
-                      
+
                       {soundsArray.map((sound) => {
-                        const record = columnRecords[sound][rowIndex]; // Get record at this row index
+                        const record = columnRecords[sound][rowIndex];
                         if (record?.isNewBest) hasNewRecordInRow = true;
 
                         return (
-                          <td key={sound} className="px-4 py-3 text-center">
+                          <td
+                            key={sound}
+                            className={`px-4 py-4 text-center ${
+                              record ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'
+                            }`}
+                          >
                             {record ? (
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="text-lg font-mono font-bold">
-                                  {((record.time || 0) / 10).toFixed(2)}
+                              <div className="flex flex-col items-center gap-2">
+                                <span className={`text-xl font-mono font-bold ${
+                                  record.isNewBest 
+                                    ? 'text-yellow-600 dark:text-yellow-400' 
+                                    : 'text-gray-800 dark:text-gray-200'
+                                }`}>
+                                  {((record.time || 0) / 10).toFixed(2)}s
                                 </span>
                                 {record.isNewBest && (
-                                  <span className="text-xs text-yellow-600 dark:text-yellow-400">🏆</span>
+                                  <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                                    <i className="fas fa-trophy"></i>
+                                    <span>Best</span>
+                                  </div>
+                                )}
+                                {/* ✅ Show improvement indicator */}
+                                {record.improvement && (
+                                  <span
+                                    className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                      record.improvement.includes("+") ||
+                                      record.improvement === "पहला रिकॉर्ड"
+                                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
+                                        : record.improvement.includes("-")
+                                        ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
+                                    }`}
+                                  >
+                                    {record.improvement}
+                                  </span>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-gray-400">--</span>
+                              <div className="flex flex-col items-center justify-center h-16">
+                                <span className="text-gray-400 text-2xl">--</span>
+                                <span className="text-xs text-gray-400">No data</span>
+                              </div>
                             )}
                           </td>
                         );
                       })}
-                      
-                      <td className="px-4 py-3 text-center">
+
+                      <td className="px-4 py-4 text-center bg-gray-50 dark:bg-gray-800/50">
                         {hasNewRecordInRow && (
-                          <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-full text-xs font-bold">
-                            रिकॉर्ड
-                          </span>
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-full text-xs font-bold shadow-lg">
+                              <i className="fas fa-star mr-1"></i>
+                              रिकॉर्ड
+                            </span>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -3195,6 +3523,27 @@ const Hindi = ({ user, onLogout }) => {
               </tbody>
             </table>
           </div>
+
+          {/* ✅ Enhanced summary footer */}
+          <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-xl border border-gray-200 dark:border-gray-600">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              {soundsArray.map((sound) => (
+                <div key={sound} className="space-y-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{sound}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <i className="fas fa-chart-bar mr-1"></i>
+                    {columnRecords[sound].length} रिकॉर्ड
+                  </div>
+                  {columnRecords[sound].length > 0 && (
+                    <div className="text-xs font-mono bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded">
+                      <i className="fas fa-trophy mr-1"></i>
+                      सर्वश्रेष्ठ: {((Math.max(...columnRecords[sound].map((r) => r.time || 0)) || 0) / 10).toFixed(2)}s
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       );
     })
@@ -3202,15 +3551,21 @@ const Hindi = ({ user, onLogout }) => {
 
   {/* Show message if no sound records at all */}
   {Object.keys(soundRoundsByDate).length === 0 && (
-    <div className="text-center py-12">
-      <i className="fas fa-microphone text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
-      <p className="text-xl text-gray-500 dark:text-gray-400">
-        अभी तक कोई स्वर अभ्यास रिकॉर्ड नहीं है
-      </p>
+    <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600">
+      <div className="space-y-4">
+        <i className="fas fa-microphone text-8xl text-gray-300 dark:text-gray-600 animate-pulse"></i>
+        <div>
+          <p className="text-2xl font-bold text-gray-500 dark:text-gray-400 mb-2">
+            अभी तक कोई स्वर अभ्यास रिकॉर्ड नहीं है
+          </p>
+          <p className="text-lg text-gray-400 dark:text-gray-500">
+            अपना पहला अभ्यास सत्र शुरू करें!
+          </p>
+        </div>
+      </div>
     </div>
   )}
 </div>
-
 
 
             {/* Detailed Varnmala Records - FIXED DATE/TIME DISPLAY */}
@@ -3255,17 +3610,13 @@ const Hindi = ({ user, onLogout }) => {
                     >
                       {records.varnmala
                         .sort((a, b) => {
-                          const aTime =
-                            typeof a.timestamp === "object" &&
-                            a.timestamp.seconds
-                              ? a.timestamp.seconds * 1000
-                              : a.timestamp;
-                          const bTime =
-                            typeof b.timestamp === "object" &&
-                            b.timestamp.seconds
-                              ? b.timestamp.seconds * 1000
-                              : b.timestamp;
-                          return bTime - aTime;
+                          const aTime = a.timestamp?.seconds
+                            ? a.timestamp.seconds * 1000
+                            : a.timestamp || 0;
+                          const bTime = b.timestamp?.seconds
+                            ? b.timestamp.seconds * 1000
+                            : b.timestamp || 0;
+                          return bTime - aTime; // Newest first
                         })
                         .map((record, index) => (
                           <tr
@@ -3280,31 +3631,15 @@ const Hindi = ({ user, onLogout }) => {
                             <td className="px-6 py-4">
                               <span className="text-xl font-mono font-bold">
                                 {record.formattedTime ||
-                                  ((record.time || 0) / 10).toFixed(2)}
+                                  (record.time
+                                    ? (record.time / 10).toFixed(2)
+                                    : "0.00")}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <div>
                                 <div className="font-medium">
-                                  {record.date ||
-                                    (() => {
-                                      try {
-                                        if (
-                                          typeof record.timestamp ===
-                                            "object" &&
-                                          record.timestamp.seconds
-                                        ) {
-                                          return new Date(
-                                            record.timestamp.seconds * 1000
-                                          ).toLocaleDateString("hi-IN");
-                                        }
-                                        return new Date(
-                                          record.timestamp
-                                        ).toLocaleDateString("hi-IN");
-                                      } catch (e) {
-                                        return "N/A";
-                                      }
-                                    })()}
+                                  {record.date || formatSafeDate(record)}
                                 </div>
                                 <div className="text-sm text-gray-500">
                                   {(() => {
@@ -3339,7 +3674,7 @@ const Hindi = ({ user, onLogout }) => {
                                     : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
                                 }`}
                               >
-                                {record.quality || "N/A"}
+                                {getQualityWithFallback(record)}
                               </span>
                             </td>
                             <td className="px-6 py-4 font-bold">
@@ -3425,85 +3760,104 @@ const Hindi = ({ user, onLogout }) => {
                     >
                       {records.stories
                         .sort((a, b) => {
-                          const aTime =
-                            typeof a.timestamp === "object" &&
-                            a.timestamp.seconds
-                              ? a.timestamp.seconds * 1000
-                              : a.timestamp;
-                          const bTime =
-                            typeof b.timestamp === "object" &&
-                            b.timestamp.seconds
-                              ? b.timestamp.seconds * 1000
-                              : b.timestamp;
-                          return bTime - aTime;
+                          const aTime = a.timestamp?.seconds
+                            ? a.timestamp.seconds * 1000
+                            : a.timestamp || 0;
+                          const bTime = b.timestamp?.seconds
+                            ? b.timestamp.seconds * 1000
+                            : b.timestamp || 0;
+                          return bTime - aTime; // Newest first
                         })
-                        .map((record, index) => (
-                          <tr
-                            key={record.id || index}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <td className="px-6 py-4">
-                              <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                                {record.storyType || "N/A"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-xl font-mono font-bold">
-                                {record.formattedTime ||
-                                  ((record.time || 0) / 10).toFixed(2)}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="font-mono text-gray-600 dark:text-gray-400">
-                                {record.target || "N/A"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={`text-lg ${
-                                  (record.percentage || 0) >= 100
-                                    ? "text-green-600 dark:text-green-400"
-                                    : (record.percentage || 0) >= 80
-                                    ? "text-blue-600 dark:text-blue-400"
-                                    : (record.percentage || 0) >= 60
-                                    ? "text-yellow-600 dark:text-yellow-400"
-                                    : "text-red-600 dark:text-red-400"
-                                }`}
-                              >
-                                {record.score || "N/A"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                  <div
-                                    className={`h-2 rounded-full ${
-                                      (record.percentage || 0) >= 100
-                                        ? "bg-green-500"
-                                        : (record.percentage || 0) >= 80
-                                        ? "bg-blue-500"
-                                        : (record.percentage || 0) >= 60
-                                        ? "bg-yellow-500"
-                                        : "bg-red-500"
-                                    }`}
-                                    style={{
-                                      width: `${Math.min(
-                                        record.percentage || 0,
-                                        100
-                                      )}%`,
-                                    }}
-                                  ></div>
-                                </div>
-                                <span className="font-bold">
-                                  {record.percentage || 0}%
+                        .map((record, index) => {
+                          // ✅ Calculate fallback values for each record
+                          const currentPercentage =
+                            record.percentage !== undefined
+                              ? record.percentage
+                              : getPercentageWithFallback(
+                                  record,
+                                  record.storyType
+                                );
+
+                          const currentTarget =
+                            record.target ||
+                            getTargetWithFallback(record, record.storyType);
+                          const currentScore =
+                            record.score || getScoreWithFallback(record);
+
+                          return (
+                            <tr
+                              key={record.id || index}
+                              className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              <td className="px-6 py-4">
+                                <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                                  {record.storyType || "N/A"}
                                 </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div>
-                                <div className="font-medium">
-                                  {record.date ||
-                                    (() => {
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="text-xl font-mono font-bold">
+                                  {record.formattedTime ||
+                                    (record.time
+                                      ? (record.time / 10).toFixed(2)
+                                      : "0.00")}
+                                </span>
+                              </td>
+                              {/* ✅ Updated Target Cell with Fallback */}
+                              <td className="px-6 py-4">
+                                <span className="font-mono text-gray-600 dark:text-gray-400">
+                                  {currentTarget}
+                                </span>
+                              </td>
+                              {/* ✅ Updated Score Cell with Fallback */}
+                              <td className="px-6 py-4">
+                                <span
+                                  className={`text-lg ${
+                                    currentPercentage >= 100
+                                      ? "text-green-600 dark:text-green-400"
+                                      : currentPercentage >= 80
+                                      ? "text-blue-600 dark:text-blue-400"
+                                      : currentPercentage >= 60
+                                      ? "text-yellow-600 dark:text-yellow-400"
+                                      : "text-red-600 dark:text-red-400"
+                                  }`}
+                                >
+                                  {currentScore}
+                                </span>
+                              </td>
+                              {/* ✅ Updated Percentage Cell with Fallback */}
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div
+                                      className={`h-2 rounded-full ${
+                                        currentPercentage >= 100
+                                          ? "bg-green-500"
+                                          : currentPercentage >= 80
+                                          ? "bg-blue-500"
+                                          : currentPercentage >= 60
+                                          ? "bg-yellow-500"
+                                          : "bg-red-500"
+                                      }`}
+                                      style={{
+                                        width: `${Math.min(
+                                          currentPercentage,
+                                          100
+                                        )}%`,
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <span className="font-bold">
+                                    {currentPercentage}%
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div>
+                                  <div className="font-medium">
+                                    {record.date || formatSafeDate(record)}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {(() => {
                                       try {
                                         if (
                                           typeof record.timestamp ===
@@ -3512,39 +3866,21 @@ const Hindi = ({ user, onLogout }) => {
                                         ) {
                                           return new Date(
                                             record.timestamp.seconds * 1000
-                                          ).toLocaleDateString("hi-IN");
+                                          ).toLocaleTimeString("hi-IN");
                                         }
                                         return new Date(
                                           record.timestamp
-                                        ).toLocaleDateString("hi-IN");
+                                        ).toLocaleTimeString("hi-IN");
                                       } catch (e) {
                                         return "N/A";
                                       }
                                     })()}
+                                  </div>
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  {(() => {
-                                    try {
-                                      if (
-                                        typeof record.timestamp === "object" &&
-                                        record.timestamp.seconds
-                                      ) {
-                                        return new Date(
-                                          record.timestamp.seconds * 1000
-                                        ).toLocaleTimeString("hi-IN");
-                                      }
-                                      return new Date(
-                                        record.timestamp
-                                      ).toLocaleTimeString("hi-IN");
-                                    } catch (e) {
-                                      return "N/A";
-                                    }
-                                  })()}
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
