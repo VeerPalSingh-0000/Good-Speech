@@ -118,6 +118,10 @@ const Hindi = ({ user, onLogout }) => {
     ऊ: { time: 0, isRunning: false, bestTime: 0, sessions: 0 },
   });
 
+  const [isSwarsDropdownOpen, setIsSwarsDropdownOpen] = useState(false);
+  const [isVarnmalaDropdownOpen, setIsVarnmalaDropdownOpen] = useState(false);
+  const [isStoriesDropdownOpen, setIsStoriesDropdownOpen] = useState(false);
+
   const [currentStory, setCurrentStory] = useState(null);
   const [showStory, setShowStory] = useState(false);
 
@@ -603,19 +607,48 @@ const Hindi = ({ user, onLogout }) => {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
     playFeedbackSound(newTheme === "dark" ? 200 : 400, 100);
   }, [theme, playFeedbackSound]);
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
 
   const deleteRecord = useCallback(
-    (type, timestamp) => {
+    async (type, recordId) => {
       if (window.confirm("क्या आप इस रिकॉर्ड को हटाना चाहते हैं?")) {
-        setRecords((prev) => ({
-          ...prev,
-          [type]: prev[type].filter((r) => r.timestamp !== timestamp),
-        }));
-        showNotification("रिकॉर्ड हटा दिया गया", "info");
-        saveToStorage();
+        try {
+          // Remove from Firebase if user is authenticated
+          if (user?.uid && recordId) {
+            await deleteResult(recordId);
+          }
+
+          // Update local state and force re-render
+          setRecords((prevRecords) => {
+            const updatedRecords = {
+              ...prevRecords,
+              [type]: prevRecords[type].filter((record) => {
+                // Handle both id and timestamp as identifiers
+                const recordIdentifier = record.id || record.timestamp;
+                return recordIdentifier !== recordId;
+              }),
+            };
+
+            // Save to localStorage immediately
+            localStorage.setItem(
+              "hindiPronunciationRecords",
+              JSON.stringify(updatedRecords)
+            );
+
+            return updatedRecords;
+          });
+
+          showNotification("रिकॉर्ड हटा दिया गया", "success");
+
+          // Force component re-render by updating a dummy state
+          setLastUpdateTime(Date.now());
+        } catch (error) {
+          console.error("Error deleting record:", error);
+          showNotification("रिकॉर्ड हटाने में त्रुटि", "error");
+        }
       }
     },
-    [showNotification, saveToStorage]
+    [user, showNotification]
   );
 
   // ============================================
@@ -717,10 +750,10 @@ const Hindi = ({ user, onLogout }) => {
       }
 
       const record = {
+        id: `sound_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Unique ID
         sound: sound,
         time: currentTime,
         formattedTime: formatTime(currentTime),
-
         improvement: improvement,
         timestamp: Date.now(), // Always use this
         date: new Date().toLocaleDateString("hi-IN"),
@@ -1096,6 +1129,83 @@ const Hindi = ({ user, onLogout }) => {
   // ============================================
   // INITIALIZATION
   // ============================================
+  // Add this after your existing useMemo hooks
+  const liveStatistics = useMemo(() => {
+    const currentTime = lastUpdateTime;
+
+    const totalSessions = Object.values(soundTimers).reduce(
+      (sum, timer) => sum + timer.sessions,
+      0
+    );
+
+    const totalRecords =
+      records.sounds.length + records.varnmala.length + records.stories.length;
+
+    // Fix daily streak calculation
+    const today = new Date();
+    const todayString = today.toDateString(); // e.g., "Fri Jul 25 2025"
+
+    const todayRecords = [
+      ...records.sounds,
+      ...records.varnmala,
+      ...records.stories,
+    ].filter((record) => {
+      try {
+        let recordDate;
+
+        // Handle different timestamp formats
+        if (record.timestamp?.seconds) {
+          // Firebase Firestore timestamp
+          recordDate = new Date(record.timestamp.seconds * 1000);
+        } else if (record.timestamp?.toDate) {
+          // Firebase Firestore timestamp object
+          recordDate = record.timestamp.toDate();
+        } else if (typeof record.timestamp === "number") {
+          // Unix timestamp
+          recordDate = new Date(record.timestamp);
+        } else if (typeof record.timestamp === "string") {
+          // String timestamp
+          recordDate = new Date(record.timestamp);
+        } else if (record.date) {
+          // Use date field as fallback
+          recordDate = new Date(record.date);
+        } else {
+          console.warn("Invalid timestamp format:", record);
+          return false;
+        }
+
+        const recordDateString = recordDate.toDateString();
+        return recordDateString === todayString;
+      } catch (error) {
+        console.error("Date parsing error:", error, record);
+        return false;
+      }
+    });
+
+    // Calculate streak based on today's activity
+    const currentDailyStreak = todayRecords.length;
+
+    console.log("Daily streak calculation:", {
+      todayString,
+      todayRecordsCount: todayRecords.length,
+      currentDailyStreak,
+      allRecords:
+        records.sounds.length +
+        records.varnmala.length +
+        records.stories.length,
+    });
+
+    return {
+      dailyStreak: currentDailyStreak,
+      totalSessions,
+      totalRecords,
+      lastUpdate: currentTime,
+    };
+  }, [records, soundTimers, lastUpdateTime]); // Removed dailyStreak from dependencies since we're calculating it here
+
+  useEffect(() => {
+    console.log("Statistics updated:", liveStatistics);
+  }, [liveStatistics]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -1355,22 +1465,22 @@ const Hindi = ({ user, onLogout }) => {
             : "bg-white/50 border-gray-200/20"
         } backdrop-blur-xl`}
       >
-        <div className="text-center mb-6 relative">
+        <div className="text-center mb-6 relative mt-15 ">
           <button
             onClick={onClose}
-            className="absolute top-0 right-4 w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-all duration-200"
+            className="fixed top-5  right-5 w-10 h-10 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-all duration-200"
             title="कहानी बंद करें"
           >
             <i className="fas fa-times"></i>
           </button>
 
-          <h4 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+          <h4 className="text-2xl p-6 md:text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
             {story.title}
           </h4>
           <div className="w-32 h-1 bg-gradient-to-r from-green-500 to-blue-500 mx-auto rounded-full mt-4"></div>
         </div>
 
-        <div className="prose prose-lg max-w-none prose-gray dark:prose-invert">
+        <div className="prose prose-lg max-w-none prose-gray dark:prose-invert mt-10">
           <div className="text-base md:text-lg leading-relaxed whitespace-pre-line">
             {story.content}
           </div>
@@ -1841,35 +1951,27 @@ const Hindi = ({ user, onLogout }) => {
                   </div>
 
                   {/* Enhanced Stats */}
-                  <div className="grid grid-cols-3 gap-4 md:gap-6">
+                  <div className="grid grid-cols-2 gap-4 md:gap-6">
+                    {" "}
+                    {/* Changed from grid-cols-3 to grid-cols-2 */}
                     {[
                       {
-                        value: dailyStreak,
-                        label: "दिन की लकीर",
+                        id: "daily-streak",
+                        value: liveStatistics.dailyStreak,
+                        label: "Streak",
                         icon: "fas fa-fire",
                         color: "from-orange-500 to-red-500",
                       },
                       {
-                        value: Object.values(soundTimers).reduce(
-                          (sum, timer) => sum + timer.sessions,
-                          0
-                        ),
-                        label: "कुल सत्र",
-                        icon: "fas fa-chart-line",
+                        id: "total-sessions",
+                        value: liveStatistics.totalRecords, // Changed from totalSessions to totalRecords
+                        label: "Total Sessions",
+                        icon: "fas fa-chart-line", // Keeping the chart-line icon instead of trophy
                         color: "from-green-500 to-blue-500",
                       },
-                      {
-                        value:
-                          records.sounds.length +
-                          records.varnmala.length +
-                          records.stories.length,
-                        label: "कुल रिकॉर्ड",
-                        icon: "fas fa-trophy",
-                        color: "from-purple-500 to-pink-500",
-                      },
-                    ].map((stat, index) => (
+                    ].map((stat) => (
                       <div
-                        key={index}
+                        key={`${stat.id}-${liveStatistics.lastUpdate}`}
                         className={`relative p-4 md:p-6 rounded-2xl transition-all duration-300 hover:-translate-y-2 group ${
                           theme === "dark"
                             ? "bg-gray-800/50 backdrop-blur-xl"
@@ -2703,8 +2805,13 @@ const Hindi = ({ user, onLogout }) => {
                               </td>
                               <td className="px-4 md:px-6 py-4">
                                 <button
+                                  onClick={() =>
+                                    deleteRecord(
+                                      "sounds",
+                                      record.id || record.timestamp
+                                    )
+                                  }
                                   className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
-                                  onClick={() => deleteResult(record.id)}
                                   title="रिकॉर्ड हटाएं"
                                 >
                                   <i className="fas fa-trash text-lg md:text-xl"></i>
@@ -2934,8 +3041,13 @@ const Hindi = ({ user, onLogout }) => {
                               </td>
                               <td className="px-4 md:px-6 py-4">
                                 <button
+                                  onClick={() =>
+                                    deleteRecord(
+                                      "varnmala",
+                                      record.id || record.timestamp
+                                    )
+                                  }
                                   className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
-                                  onClick={() => deleteResult(record.id)}
                                   title="रिकॉर्ड हटाएं"
                                 >
                                   <i className="fas fa-trash text-lg md:text-xl"></i>
@@ -3099,8 +3211,13 @@ const Hindi = ({ user, onLogout }) => {
                                 </td>
                                 <td className="px-4 md:px-6 py-4">
                                   <button
+                                    onClick={() =>
+                                      deleteRecord(
+                                        "stories",
+                                        record.id || record.timestamp
+                                      )
+                                    }
                                     className="w-10 md:w-12 h-10 md:h-12 rounded-full text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 hover:scale-110"
-                                    onClick={() => deleteResult(record.id)}
                                     title="रिकॉर्ड हटाएं"
                                   >
                                     <i className="fas fa-trash text-lg md:text-xl"></i>
@@ -3221,677 +3338,933 @@ const Hindi = ({ user, onLogout }) => {
 
             {/* Sound Records with Fixed Date Display */}
 
-            <div className="space-y-8"> {/* ✅ Increased spacing between date tables */}
-  <h3 className="text-2xl font-bold flex items-center gap-2">
-    <i className="fas fa-microphone text-blue-500"></i>
-    स्वर अभ्यास (सत्र अनुसार)
-  </h3>
-
-  {Object.keys(soundRoundsByDate)
-    .sort((a, b) => {
-      // ✅ Enhanced date sorting with fallback
-      try {
-        const dateA = new Date(a);
-        const dateB = new Date(b);
-        return dateB.getTime() - dateA.getTime(); // Latest date first
-      } catch (error) {
-        return b.localeCompare(a); // Fallback string comparison
-      }
-    })
-    .map((date, dateIndex) => {
-      const roundsForDate = soundRoundsByDate[date];
-
-      // 1. Get all unique sounds for this date
-      const allSoundsForDate = new Set();
-      Object.values(roundsForDate).forEach((soundsData) => {
-        if (soundsData) {
-          Object.keys(soundsData).forEach((sound) =>
-            allSoundsForDate.add(sound)
-          );
-        }
-      });
-      const soundsArray = Array.from(allSoundsForDate).sort();
-
-      // 2. Create column-based data structure - each sound gets its own sorted array
-      const columnRecords = {};
-      soundsArray.forEach((sound) => {
-        columnRecords[sound] = [];
-      });
-
-      // 3. Collect all records for each sound and sort them
-      Object.values(roundsForDate).forEach((soundsData) => {
-        if (soundsData) {
-          Object.entries(soundsData).forEach(([sound, record]) => {
-            if (columnRecords[sound] && record) {
-              columnRecords[sound].push(record);
-            }
-          });
-        }
-      });
-
-      // 4. Sort each column by timestamp (OLDEST FIRST - ascending order)
-      soundsArray.forEach((sound) => {
-        columnRecords[sound].sort((a, b) => {
-          const aTime = a.timestamp?.seconds
-            ? a.timestamp.seconds * 1000
-            : a.timestamp || 0;
-          const bTime = b.timestamp?.seconds
-            ? b.timestamp.seconds * 1000
-            : b.timestamp || 0;
-          return aTime - bTime; // ✅ OLDEST FIRST (changed from bTime - aTime)
-        });
-      });
-
-      // 5. Find the maximum number of records in any column
-      const maxRows = Math.max(
-        ...soundsArray.map((sound) => columnRecords[sound].length),
-        0
-      );
-
-      if (maxRows === 0) {
-        return null;
-      }
-
-      // 6. Render the table with enhanced visual separation
-      return (
-        <div
-          key={date}
-          className={`relative p-6 rounded-2xl shadow-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:shadow-3xl ${
-            theme === "dark" 
-              ? "bg-gray-800/60 border-gray-600/40" 
-              : "bg-white/60 border-gray-300/40"
-          } ${dateIndex === 0 ? 'ring-2 ring-blue-400/50' : ''}`} // ✅ Highlight latest date
-        >
-          {/* ✅ Enhanced Date Header with Position Indicator */}
-          <div className="mb-6 p-5 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/40 dark:via-purple-900/40 dark:to-pink-900/40 rounded-xl border-2 border-blue-200/50 dark:border-blue-600/50 relative overflow-hidden">
-            {/* Latest Date Badge */}
-            {dateIndex === 0 && (
-              <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-bl-lg text-xs font-bold">
-                <i className="fas fa-crown mr-1"></i>
-                Latest
-              </div>
-            )}
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
-                  dateIndex === 0 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' 
-                    : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
-                }`}>
-                  📅
-                </div>
-                <div>
-                  <h4 className={`text-2xl font-bold ${
-                    dateIndex === 0 
-                      ? 'text-blue-800 dark:text-blue-200' 
-                      : 'text-blue-700 dark:text-blue-300'
-                  }`}>
-                    {(() => {
-                      // Get any record from this date to format it properly
-                      const sampleRecord = Object.values(roundsForDate)[0]
-                        ? Object.values(Object.values(roundsForDate)[0])[0]
-                        : null;
-
-                      return formatSafeDate(sampleRecord) || date;
-                    })()}
-                  </h4>
-                  <div className="flex items-center gap-4 mt-2">
-                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      <i className="fas fa-database mr-1"></i>
-                      कुल रिकॉर्ड: {Object.values(columnRecords).reduce((sum, arr) => sum + arr.length, 0)}
-                    </p>
-                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
-                      <i className="fas fa-volume-up mr-1"></i>
-                      ध्वनियाँ: {soundsArray.length}
-                    </p>
+            {/* Enhanced Sound Records with Dropdown and Date-wise Tables */}
+            <div className="space-y-8">
+              {/* Dropdown Header for Swar Section */}
+              <div
+                className={`p-6 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
+                  theme === "dark"
+                    ? "bg-gray-800/70 border-blue-500/30 hover:border-blue-400/50"
+                    : "bg-blue-50/70 border-blue-300/30 hover:border-blue-400/50"
+                } backdrop-blur-xl shadow-lg hover:shadow-xl`}
+                onClick={() => setIsSwarsDropdownOpen(!isSwarsDropdownOpen)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                      <i className="fas fa-microphone text-white text-xl"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                        स्वर अभ्यास (सत्र अनुसार)
+                      </h3>
+                      <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                        <i className="fas fa-calendar mr-1"></i>
+                        {Object.keys(soundRoundsByDate).length} दिन के रिकॉर्ड •
+                        <i className="fas fa-database ml-2 mr-1"></i>
+                        {records.sounds.length} कुल रिकॉर्ड
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`px-4 py-2 rounded-full text-sm font-medium ${
+                        theme === "dark"
+                          ? "bg-gray-700 text-gray-300"
+                          : "bg-white text-gray-600"
+                      }`}
+                    >
+                      {isSwarsDropdownOpen ? "छुपाएं" : "देखें"}
+                    </div>
+                    <i
+                      className={`fas fa-chevron-${
+                        isSwarsDropdownOpen ? "up" : "down"
+                      } text-2xl text-blue-500 transform transition-transform duration-300`}
+                    ></i>
                   </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-600 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
-                  <i className="fas fa-music mr-1"></i>
-                  {soundsArray.join(" • ")}
-                </div>
-                {/* ✅ Date Position Indicator */}
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  दिन #{dateIndex + 1}
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Table with Enhanced Styling */}
-          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-600">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
-                <tr>
-                  <th className="px-4 py-4 text-left text-sm font-bold rounded-tl-xl">
-                    <i className="fas fa-hashtag mr-2"></i>
-                    सत्र # ⬇️
-                  </th>
-                  {soundsArray.map((sound) => (
-                    <th
-                      key={sound}
-                      className="px-4 py-4 text-center text-lg font-bold"
-                    >
-                      <div className="flex flex-col items-center">
-                        <span className="text-2xl">{sound}</span>
-                        <span className="text-xs opacity-75">
-                          {columnRecords[sound].length} रिकॉर्ड
-                        </span>
-                      </div>
-                    </th>
-                  ))}
-                  <th className="px-4 py-4 text-center text-sm font-bold rounded-tr-xl">
-                    <i className="fas fa-trophy mr-2"></i>
-                    स्थिति
-                  </th>
-                </tr>
-              </thead>
-              <tbody
-                className={`divide-y-2 ${
-                  theme === "dark" ? "divide-gray-600" : "divide-gray-300"
+              {/* Dropdown Content - Date-wise Tables */}
+              <div
+                className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                  isSwarsDropdownOpen
+                    ? "max-h-none opacity-100"
+                    : "max-h-0 opacity-0"
                 }`}
               >
-                {/* ✅ Data fills top to bottom, oldest first */}
-                {Array.from({ length: maxRows }, (_, rowIndex) => {
-                  let hasNewRecordInRow = false;
+                {isSwarsDropdownOpen && (
+                  <div className="space-y-8 pt-4">
+                    {Object.keys(soundRoundsByDate)
+                      .sort((a, b) => {
+                        try {
+                          const dateA = new Date(a);
+                          const dateB = new Date(b);
+                          return dateB.getTime() - dateA.getTime(); // Latest date first
+                        } catch (error) {
+                          return b.localeCompare(a);
+                        }
+                      })
+                      .map((date, dateIndex) => {
+                        const roundsForDate = soundRoundsByDate[date];
 
-                  return (
-                    <tr
-                      key={`${date}-row-${rowIndex}`}
-                      className={`hover:bg-gradient-to-r transition-all duration-200 ${
-                        theme === "dark" 
-                          ? "hover:from-gray-700/50 hover:to-purple-900/30" 
-                          : "hover:from-blue-50 hover:to-purple-50"
-                      }`}
-                    >
-                      <td className="px-4 py-4 font-bold text-purple-600 dark:text-purple-400 bg-gray-50 dark:bg-gray-800/50">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-sm font-bold">
-                            {rowIndex + 1}
-                          </div>
-                          <div>
-                            <div className="text-sm font-semibold">सत्र #{rowIndex + 1}</div>
-                            {/* ✅ Show actual time for this session */}
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              <i className="fas fa-clock mr-1"></i>
-                              {(() => {
-                                // Find the earliest record in this row to show time
-                                let earliestRecord = null;
-                                let earliestTime = Infinity;
+                        // Get all unique sounds for this date
+                        const allSoundsForDate = new Set();
+                        Object.values(roundsForDate).forEach((soundsData) => {
+                          if (soundsData) {
+                            Object.keys(soundsData).forEach((sound) =>
+                              allSoundsForDate.add(sound)
+                            );
+                          }
+                        });
+                        const soundsArray = Array.from(allSoundsForDate).sort();
 
-                                soundsArray.forEach((sound) => {
-                                  const record = columnRecords[sound][rowIndex];
-                                  if (record) {
-                                    const recordTime = record.timestamp?.seconds
-                                      ? record.timestamp.seconds * 1000
-                                      : record.timestamp || Infinity;
-                                    if (recordTime < earliestTime) {
-                                      earliestTime = recordTime;
-                                      earliestRecord = record;
-                                    }
-                                  }
-                                });
+                        // Create column-based data structure
+                        const columnRecords = {};
+                        soundsArray.forEach((sound) => {
+                          columnRecords[sound] = [];
+                        });
 
-                                if (earliestRecord) {
-                                  try {
-                                    const time = earliestRecord.timestamp?.seconds
-                                      ? new Date(earliestRecord.timestamp.seconds * 1000)
-                                      : new Date(earliestRecord.timestamp);
-                                    return time.toLocaleTimeString("hi-IN", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    });
-                                  } catch {
-                                    return "";
-                                  }
+                        // Collect all records for each sound and sort them
+                        Object.values(roundsForDate).forEach((soundsData) => {
+                          if (soundsData) {
+                            Object.entries(soundsData).forEach(
+                              ([sound, record]) => {
+                                if (columnRecords[sound] && record) {
+                                  columnRecords[sound].push(record);
                                 }
-                                return "";
-                              })()}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
+                              }
+                            );
+                          }
+                        });
 
-                      {soundsArray.map((sound) => {
-                        const record = columnRecords[sound][rowIndex];
-                        if (record?.isNewBest) hasNewRecordInRow = true;
+                        // Sort each column by timestamp (OLDEST FIRST)
+                        soundsArray.forEach((sound) => {
+                          columnRecords[sound].sort((a, b) => {
+                            const aTime = a.timestamp?.seconds
+                              ? a.timestamp.seconds * 1000
+                              : a.timestamp || 0;
+                            const bTime = b.timestamp?.seconds
+                              ? b.timestamp.seconds * 1000
+                              : b.timestamp || 0;
+                            return aTime - bTime;
+                          });
+                        });
+
+                        const maxRows = Math.max(
+                          ...soundsArray.map(
+                            (sound) => columnRecords[sound].length
+                          ),
+                          0
+                        );
+
+                        if (maxRows === 0) {
+                          return null;
+                        }
 
                         return (
-                          <td
-                            key={sound}
-                            className={`px-4 py-4 text-center ${
-                              record ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'
+                          <div
+                            key={date}
+                            className={`relative p-6 rounded-2xl shadow-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:shadow-3xl animate-fade-in ${
+                              theme === "dark"
+                                ? "bg-gray-800/60 border-gray-600/40"
+                                : "bg-white/60 border-gray-300/40"
+                            } ${
+                              dateIndex === 0 ? "ring-2 ring-blue-400/50" : ""
                             }`}
                           >
-                            {record ? (
-                              <div className="flex flex-col items-center gap-2">
-                                <span className={`text-xl font-mono font-bold ${
-                                  record.isNewBest 
-                                    ? 'text-yellow-600 dark:text-yellow-400' 
-                                    : 'text-gray-800 dark:text-gray-200'
-                                }`}>
-                                  {((record.time || 0) / 10).toFixed(2)}s
-                                </span>
-                                {record.isNewBest && (
-                                  <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
-                                    <i className="fas fa-trophy"></i>
-                                    <span>Best</span>
-                                  </div>
-                                )}
-                                {/* ✅ Show improvement indicator */}
-                                {record.improvement && (
-                                  <span
-                                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                      record.improvement.includes("+") ||
-                                      record.improvement === "पहला रिकॉर्ड"
-                                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
-                                        : record.improvement.includes("-")
-                                        ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
-                                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
-                                    }`}
-                                  >
-                                    {record.improvement}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-center justify-center h-16">
-                                <span className="text-gray-400 text-2xl">--</span>
-                                <span className="text-xs text-gray-400">No data</span>
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-
-                      <td className="px-4 py-4 text-center bg-gray-50 dark:bg-gray-800/50">
-                        {hasNewRecordInRow && (
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-full text-xs font-bold shadow-lg">
-                              <i className="fas fa-star mr-1"></i>
-                              रिकॉर्ड
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* ✅ Enhanced summary footer */}
-          <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-xl border border-gray-200 dark:border-gray-600">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              {soundsArray.map((sound) => (
-                <div key={sound} className="space-y-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{sound}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <i className="fas fa-chart-bar mr-1"></i>
-                    {columnRecords[sound].length} रिकॉर्ड
-                  </div>
-                  {columnRecords[sound].length > 0 && (
-                    <div className="text-xs font-mono bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded">
-                      <i className="fas fa-trophy mr-1"></i>
-                      सर्वश्रेष्ठ: {((Math.max(...columnRecords[sound].map((r) => r.time || 0)) || 0) / 10).toFixed(2)}s
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    })
-    .filter(Boolean)}
-
-  {/* Show message if no sound records at all */}
-  {Object.keys(soundRoundsByDate).length === 0 && (
-    <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600">
-      <div className="space-y-4">
-        <i className="fas fa-microphone text-8xl text-gray-300 dark:text-gray-600 animate-pulse"></i>
-        <div>
-          <p className="text-2xl font-bold text-gray-500 dark:text-gray-400 mb-2">
-            अभी तक कोई स्वर अभ्यास रिकॉर्ड नहीं है
-          </p>
-          <p className="text-lg text-gray-400 dark:text-gray-500">
-            अपना पहला अभ्यास सत्र शुरू करें!
-          </p>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
-
-
-            {/* Detailed Varnmala Records - FIXED DATE/TIME DISPLAY */}
-            <div
-              className={`p-8 rounded-3xl shadow-2xl border ${
-                theme === "dark"
-                  ? "bg-gray-800/50 border-gray-700/20"
-                  : "bg-white/50 border-gray-200/20"
-              } backdrop-blur-xl`}
-            >
-              <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                <i className="fas fa-list text-purple-500"></i>
-                वर्णमाला अभ्यास का पूरा इतिहास ({records.varnmala.length}{" "}
-                रिकॉर्ड)
-              </h3>
-
-              {records.varnmala.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                      <tr>
-                        <th className="px-6 py-4 text-left font-bold rounded-tl-2xl">
-                          सत्र
-                        </th>
-                        <th className="px-6 py-4 text-left font-bold">समय</th>
-                        <th className="px-6 py-4 text-left font-bold">
-                          दिनांक
-                        </th>
-                        <th className="px-6 py-4 text-left font-bold">
-                          गुणवत्ता
-                        </th>
-                        <th className="px-6 py-4 text-left font-bold">लैप्स</th>
-                        <th className="px-6 py-4 text-left font-bold rounded-tr-2xl">
-                          लैप विवरण
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody
-                      className={`divide-y ${
-                        theme === "dark" ? "divide-gray-700" : "divide-gray-200"
-                      }`}
-                    >
-                      {records.varnmala
-                        .sort((a, b) => {
-                          const aTime = a.timestamp?.seconds
-                            ? a.timestamp.seconds * 1000
-                            : a.timestamp || 0;
-                          const bTime = b.timestamp?.seconds
-                            ? b.timestamp.seconds * 1000
-                            : b.timestamp || 0;
-                          return bTime - aTime; // Newest first
-                        })
-                        .map((record, index) => (
-                          <tr
-                            key={record.id || index}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <td className="px-6 py-4">
-                              <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                                सत्र #{record.session || index + 1}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-xl font-mono font-bold">
-                                {record.formattedTime ||
-                                  (record.time
-                                    ? (record.time / 10).toFixed(2)
-                                    : "0.00")}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div>
-                                <div className="font-medium">
-                                  {record.date || formatSafeDate(record)}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {(() => {
-                                    try {
-                                      if (
-                                        typeof record.timestamp === "object" &&
-                                        record.timestamp.seconds
-                                      ) {
-                                        return new Date(
-                                          record.timestamp.seconds * 1000
-                                        ).toLocaleTimeString("hi-IN");
-                                      }
-                                      return new Date(
-                                        record.timestamp
-                                      ).toLocaleTimeString("hi-IN");
-                                    } catch (e) {
-                                      return "N/A";
-                                    }
-                                  })()}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={`px-3 py-1 rounded-full text-sm font-bold ${
-                                  record.quality === "उत्कृष्ट"
-                                    ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                                    : record.quality === "अच्छा"
-                                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                                    : record.quality === "सामान्य"
-                                    ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400"
-                                    : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                                }`}
-                              >
-                                {getQualityWithFallback(record)}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 font-bold">
-                              {record.laps?.length || 0}
-                            </td>
-                            <td className="px-6 py-4">
-                              {record.laps && record.laps.length > 0 && (
-                                <div className="max-w-xs">
-                                  <details className="cursor-pointer">
-                                    <summary className="text-blue-500 hover:text-blue-600 font-medium">
-                                      लैप समय देखें
-                                    </summary>
-                                    <div className="mt-2 space-y-1 text-sm">
-                                      {record.laps.map((lap, lapIndex) => (
-                                        <div
-                                          key={lapIndex}
-                                          className="flex justify-between"
-                                        >
-                                          <span>लैप {lap.lapNumber}:</span>
-                                          <span className="font-mono">
-                                            {((lap.time || 0) / 10).toFixed(2)}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </details>
+                            {/* Enhanced Date Header */}
+                            <div className="mb-6 p-5 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/40 dark:via-purple-900/40 dark:to-pink-900/40 rounded-xl border-2 border-blue-200/50 dark:border-blue-600/50 relative overflow-hidden">
+                              {/* Latest Date Badge */}
+                              {dateIndex === 0 && (
+                                <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-bl-lg text-xs font-bold">
+                                  <i className="fas fa-crown mr-1"></i>
+                                  Latest
                                 </div>
                               )}
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                  <div
+                                    className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                                      dateIndex === 0
+                                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                                        : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                                    }`}
+                                  >
+                                    📅
+                                  </div>
+                                  <div>
+                                    <h4
+                                      className={`text-2xl font-bold ${
+                                        dateIndex === 0
+                                          ? "text-blue-800 dark:text-blue-200"
+                                          : "text-blue-700 dark:text-blue-300"
+                                      }`}
+                                    >
+                                      {(() => {
+                                        const sampleRecord = Object.values(
+                                          roundsForDate
+                                        )[0]
+                                          ? Object.values(
+                                              Object.values(roundsForDate)[0]
+                                            )[0]
+                                          : null;
+                                        return (
+                                          formatSafeDate(sampleRecord) || date
+                                        );
+                                      })()}
+                                    </h4>
+                                    <div className="flex items-center gap-4 mt-2">
+                                      <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                                        <i className="fas fa-database mr-1"></i>
+                                        कुल रिकॉर्ड:{" "}
+                                        {Object.values(columnRecords).reduce(
+                                          (sum, arr) => sum + arr.length,
+                                          0
+                                        )}
+                                      </p>
+                                      <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                                        <i className="fas fa-volume-up mr-1"></i>
+                                        ध्वनियाँ: {soundsArray.length}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+                                    <i className="fas fa-music mr-1"></i>
+                                    {soundsArray.join(" • ")}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    दिन #{dateIndex + 1}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Table with Enhanced Styling */}
+                            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-600">
+                              <table className="w-full">
+                                <thead className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
+                                  <tr>
+                                    <th className="px-4 py-4 text-left text-sm font-bold rounded-tl-xl">
+                                      <i className="fas fa-hashtag mr-2"></i>
+                                      सत्र # ⬇️
+                                    </th>
+                                    {soundsArray.map((sound) => (
+                                      <th
+                                        key={sound}
+                                        className="px-4 py-4 text-center text-lg font-bold"
+                                      >
+                                        <div className="flex flex-col items-center">
+                                          <span className="text-2xl">
+                                            {sound}
+                                          </span>
+                                          <span className="text-xs opacity-75">
+                                            {columnRecords[sound].length}{" "}
+                                            रिकॉर्ड
+                                          </span>
+                                        </div>
+                                      </th>
+                                    ))}
+                                    <th className="px-4 py-4 text-center text-sm font-bold rounded-tr-xl">
+                                      <i className="fas fa-trophy mr-2"></i>
+                                      स्थिति
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody
+                                  className={`divide-y-2 ${
+                                    theme === "dark"
+                                      ? "divide-gray-600"
+                                      : "divide-gray-300"
+                                  }`}
+                                >
+                                  {Array.from(
+                                    { length: maxRows },
+                                    (_, rowIndex) => {
+                                      let hasNewRecordInRow = false;
+
+                                      return (
+                                        <tr
+                                          key={`${date}-row-${rowIndex}`}
+                                          className={`hover:bg-gradient-to-r transition-all duration-200 ${
+                                            theme === "dark"
+                                              ? "hover:from-gray-700/50 hover:to-purple-900/30"
+                                              : "hover:from-blue-50 hover:to-purple-50"
+                                          }`}
+                                        >
+                                          <td className="px-4 py-4 font-bold text-purple-600 dark:text-purple-400 bg-gray-50 dark:bg-gray-800/50">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-sm font-bold">
+                                                {rowIndex + 1}
+                                              </div>
+                                              <div>
+                                                <div className="text-sm font-semibold">
+                                                  सत्र #{rowIndex + 1}
+                                                </div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                  <i className="fas fa-clock mr-1"></i>
+                                                  {(() => {
+                                                    let earliestRecord = null;
+                                                    let earliestTime = Infinity;
+
+                                                    soundsArray.forEach(
+                                                      (sound) => {
+                                                        const record =
+                                                          columnRecords[sound][
+                                                            rowIndex
+                                                          ];
+                                                        if (record) {
+                                                          const recordTime =
+                                                            record.timestamp
+                                                              ?.seconds
+                                                              ? record.timestamp
+                                                                  .seconds *
+                                                                1000
+                                                              : record.timestamp ||
+                                                                Infinity;
+                                                          if (
+                                                            recordTime <
+                                                            earliestTime
+                                                          ) {
+                                                            earliestTime =
+                                                              recordTime;
+                                                            earliestRecord =
+                                                              record;
+                                                          }
+                                                        }
+                                                      }
+                                                    );
+
+                                                    if (earliestRecord) {
+                                                      try {
+                                                        const time =
+                                                          earliestRecord
+                                                            .timestamp?.seconds
+                                                            ? new Date(
+                                                                earliestRecord
+                                                                  .timestamp
+                                                                  .seconds *
+                                                                  1000
+                                                              )
+                                                            : new Date(
+                                                                earliestRecord.timestamp
+                                                              );
+                                                        return time.toLocaleTimeString(
+                                                          "hi-IN",
+                                                          {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                          }
+                                                        );
+                                                      } catch {
+                                                        return "";
+                                                      }
+                                                    }
+                                                    return "";
+                                                  })()}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </td>
+
+                                          {soundsArray.map((sound) => {
+                                            const record =
+                                              columnRecords[sound][rowIndex];
+                                            if (record?.isNewBest)
+                                              hasNewRecordInRow = true;
+
+                                            return (
+                                              <td
+                                                key={sound}
+                                                className={`px-4 py-4 text-center ${
+                                                  record
+                                                    ? "bg-white dark:bg-gray-800"
+                                                    : "bg-gray-50 dark:bg-gray-900"
+                                                }`}
+                                              >
+                                                {record ? (
+                                                  <div className="flex flex-col items-center gap-2">
+                                                    <span
+                                                      className={`text-xl font-mono font-bold ${
+                                                        record.isNewBest
+                                                          ? "text-yellow-600 dark:text-yellow-400"
+                                                          : "text-gray-800 dark:text-gray-200"
+                                                      }`}
+                                                    >
+                                                      {(
+                                                        (record.time || 0) / 10
+                                                      ).toFixed(2)}
+                                                      s
+                                                    </span>
+                                                    {record.isNewBest && (
+                                                      <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                                                        <i className="fas fa-trophy"></i>
+                                                        <span>Best</span>
+                                                      </div>
+                                                    )}
+                                                    {record.improvement && (
+                                                      <span
+                                                        className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                          record.improvement.includes(
+                                                            "+"
+                                                          ) ||
+                                                          record.improvement ===
+                                                            "पहला रिकॉर्ड"
+                                                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
+                                                            : record.improvement.includes(
+                                                                "-"
+                                                              )
+                                                            ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                                                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
+                                                        }`}
+                                                      >
+                                                        {record.improvement}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                ) : (
+                                                  <div className="flex flex-col items-center justify-center h-16">
+                                                    <span className="text-gray-400 text-2xl">
+                                                      --
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">
+                                                      No data
+                                                    </span>
+                                                  </div>
+                                                )}
+                                              </td>
+                                            );
+                                          })}
+
+                                          <td className="px-4 py-4 text-center bg-gray-50 dark:bg-gray-800/50">
+                                            {hasNewRecordInRow && (
+                                              <div className="flex flex-col items-center gap-1">
+                                                <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-full text-xs font-bold shadow-lg">
+                                                  <i className="fas fa-star mr-1"></i>
+                                                  रिकॉर्ड
+                                                </span>
+                                              </div>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    }
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Enhanced summary footer */}
+                            <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-xl border border-gray-200 dark:border-gray-600">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                {soundsArray.map((sound) => (
+                                  <div
+                                    key={sound}
+                                    className="space-y-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
+                                  >
+                                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                      {sound}
+                                    </div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                      <i className="fas fa-chart-bar mr-1"></i>
+                                      {columnRecords[sound].length} रिकॉर्ड
+                                    </div>
+                                    {columnRecords[sound].length > 0 && (
+                                      <div className="text-xs font-mono bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded">
+                                        <i className="fas fa-trophy mr-1"></i>
+                                        सर्वश्रेष्ठ:{" "}
+                                        {(
+                                          (Math.max(
+                                            ...columnRecords[sound].map(
+                                              (r) => r.time || 0
+                                            )
+                                          ) || 0) / 10
+                                        ).toFixed(2)}
+                                        s
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                      .filter(Boolean)}
+
+                    {/* Show message if no sound records */}
+                    {Object.keys(soundRoundsByDate).length === 0 && (
+                      <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600">
+                        <div className="space-y-4">
+                          <i className="fas fa-microphone text-8xl text-gray-300 dark:text-gray-600 animate-pulse"></i>
+                          <div>
+                            <p className="text-2xl font-bold text-gray-500 dark:text-gray-400 mb-2">
+                              अभी तक कोई स्वर अभ्यास रिकॉर्ड नहीं है
+                            </p>
+                            <p className="text-lg text-gray-400 dark:text-gray-500">
+                              अपना पहला अभ्यास सत्र शुरू करें!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Detailed Varnmala Records - FIXED DATE/TIME DISPLAY */}
+            {/* Enhanced Varnmala Records with Dropdown */}
+            <div className="space-y-6">
+              {/* Dropdown Header for Varnmala Section */}
+              <div
+                className={`p-6 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
+                  theme === "dark"
+                    ? "bg-gray-800/70 border-purple-500/30 hover:border-purple-400/50"
+                    : "bg-purple-50/70 border-purple-300/30 hover:border-purple-400/50"
+                } backdrop-blur-xl shadow-lg hover:shadow-xl`}
+                onClick={() =>
+                  setIsVarnmalaDropdownOpen(!isVarnmalaDropdownOpen)
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                      <i className="fas fa-list text-white text-xl"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                        वर्णमाला अभ्यास का पूरा इतिहास
+                      </h3>
+                      <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
+                        <i className="fas fa-database mr-1"></i>
+                        {records.varnmala.length} कुल रिकॉर्ड
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`px-4 py-2 rounded-full text-sm font-medium ${
+                        theme === "dark"
+                          ? "bg-gray-700 text-gray-300"
+                          : "bg-white text-gray-600"
+                      }`}
+                    >
+                      {isVarnmalaDropdownOpen ? "छुपाएं" : "देखें"}
+                    </div>
+                    <i
+                      className={`fas fa-chevron-${
+                        isVarnmalaDropdownOpen ? "up" : "down"
+                      } text-2xl text-purple-500 transform transition-transform duration-300`}
+                    ></i>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <i className="fas fa-list text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                  <p className="text-xl text-gray-500 dark:text-gray-400">
-                    अभी तक कोई वर्णमाला अभ्यास रिकॉर्ड नहीं है
-                  </p>
-                </div>
-              )}
+              </div>
+
+              {/* Dropdown Content */}
+              <div
+                className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                  isVarnmalaDropdownOpen
+                    ? "max-h-none opacity-100"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
+                {isVarnmalaDropdownOpen && (
+                  <div
+                    className={`p-8 rounded-3xl shadow-2xl border animate-fade-in ${
+                      theme === "dark"
+                        ? "bg-gray-800/50 border-gray-700/20"
+                        : "bg-white/50 border-gray-200/20"
+                    } backdrop-blur-xl`}
+                  >
+                    {records.varnmala.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                            <tr>
+                              <th className="px-6 py-4 text-left font-bold rounded-tl-2xl">
+                                सत्र
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold">
+                                समय
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold">
+                                दिनांक
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold">
+                                गुणवत्ता
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold">
+                                लैप्स
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold rounded-tr-2xl">
+                                लैप विवरण
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody
+                            className={`divide-y ${
+                              theme === "dark"
+                                ? "divide-gray-700"
+                                : "divide-gray-200"
+                            }`}
+                          >
+                            {records.varnmala
+                              .sort((a, b) => {
+                                const aTime = a.timestamp?.seconds
+                                  ? a.timestamp.seconds * 1000
+                                  : a.timestamp || 0;
+                                const bTime = b.timestamp?.seconds
+                                  ? b.timestamp.seconds * 1000
+                                  : b.timestamp || 0;
+                                return bTime - aTime; // Newest first
+                              })
+                              .map((record, index) => (
+                                <tr
+                                  key={record.id || index}
+                                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                  <td className="px-6 py-4">
+                                    <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                                      सत्र #{record.session || index + 1}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className="text-xl font-mono font-bold">
+                                      {record.formattedTime ||
+                                        (record.time
+                                          ? (record.time / 10).toFixed(2)
+                                          : "0.00")}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div>
+                                      <div className="font-medium">
+                                        {record.date || formatSafeDate(record)}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {(() => {
+                                          try {
+                                            if (
+                                              typeof record.timestamp ===
+                                                "object" &&
+                                              record.timestamp.seconds
+                                            ) {
+                                              return new Date(
+                                                record.timestamp.seconds * 1000
+                                              ).toLocaleTimeString("hi-IN");
+                                            }
+                                            return new Date(
+                                              record.timestamp
+                                            ).toLocaleTimeString("hi-IN");
+                                          } catch (e) {
+                                            return "N/A";
+                                          }
+                                        })()}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span
+                                      className={`px-3 py-1 rounded-full text-sm font-bold ${
+                                        record.quality === "उत्कृष्ट"
+                                          ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                                          : record.quality === "अच्छा"
+                                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                          : record.quality === "सामान्य"
+                                          ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400"
+                                          : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                                      }`}
+                                    >
+                                      {getQualityWithFallback(record)}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 font-bold">
+                                    {record.laps?.length || 0}
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    {record.laps && record.laps.length > 0 && (
+                                      <div className="max-w-xs">
+                                        <details className="cursor-pointer">
+                                          <summary className="text-blue-500 hover:text-blue-600 font-medium">
+                                            लैप समय देखें
+                                          </summary>
+                                          <div className="mt-2 space-y-1 text-sm">
+                                            {record.laps.map(
+                                              (lap, lapIndex) => (
+                                                <div
+                                                  key={lapIndex}
+                                                  className="flex justify-between"
+                                                >
+                                                  <span>
+                                                    लैप {lap.lapNumber}:
+                                                  </span>
+                                                  <span className="font-mono">
+                                                    {(
+                                                      (lap.time || 0) / 10
+                                                    ).toFixed(2)}
+                                                  </span>
+                                                </div>
+                                              )
+                                            )}
+                                          </div>
+                                        </details>
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <i className="fas fa-list text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p className="text-xl text-gray-500 dark:text-gray-400">
+                          अभी तक कोई वर्णमाला अभ्यास रिकॉर्ड नहीं है
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Detailed Story Records - FIXED DATE/TIME DISPLAY */}
-            <div
-              className={`p-8 rounded-3xl shadow-2xl border ${
-                theme === "dark"
-                  ? "bg-gray-800/50 border-gray-700/20"
-                  : "bg-white/50 border-gray-200/20"
-              } backdrop-blur-xl`}
-            >
-              <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                <i className="fas fa-book text-green-500"></i>
-                पठन अभ्यास का पूरा इतिहास ({records.stories.length} रिकॉर्ड)
-              </h3>
-
-              {records.stories.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                      <tr>
-                        <th className="px-6 py-4 text-left font-bold rounded-tl-2xl">
-                          कहानी प्रकार
-                        </th>
-                        <th className="px-6 py-4 text-left font-bold">समय</th>
-                        <th className="px-6 py-4 text-left font-bold">
-                          लक्ष्य
-                        </th>
-                        <th className="px-6 py-4 text-left font-bold">स्कोर</th>
-                        <th className="px-6 py-4 text-left font-bold">
-                          प्रतिशत
-                        </th>
-                        <th className="px-6 py-4 text-left font-bold rounded-tr-2xl">
-                          दिनांक
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody
-                      className={`divide-y ${
-                        theme === "dark" ? "divide-gray-700" : "divide-gray-200"
+            {/* Enhanced Story Records with Dropdown */}
+            <div className="space-y-6">
+              {/* Dropdown Header for Stories Section */}
+              <div
+                className={`p-6 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
+                  theme === "dark"
+                    ? "bg-gray-800/70 border-green-500/30 hover:border-green-400/50"
+                    : "bg-green-50/70 border-green-300/30 hover:border-green-400/50"
+                } backdrop-blur-xl shadow-lg hover:shadow-xl`}
+                onClick={() => setIsStoriesDropdownOpen(!isStoriesDropdownOpen)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                      <i className="fas fa-book text-white text-xl"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-green-700 dark:text-green-300">
+                        पठन अभ्यास का पूरा इतिहास
+                      </h3>
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                        <i className="fas fa-database mr-1"></i>
+                        {records.stories.length} कुल रिकॉर्ड
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`px-4 py-2 rounded-full text-sm font-medium ${
+                        theme === "dark"
+                          ? "bg-gray-700 text-gray-300"
+                          : "bg-white text-gray-600"
                       }`}
                     >
-                      {records.stories
-                        .sort((a, b) => {
-                          const aTime = a.timestamp?.seconds
-                            ? a.timestamp.seconds * 1000
-                            : a.timestamp || 0;
-                          const bTime = b.timestamp?.seconds
-                            ? b.timestamp.seconds * 1000
-                            : b.timestamp || 0;
-                          return bTime - aTime; // Newest first
-                        })
-                        .map((record, index) => {
-                          // ✅ Calculate fallback values for each record
-                          const currentPercentage =
-                            record.percentage !== undefined
-                              ? record.percentage
-                              : getPercentageWithFallback(
-                                  record,
-                                  record.storyType
-                                );
+                      {isStoriesDropdownOpen ? "छुपाएं" : "देखें"}
+                    </div>
+                    <i
+                      className={`fas fa-chevron-${
+                        isStoriesDropdownOpen ? "up" : "down"
+                      } text-2xl text-green-500 transform transition-transform duration-300`}
+                    ></i>
+                  </div>
+                </div>
+              </div>
 
-                          const currentTarget =
-                            record.target ||
-                            getTargetWithFallback(record, record.storyType);
-                          const currentScore =
-                            record.score || getScoreWithFallback(record);
-
-                          return (
-                            <tr
-                              key={record.id || index}
-                              className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                            >
-                              <td className="px-6 py-4">
-                                <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                                  {record.storyType || "N/A"}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className="text-xl font-mono font-bold">
-                                  {record.formattedTime ||
-                                    (record.time
-                                      ? (record.time / 10).toFixed(2)
-                                      : "0.00")}
-                                </span>
-                              </td>
-                              {/* ✅ Updated Target Cell with Fallback */}
-                              <td className="px-6 py-4">
-                                <span className="font-mono text-gray-600 dark:text-gray-400">
-                                  {currentTarget}
-                                </span>
-                              </td>
-                              {/* ✅ Updated Score Cell with Fallback */}
-                              <td className="px-6 py-4">
-                                <span
-                                  className={`text-lg ${
-                                    currentPercentage >= 100
-                                      ? "text-green-600 dark:text-green-400"
-                                      : currentPercentage >= 80
-                                      ? "text-blue-600 dark:text-blue-400"
-                                      : currentPercentage >= 60
-                                      ? "text-yellow-600 dark:text-yellow-400"
-                                      : "text-red-600 dark:text-red-400"
-                                  }`}
-                                >
-                                  {currentScore}
-                                </span>
-                              </td>
-                              {/* ✅ Updated Percentage Cell with Fallback */}
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                    <div
-                                      className={`h-2 rounded-full ${
-                                        currentPercentage >= 100
-                                          ? "bg-green-500"
-                                          : currentPercentage >= 80
-                                          ? "bg-blue-500"
-                                          : currentPercentage >= 60
-                                          ? "bg-yellow-500"
-                                          : "bg-red-500"
-                                      }`}
-                                      style={{
-                                        width: `${Math.min(
-                                          currentPercentage,
-                                          100
-                                        )}%`,
-                                      }}
-                                    ></div>
-                                  </div>
-                                  <span className="font-bold">
-                                    {currentPercentage}%
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div>
-                                  <div className="font-medium">
-                                    {record.date || formatSafeDate(record)}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    {(() => {
-                                      try {
-                                        if (
-                                          typeof record.timestamp ===
-                                            "object" &&
-                                          record.timestamp.seconds
-                                        ) {
-                                          return new Date(
-                                            record.timestamp.seconds * 1000
-                                          ).toLocaleTimeString("hi-IN");
-                                        }
-                                        return new Date(
-                                          record.timestamp
-                                        ).toLocaleTimeString("hi-IN");
-                                      } catch (e) {
-                                        return "N/A";
-                                      }
-                                    })()}
-                                  </div>
-                                </div>
-                              </td>
+              {/* Dropdown Content */}
+              <div
+                className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                  isStoriesDropdownOpen
+                    ? "max-h-none opacity-100"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
+                {isStoriesDropdownOpen && (
+                  <div
+                    className={`p-8 rounded-3xl shadow-2xl border animate-fade-in ${
+                      theme === "dark"
+                        ? "bg-gray-800/50 border-gray-700/20"
+                        : "bg-white/50 border-gray-200/20"
+                    } backdrop-blur-xl`}
+                  >
+                    {records.stories.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                            <tr>
+                              <th className="px-6 py-4 text-left font-bold rounded-tl-2xl">
+                                कहानी प्रकार
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold">
+                                समय
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold">
+                                लक्ष्य
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold">
+                                स्कोर
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold">
+                                प्रतिशत
+                              </th>
+                              <th className="px-6 py-4 text-left font-bold rounded-tr-2xl">
+                                दिनांक
+                              </th>
                             </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <i className="fas fa-book text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                  <p className="text-xl text-gray-500 dark:text-gray-400">
-                    अभी तक कोई पठन अभ्यास रिकॉर्ड नहीं है
-                  </p>
-                </div>
-              )}
+                          </thead>
+                          <tbody
+                            className={`divide-y ${
+                              theme === "dark"
+                                ? "divide-gray-700"
+                                : "divide-gray-200"
+                            }`}
+                          >
+                            {records.stories
+                              .sort((a, b) => {
+                                const aTime = a.timestamp?.seconds
+                                  ? a.timestamp.seconds * 1000
+                                  : a.timestamp || 0;
+                                const bTime = b.timestamp?.seconds
+                                  ? b.timestamp.seconds * 1000
+                                  : b.timestamp || 0;
+                                return bTime - aTime; // Newest first
+                              })
+                              .map((record, index) => {
+                                const currentPercentage =
+                                  record.percentage !== undefined
+                                    ? record.percentage
+                                    : getPercentageWithFallback(
+                                        record,
+                                        record.storyType
+                                      );
+
+                                const currentTarget =
+                                  record.target ||
+                                  getTargetWithFallback(
+                                    record,
+                                    record.storyType
+                                  );
+                                const currentScore =
+                                  record.score || getScoreWithFallback(record);
+
+                                return (
+                                  <tr
+                                    key={record.id || index}
+                                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                  >
+                                    <td className="px-6 py-4">
+                                      <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                                        {record.storyType || "N/A"}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <span className="text-xl font-mono font-bold">
+                                        {record.formattedTime ||
+                                          (record.time
+                                            ? (record.time / 10).toFixed(2)
+                                            : "0.00")}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <span className="font-mono text-gray-600 dark:text-gray-400">
+                                        {currentTarget}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <span
+                                        className={`text-lg ${
+                                          currentPercentage >= 100
+                                            ? "text-green-600 dark:text-green-400"
+                                            : currentPercentage >= 80
+                                            ? "text-blue-600 dark:text-blue-400"
+                                            : currentPercentage >= 60
+                                            ? "text-yellow-600 dark:text-yellow-400"
+                                            : "text-red-600 dark:text-red-400"
+                                        }`}
+                                      >
+                                        {currentScore}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                          <div
+                                            className={`h-2 rounded-full ${
+                                              currentPercentage >= 100
+                                                ? "bg-green-500"
+                                                : currentPercentage >= 80
+                                                ? "bg-blue-500"
+                                                : currentPercentage >= 60
+                                                ? "bg-yellow-500"
+                                                : "bg-red-500"
+                                            }`}
+                                            style={{
+                                              width: `${Math.min(
+                                                currentPercentage,
+                                                100
+                                              )}%`,
+                                            }}
+                                          ></div>
+                                        </div>
+                                        <span className="font-bold">
+                                          {currentPercentage}%
+                                        </span>
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div>
+                                        <div className="font-medium">
+                                          {record.date ||
+                                            formatSafeDate(record)}
+                                        </div>
+                                        <div className="text-sm text-gray-500">
+                                          {(() => {
+                                            try {
+                                              if (
+                                                typeof record.timestamp ===
+                                                  "object" &&
+                                                record.timestamp.seconds
+                                              ) {
+                                                return new Date(
+                                                  record.timestamp.seconds *
+                                                    1000
+                                                ).toLocaleTimeString("hi-IN");
+                                              }
+                                              return new Date(
+                                                record.timestamp
+                                              ).toLocaleTimeString("hi-IN");
+                                            } catch (e) {
+                                              return "N/A";
+                                            }
+                                          })()}
+                                        </div>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <i className="fas fa-book text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p className="text-xl text-gray-500 dark:text-gray-400">
+                          अभी तक कोई पठन अभ्यास रिकॉर्ड नहीं है
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
