@@ -1253,23 +1253,37 @@ const Hindi = ({ user, onLogout }) => {
   );
 
   // date  ➜  round #  ➜  { sound : record }
-  const soundRoundsByDate = useMemo(() => {
-    const map = {};
+const soundRoundsByDate = useMemo(() => {
+  const map = {};
 
-    // we rely on the property `sessionCount` that each sound-record already has
-    // (if you don’t have it, see the note at the bottom)
-    records.sounds.forEach((r) => {
-      const dateKey = new Date(r.timestamp).toLocaleDateString("hi-IN");
+  records.sounds.forEach((r) => {
+    try {
+      // Handle both Firestore timestamp and regular timestamp
+      const timestamp = r.timestamp?.seconds 
+        ? new Date(r.timestamp.seconds * 1000)
+        : new Date(r.timestamp);
+      
+      // Use consistent date format
+      const dateKey = timestamp.toDateString(); // "Sat Jul 26 2025"
+      
       const round = r.sessionCount || 1; // fallback 1
 
       if (!map[dateKey]) map[dateKey] = {};
       if (!map[dateKey][round]) map[dateKey][round] = {};
 
       map[dateKey][round][r.sound] = r; // keep the full record for later
-    });
+    } catch (error) {
+      console.error("Error processing sound record:", error, r);
+      // Skip invalid records instead of breaking
+    }
+  });
 
-    return map; //  {date}{round}{sound} -> record
-  }, [records.sounds]);
+  return map; // {date}{round}{sound} -> record
+}, [records.sounds]);
+
+// Add debugging to see the structure
+console.log("soundRoundsByDate:", soundRoundsByDate);
+
 
   const historyStats = useMemo(() => {
     // Helper function to calculate stats for any category
@@ -2120,198 +2134,209 @@ const Hindi = ({ user, onLogout }) => {
         )}
 
         {/* Enhanced Sound Timer Practice */}
-        {currentView === "exercises" && (
-          <div className="space-y-12">
-            <div className="text-center space-y-4">
-              <h2 className="text-3xl p-4 md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                स्वर अभ्यास
-              </h2>
-              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                Practice vowel sounds with precision timing. Each session helps
-                build muscle memory and improves speech fluency.
-              </p>
-              <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div>
-            </div>
+{currentView === "exercises" && (
+  <div className="space-y-12">
+    <div className="text-center space-y-4">
+      <h2 className="text-3xl p-4 md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        स्वर अभ्यास
+      </h2>
+      <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+        Practice vowel sounds with precision timing. Each session helps
+        build muscle memory and improves speech fluency.
+      </p>
+      <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto rounded-full"></div>
+    </div>
 
-            <div className="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 lg:gap-8">
-              {Object.keys(soundTimers).map((sound) => (
-                <div
-                  key={sound}
-                  className={`group relative p-6 md:p-8 rounded-3xl transition-all duration-500 hover:-translate-y-4 hover:scale-105 ${
-                    theme === "dark" ? "bg-gray-800/50" : "bg-white/50"
-                  } backdrop-blur-xl border border-gray-200/20 dark:border-gray-700/20 shadow-2xl hover:shadow-purple-500/25`}
-                >
-                  {/* Background Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 lg:gap-8">
+      {Object.keys(soundTimers).map((sound) => {
+        // Calculate user-specific data for each sound
+        const userSoundRecords = records.sounds.filter(record => 
+          record.userId === user?.uid && record.sound === sound
+        );
+        const userSessions = userSoundRecords.length;
+        const userBestTime = userSoundRecords.length > 0 ? 
+          Math.max(...userSoundRecords.map(r => r.time)) : 0;
+        
+        return (
+          <div
+            key={sound}
+            className={`group relative p-6 md:p-8 rounded-3xl transition-all duration-500 hover:-translate-y-4 hover:scale-105 ${
+              theme === "dark" ? "bg-gray-800/50" : "bg-white/50"
+            } backdrop-blur-xl border border-gray-200/20 dark:border-gray-700/20 shadow-2xl hover:shadow-purple-500/25`}
+          >
+            {/* Background Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                  <div className="relative text-center space-y-6">
-                    {/* Sound Display */}
-                    <div className="space-y-3">
-                      <div className="text-6xl p-4 md:text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
-                        {sound}
-                      </div>
-                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
-                        Sessions: {soundTimers[sound].sessions} | Best:{" "}
-                        {formatTime(soundTimers[sound].bestTime)}
-                      </div>
-                    </div>
-
-                    {/* Enhanced Circular Timer */}
-                    <div className="relative w-32 md:w-40 h-32 md:h-40 mx-auto">
-                      <svg
-                        className="w-full h-full -rotate-90"
-                        viewBox="0 0 160 160"
-                      >
-                        <circle
-                          cx="80"
-                          cy="80"
-                          r="70"
-                          fill="transparent"
-                          stroke={theme === "dark" ? "#374151" : "#e5e7eb"}
-                          strokeWidth="8"
-                        />
-                        <circle
-                          cx="80"
-                          cy="80"
-                          r="70"
-                          fill="transparent"
-                          stroke="url(#timer-gradient)"
-                          strokeWidth="8"
-                          strokeLinecap="round"
-                          strokeDasharray={440}
-                          strokeDashoffset={
-                            440 - (soundTimers[sound].time / 600) * 440
-                          }
-                          className="transition-all duration-300"
-                        />
-                        <defs>
-                          <linearGradient
-                            id="timer-gradient"
-                            x1="0%"
-                            y1="0%"
-                            x2="100%"
-                            y2="100%"
-                          >
-                            <stop offset="0%" stopColor="rgb(59 130 246)" />
-                            <stop offset="50%" stopColor="rgb(147 51 234)" />
-                            <stop offset="100%" stopColor="rgb(236 72 153)" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="text-lg md:text-2xl font-bold font-mono">
-                          {formatTime(soundTimers[sound].time)}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                          TIME
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Enhanced Controls */}
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          className={`px-2 md:px-4 py-3 rounded-xl font-semibold text-xs md:text-sm transition-all duration-300 ${
-                            soundTimers[sound].isRunning
-                              ? "opacity-50 cursor-not-allowed bg-gray-300 dark:bg-gray-600"
-                              : "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:scale-105"
-                          }`}
-                          onClick={() => startSoundTimer(sound)}
-                          disabled={soundTimers[sound].isRunning}
-                        >
-                          <i className="fas fa-play"></i>
-                        </button>
-                        <button
-                          className={`px-2 md:px-4 py-3 rounded-xl font-semibold text-xs md:text-sm transition-all duration-300 ${
-                            !soundTimers[sound].isRunning
-                              ? "opacity-50 cursor-not-allowed bg-gray-300 dark:bg-gray-600"
-                              : "bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105"
-                          }`}
-                          onClick={() => pauseSoundTimer(sound)}
-                          disabled={!soundTimers[sound].isRunning}
-                        >
-                          <i className="fas fa-pause"></i>
-                        </button>
-                        <button
-                          className="px-2 md:px-4 py-3 rounded-xl font-semibold text-xs md:text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:scale-105 transition-all duration-300"
-                          onClick={() => recordTime(sound)}
-                        >
-                          <i className="fas fa-save"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+            <div className="relative text-center space-y-6">
+              {/* Sound Display */}
+              <div className="space-y-3">
+                <div className="text-6xl p-4 md:text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300">
+                  {sound}
                 </div>
-              ))}
-            </div>
-
-            {/* Enhanced Voice Recording Section */}
-            <section
-              className={`relative overflow-hidden p-8 md:p-12 rounded-3xl ${
-                theme === "dark" ? "bg-gray-800/50" : "bg-white/50"
-              } backdrop-blur-xl border border-gray-200/20 dark:border-gray-700/20 shadow-2xl`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-pink-500/10 to-purple-500/10"></div>
-              <div className="relative text-center space-y-8">
-                <div className="space-y-4">
-                  <div className="w-16 md:w-20 h-16 md:h-20 mx-auto rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center">
-                    <i className="fas fa-microphone text-white text-2xl md:text-3xl"></i>
-                  </div>
-                  <h3 className="text-2xl md:text-3xl font-bold">
-                    Voice Recording Practice
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                    Record your speech exercises to track pronunciation
-                    improvement and build confidence in your voice.
-                  </p>
-                </div>
-
-                <div className="space-y-6">
-                  {!voiceRecording ? (
-                    <button
-                      className="group relative px-8 md:px-12 py-4 md:py-6 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-2xl font-bold text-lg md:text-xl shadow-2xl hover:shadow-red-500/25 transition-all duration-300 hover:-translate-y-2 hover:scale-105"
-                      onClick={startVoiceRecording}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
-                      <div className="relative flex items-center gap-3 md:gap-4">
-                        <i className="fas fa-microphone text-xl md:text-2xl"></i>
-                        <span>Start Recording</span>
-                      </div>
-                    </button>
-                  ) : (
-                    <div className="space-y-6">
-                      <button
-                        className="px-8 md:px-12 py-4 md:py-6 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-2xl font-bold text-lg md:text-xl shadow-2xl hover:shadow-orange-500/25 transition-all duration-300 hover:-translate-y-2"
-                        onClick={stopVoiceRecording}
-                      >
-                        <i className="fas fa-stop mr-3 md:mr-4 text-xl md:text-2xl"></i>
-                        Stop Recording
-                      </button>
-
-                      <div className="flex items-center justify-center gap-4 md:gap-6 p-4 md:p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl border-2 border-dashed border-red-300 dark:border-red-600">
-                        <div className="flex space-x-2">
-                          <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                          <div
-                            className="w-4 h-4 bg-red-500 rounded-full animate-pulse"
-                            style={{ animationDelay: "0.2s" }}
-                          ></div>
-                          <div
-                            className="w-4 h-4 bg-red-500 rounded-full animate-pulse"
-                            style={{ animationDelay: "0.4s" }}
-                          ></div>
-                        </div>
-                        <span className="text-red-700 dark:text-red-300 font-bold text-base md:text-lg">
-                          Recording in progress...
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                {/* User-specific sessions and best time */}
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
+                  Sessions: {userSessions} | Best: {formatTime(userBestTime)}
                 </div>
               </div>
-            </section>
+
+              {/* Enhanced Circular Timer */}
+              <div className="relative w-32 md:w-40 h-32 md:h-40 mx-auto">
+                <svg
+                  className="w-full h-full -rotate-90"
+                  viewBox="0 0 160 160"
+                >
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    fill="transparent"
+                    stroke={theme === "dark" ? "#374151" : "#e5e7eb"}
+                    strokeWidth="8"
+                  />
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    fill="transparent"
+                    stroke="url(#timer-gradient)"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray={440}
+                    strokeDashoffset={
+                      440 - (soundTimers[sound].time / 600) * 440
+                    }
+                    className="transition-all duration-300"
+                  />
+                  <defs>
+                    <linearGradient
+                      id="timer-gradient"
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="100%"
+                    >
+                      <stop offset="0%" stopColor="rgb(59 130 246)" />
+                      <stop offset="50%" stopColor="rgb(147 51 234)" />
+                      <stop offset="100%" stopColor="rgb(236 72 153)" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-lg md:text-2xl font-bold font-mono">
+                    {formatTime(soundTimers[sound].time)}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    TIME
+                  </div>
+                </div>
+              </div>
+
+              {/* Enhanced Controls */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    className={`px-2 md:px-4 py-3 rounded-xl font-semibold text-xs md:text-sm transition-all duration-300 ${
+                      soundTimers[sound].isRunning
+                        ? "opacity-50 cursor-not-allowed bg-gray-300 dark:bg-gray-600"
+                        : "bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:scale-105"
+                    }`}
+                    onClick={() => startSoundTimer(sound)}
+                    disabled={soundTimers[sound].isRunning}
+                  >
+                    <i className="fas fa-play"></i>
+                  </button>
+                  <button
+                    className={`px-2 md:px-4 py-3 rounded-xl font-semibold text-xs md:text-sm transition-all duration-300 ${
+                      !soundTimers[sound].isRunning
+                        ? "opacity-50 cursor-not-allowed bg-gray-300 dark:bg-gray-600"
+                        : "bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105"
+                    }`}
+                    onClick={() => pauseSoundTimer(sound)}
+                    disabled={!soundTimers[sound].isRunning}
+                  >
+                    <i className="fas fa-pause"></i>
+                  </button>
+                  <button
+                    className="px-2 md:px-4 py-3 rounded-xl font-semibold text-xs md:text-sm bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:scale-105 transition-all duration-300"
+                    onClick={() => recordTime(sound)}
+                  >
+                    <i className="fas fa-save"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+        );
+      })}
+    </div>
+
+    {/* Enhanced Voice Recording Section - Rest remains the same */}
+    <section
+      className={`relative overflow-hidden p-8 md:p-12 rounded-3xl ${
+        theme === "dark" ? "bg-gray-800/50" : "bg-white/50"
+      } backdrop-blur-xl border border-gray-200/20 dark:border-gray-700/20 shadow-2xl`}
+    >
+      <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-pink-500/10 to-purple-500/10"></div>
+      <div className="relative text-center space-y-8">
+        <div className="space-y-4">
+          <div className="w-16 md:w-20 h-16 md:h-20 mx-auto rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center">
+            <i className="fas fa-microphone text-white text-2xl md:text-3xl"></i>
+          </div>
+          <h3 className="text-2xl md:text-3xl font-bold">
+            Voice Recording Practice
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Record your speech exercises to track pronunciation
+            improvement and build confidence in your voice.
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {!voiceRecording ? (
+            <button
+              className="group relative px-8 md:px-12 py-4 md:py-6 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-2xl font-bold text-lg md:text-xl shadow-2xl hover:shadow-red-500/25 transition-all duration-300 hover:-translate-y-2 hover:scale-105"
+              onClick={startVoiceRecording}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
+              <div className="relative flex items-center gap-3 md:gap-4">
+                <i className="fas fa-microphone text-xl md:text-2xl"></i>
+                <span>Start Recording</span>
+              </div>
+            </button>
+          ) : (
+            <div className="space-y-6">
+              <button
+                className="px-8 md:px-12 py-4 md:py-6 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-2xl font-bold text-lg md:text-xl shadow-2xl hover:shadow-orange-500/25 transition-all duration-300 hover:-translate-y-2"
+                onClick={stopVoiceRecording}
+              >
+                <i className="fas fa-stop mr-3 md:mr-4 text-xl md:text-2xl"></i>
+                Stop Recording
+              </button>
+
+              <div className="flex items-center justify-center gap-4 md:gap-6 p-4 md:p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl border-2 border-dashed border-red-300 dark:border-red-600">
+                <div className="flex space-x-2">
+                  <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                  <div
+                    className="w-4 h-4 bg-red-500 rounded-full animate-pulse"
+                    style={{ animationDelay: "0.2s" }}
+                  ></div>
+                  <div
+                    className="w-4 h-4 bg-red-500 rounded-full animate-pulse"
+                    style={{ animationDelay: "0.4s" }}
+                  ></div>
+                </div>
+                <span className="text-red-700 dark:text-red-300 font-bold text-base md:text-lg">
+                  Recording in progress...
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  </div>
+)}
+
 
         {/* Varnmala Timer */}
         {currentView === "varnmala" && (
@@ -3818,220 +3843,372 @@ const Hindi = ({ user, onLogout }) => {
 
             {/* Detailed Varnmala Records - FIXED DATE/TIME DISPLAY */}
             {/* Enhanced Varnmala Records with Dropdown */}
-            <div className="space-y-6">
-              {/* Dropdown Header for Varnmala Section */}
-              <div
-                className={`p-6 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
-                  theme === "dark"
-                    ? "bg-gray-800/70 border-purple-500/30 hover:border-purple-400/50"
-                    : "bg-purple-50/70 border-purple-300/30 hover:border-purple-400/50"
-                } backdrop-blur-xl shadow-lg hover:shadow-xl`}
-                onClick={() =>
-                  setIsVarnmalaDropdownOpen(!isVarnmalaDropdownOpen)
+{/* Sound Records Section with True Date-wise Separation */}
+<div className="space-y-8">
+  {/* Dropdown Header for Swar Section */}
+  <div
+    className={`p-6 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
+      theme === "dark"
+        ? "bg-gray-800/70 border-blue-500/30 hover:border-blue-400/50"
+        : "bg-blue-50/70 border-blue-300/30 hover:border-blue-400/50"
+    } backdrop-blur-xl shadow-lg hover:shadow-xl`}
+    onClick={() => setIsSwarsDropdownOpen(!isSwarsDropdownOpen)}
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+          <i className="fas fa-microphone text-white text-xl"></i>
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+            स्वर अभ्यास (दिन अनुसार)
+          </h3>
+          <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+            <i className="fas fa-calendar mr-1"></i>
+            {(() => {
+              // Group records by actual dates
+              const dateGroups = {};
+              records.sounds.forEach(record => {
+                try {
+                  const recordDate = record.timestamp?.seconds 
+                    ? new Date(record.timestamp.seconds * 1000).toDateString()
+                    : new Date(record.timestamp).toDateString();
+                  if (!dateGroups[recordDate]) {
+                    dateGroups[recordDate] = [];
+                  }
+                  dateGroups[recordDate].push(record);
+                } catch (e) {
+                  // Skip invalid dates
                 }
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                      <i className="fas fa-list text-white text-xl"></i>
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                        वर्णमाला अभ्यास का पूरा इतिहास
-                      </h3>
-                      <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
-                        <i className="fas fa-database mr-1"></i>
-                        {records.varnmala.length} कुल रिकॉर्ड
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`px-4 py-2 rounded-full text-sm font-medium ${
-                        theme === "dark"
-                          ? "bg-gray-700 text-gray-300"
-                          : "bg-white text-gray-600"
-                      }`}
-                    >
-                      {isVarnmalaDropdownOpen ? "छुपाएं" : "देखें"}
-                    </div>
-                    <i
-                      className={`fas fa-chevron-${
-                        isVarnmalaDropdownOpen ? "up" : "down"
-                      } text-2xl text-purple-500 transform transition-transform duration-300`}
-                    ></i>
+              });
+              return Object.keys(dateGroups).length;
+            })()} दिन के रिकॉर्ड •
+            <i className="fas fa-database ml-2 mr-1"></i>
+            {records.sounds.length} कुल रिकॉर्ड
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div
+          className={`px-4 py-2 rounded-full text-sm font-medium ${
+            theme === "dark"
+              ? "bg-gray-700 text-gray-300"
+              : "bg-white text-gray-600"
+          }`}
+        >
+          {isSwarsDropdownOpen ? "छुपाएं" : "देखें"}
+        </div>
+        <i
+          className={`fas fa-chevron-${
+            isSwarsDropdownOpen ? "up" : "down"
+          } text-2xl text-blue-500 transform transition-transform duration-300`}
+        ></i>
+      </div>
+    </div>
+  </div>
+
+  {/* Dropdown Content - True Date-wise Tables */}
+  <div
+    className={`transition-all duration-500 ease-in-out ${
+      isSwarsDropdownOpen
+        ? "block opacity-100"
+        : "hidden opacity-0"
+    }`}
+  >
+    {isSwarsDropdownOpen && (
+      <div className="space-y-8 pt-4">
+        {(() => {
+          // Create true date-based grouping
+          const dateGroups = {};
+          
+          records.sounds.forEach(record => {
+            try {
+              const recordDate = record.timestamp?.seconds 
+                ? new Date(record.timestamp.seconds * 1000).toDateString()
+                : new Date(record.timestamp).toDateString();
+              
+              if (!dateGroups[recordDate]) {
+                dateGroups[recordDate] = [];
+              }
+              dateGroups[recordDate].push(record);
+            } catch (e) {
+              console.error("Invalid timestamp:", record);
+            }
+          });
+
+          // Sort dates (latest first)
+          const sortedDates = Object.keys(dateGroups).sort((a, b) => {
+            return new Date(b).getTime() - new Date(a).getTime();
+          });
+
+          if (sortedDates.length === 0) {
+            return (
+              <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600">
+                <div className="space-y-4">
+                  <i className="fas fa-microphone text-8xl text-gray-300 dark:text-gray-600 animate-pulse"></i>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-500 dark:text-gray-400 mb-2">
+                      अभी तक कोई स्वर अभ्यास रिकॉर्ड नहीं है
+                    </p>
+                    <p className="text-lg text-gray-400 dark:text-gray-500">
+                      अपना पहला अभ्यास सत्र शुरू करें!
+                    </p>
                   </div>
                 </div>
               </div>
+            );
+          }
 
-              {/* Dropdown Content */}
+          return sortedDates.map((dateString, dateIndex) => {
+            const recordsForDate = dateGroups[dateString];
+            
+            // Get unique sounds for this date
+            const soundsForDate = [...new Set(recordsForDate.map(r => r.sound))].sort();
+            
+            // Group records by sound for this date
+            const soundRecords = {};
+            soundsForDate.forEach(sound => {
+              soundRecords[sound] = recordsForDate
+                .filter(r => r.sound === sound)
+                .sort((a, b) => {
+                  const aTime = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : a.timestamp || 0;
+                  const bTime = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : b.timestamp || 0;
+                  return aTime - bTime; // Oldest first
+                });
+            });
+
+            const maxRecords = Math.max(...soundsForDate.map(sound => soundRecords[sound].length));
+
+            return (
               <div
-                className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                  isVarnmalaDropdownOpen
-                    ? "max-h-none opacity-100"
-                    : "max-h-0 opacity-0"
+                key={`date-${dateString}-${dateIndex}`}
+                className={`relative p-6 rounded-2xl shadow-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:shadow-3xl animate-fade-in mb-8 ${
+                  theme === "dark"
+                    ? "bg-gray-800/60 border-gray-600/40"
+                    : "bg-white/60 border-gray-300/40"
+                } ${
+                  dateIndex === 0 ? "ring-2 ring-blue-400/50" : ""
                 }`}
               >
-                {isVarnmalaDropdownOpen && (
-                  <div
-                    className={`p-8 rounded-3xl shadow-2xl border animate-fade-in ${
-                      theme === "dark"
-                        ? "bg-gray-800/50 border-gray-700/20"
-                        : "bg-white/50 border-gray-200/20"
-                    } backdrop-blur-xl`}
-                  >
-                    {records.varnmala.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                            <tr>
-                              <th className="px-6 py-4 text-left font-bold rounded-tl-2xl">
-                                सत्र
-                              </th>
-                              <th className="px-6 py-4 text-left font-bold">
-                                समय
-                              </th>
-                              <th className="px-6 py-4 text-left font-bold">
-                                दिनांक
-                              </th>
-                              <th className="px-6 py-4 text-left font-bold">
-                                गुणवत्ता
-                              </th>
-                              <th className="px-6 py-4 text-left font-bold">
-                                लैप्स
-                              </th>
-                              <th className="px-6 py-4 text-left font-bold rounded-tr-2xl">
-                                लैप विवरण
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody
-                            className={`divide-y ${
+                {/* Date Header */}
+                <div className="mb-6 p-5 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/40 dark:via-purple-900/40 dark:to-pink-900/40 rounded-xl border-2 border-blue-200/50 dark:border-blue-600/50 relative overflow-hidden">
+                  {/* Latest Date Badge */}
+                  {dateIndex === 0 && (
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-bl-lg text-xs font-bold">
+                      <i className="fas fa-crown mr-1"></i>
+                      Latest
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                          dateIndex === 0
+                            ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                            : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                        }`}
+                      >
+                        📅
+                      </div>
+                      <div>
+                        <h4
+                          className={`text-2xl font-bold ${
+                            dateIndex === 0
+                              ? "text-blue-800 dark:text-blue-200"
+                              : "text-blue-700 dark:text-blue-300"
+                          }`}
+                        >
+                          {new Date(dateString).toLocaleDateString('hi-IN', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </h4>
+                        <div className="flex items-center gap-4 mt-2">
+                          <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                            <i className="fas fa-database mr-1"></i>
+                            कुल रिकॉर्ड: {recordsForDate.length}
+                          </p>
+                          <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                            <i className="fas fa-volume-up mr-1"></i>
+                            ध्वनियाँ: {soundsForDate.length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+                        <i className="fas fa-music mr-1"></i>
+                        {soundsForDate.join(" • ")}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        दिन #{dateIndex + 1}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table for this specific date */}
+                <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-600">
+                  <table className="w-full">
+                    <thead className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
+                      <tr>
+                        <th className="px-4 py-4 text-left text-sm font-bold rounded-tl-xl">
+                          <i className="fas fa-hashtag mr-2"></i>
+                          #
+                        </th>
+                        {soundsForDate.map((sound) => (
+                          <th
+                            key={sound}
+                            className="px-4 py-4 text-center text-lg font-bold"
+                          >
+                            <div className="flex flex-col items-center">
+                              <span className="text-2xl">{sound}</span>
+                              <span className="text-xs opacity-75">
+                                {soundRecords[sound].length} रिकॉर्ड
+                              </span>
+                            </div>
+                          </th>
+                        ))}
+                        <th className="px-4 py-4 text-center text-sm font-bold rounded-tr-xl">
+                          <i className="fas fa-trophy mr-2"></i>
+                          स्थिति
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody
+                      className={`divide-y-2 ${
+                        theme === "dark" ? "divide-gray-600" : "divide-gray-300"
+                      }`}
+                    >
+                      {Array.from({ length: maxRecords }, (_, rowIndex) => {
+                        let hasNewRecordInRow = false;
+
+                        return (
+                          <tr
+                            key={`${dateString}-row-${rowIndex}`}
+                            className={`hover:bg-gradient-to-r transition-all duration-200 ${
                               theme === "dark"
-                                ? "divide-gray-700"
-                                : "divide-gray-200"
+                                ? "hover:from-gray-700/50 hover:to-purple-900/30"
+                                : "hover:from-blue-50 hover:to-purple-50"
                             }`}
                           >
-                            {records.varnmala
-                              .sort((a, b) => {
-                                const aTime = a.timestamp?.seconds
-                                  ? a.timestamp.seconds * 1000
-                                  : a.timestamp || 0;
-                                const bTime = b.timestamp?.seconds
-                                  ? b.timestamp.seconds * 1000
-                                  : b.timestamp || 0;
-                                return bTime - aTime; // Newest first
-                              })
-                              .map((record, index) => (
-                                <tr
-                                  key={record.id || index}
-                                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            <td className="px-4 py-4 font-bold text-purple-600 dark:text-purple-400 bg-gray-50 dark:bg-gray-800/50">
+                              <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-sm font-bold">
+                                {rowIndex + 1}
+                              </div>
+                            </td>
+
+                            {soundsForDate.map((sound) => {
+                              const record = soundRecords[sound][rowIndex];
+                              if (record?.isNewBest) hasNewRecordInRow = true;
+
+                              return (
+                                <td
+                                  key={sound}
+                                  className={`px-4 py-4 text-center ${
+                                    record
+                                      ? "bg-white dark:bg-gray-800"
+                                      : "bg-gray-50 dark:bg-gray-900"
+                                  }`}
                                 >
-                                  <td className="px-6 py-4">
-                                    <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                                      सत्र #{record.session || index + 1}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <span className="text-xl font-mono font-bold">
-                                      {record.formattedTime ||
-                                        (record.time
-                                          ? (record.time / 10).toFixed(2)
-                                          : "0.00")}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <div>
-                                      <div className="font-medium">
-                                        {record.date || formatSafeDate(record)}
-                                      </div>
-                                      <div className="text-sm text-gray-500">
-                                        {(() => {
-                                          try {
-                                            if (
-                                              typeof record.timestamp ===
-                                                "object" &&
-                                              record.timestamp.seconds
-                                            ) {
-                                              return new Date(
-                                                record.timestamp.seconds * 1000
-                                              ).toLocaleTimeString("hi-IN");
-                                            }
-                                            return new Date(
-                                              record.timestamp
-                                            ).toLocaleTimeString("hi-IN");
-                                          } catch (e) {
-                                            return "N/A";
-                                          }
-                                        })()}
-                                      </div>
+                                  {record ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                      <span
+                                        className={`text-xl font-mono font-bold ${
+                                          record.isNewBest
+                                            ? "text-yellow-600 dark:text-yellow-400"
+                                            : "text-gray-800 dark:text-gray-200"
+                                        }`}
+                                      >
+                                        {((record.time || 0) / 10).toFixed(2)}s
+                                      </span>
+                                      {record.isNewBest && (
+                                        <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                                          <i className="fas fa-trophy"></i>
+                                          <span>Best</span>
+                                        </div>
+                                      )}
+                                      {record.improvement && (
+                                        <span
+                                          className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                            record.improvement.includes("+") ||
+                                            record.improvement === "पहला रिकॉर्ड"
+                                              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
+                                              : record.improvement.includes("-")
+                                              ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                                              : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
+                                          }`}
+                                        >
+                                          {record.improvement}
+                                        </span>
+                                      )}
                                     </div>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <span
-                                      className={`px-3 py-1 rounded-full text-sm font-bold ${
-                                        record.quality === "उत्कृष्ट"
-                                          ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                                          : record.quality === "अच्छा"
-                                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                                          : record.quality === "सामान्य"
-                                          ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400"
-                                          : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                                      }`}
-                                    >
-                                      {getQualityWithFallback(record)}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4 font-bold">
-                                    {record.laps?.length || 0}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    {record.laps && record.laps.length > 0 && (
-                                      <div className="max-w-xs">
-                                        <details className="cursor-pointer">
-                                          <summary className="text-blue-500 hover:text-blue-600 font-medium">
-                                            लैप समय देखें
-                                          </summary>
-                                          <div className="mt-2 space-y-1 text-sm">
-                                            {record.laps.map(
-                                              (lap, lapIndex) => (
-                                                <div
-                                                  key={lapIndex}
-                                                  className="flex justify-between"
-                                                >
-                                                  <span>
-                                                    लैप {lap.lapNumber}:
-                                                  </span>
-                                                  <span className="font-mono">
-                                                    {(
-                                                      (lap.time || 0) / 10
-                                                    ).toFixed(2)}
-                                                  </span>
-                                                </div>
-                                              )
-                                            )}
-                                          </div>
-                                        </details>
-                                      </div>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
+                                  ) : (
+                                    <div className="flex flex-col items-center justify-center h-16">
+                                      <span className="text-gray-400 text-2xl">--</span>
+                                      <span className="text-xs text-gray-400">No data</span>
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+
+                            <td className="px-4 py-4 text-center bg-gray-50 dark:bg-gray-800/50">
+                              {hasNewRecordInRow && (
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-full text-xs font-bold shadow-lg">
+                                    <i className="fas fa-star mr-1"></i>
+                                    रिकॉर्ड
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Summary footer for this date */}
+                <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 rounded-xl border border-gray-200 dark:border-gray-600">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    {soundsForDate.map((sound) => (
+                      <div
+                        key={sound}
+                        className="space-y-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
+                      >
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {sound}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <i className="fas fa-chart-bar mr-1"></i>
+                          {soundRecords[sound].length} रिकॉर्ड
+                        </div>
+                        {soundRecords[sound].length > 0 && (
+                          <div className="text-xs font-mono bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded">
+                            <i className="fas fa-trophy mr-1"></i>
+                            सर्वश्रेष्ठ:{" "}
+                            {(
+                              (Math.max(...soundRecords[sound].map(r => r.time || 0)) || 0) / 10
+                            ).toFixed(2)}s
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <i className="fas fa-list text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                        <p className="text-xl text-gray-500 dark:text-gray-400">
-                          अभी तक कोई वर्णमाला अभ्यास रिकॉर्ड नहीं है
-                        </p>
-                      </div>
-                    )}
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            );
+          });
+        })()}
+      </div>
+    )}
+  </div>
+</div>
+
 
             {/* Detailed Story Records - FIXED DATE/TIME DISPLAY */}
             {/* Enhanced Story Records with Dropdown */}
