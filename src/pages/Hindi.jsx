@@ -1937,201 +1937,289 @@ console.log("soundRoundsByDate:", soundRoundsByDate);
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Home Section */}
         {currentView === "home" && (
-          <div className="space-y-16">
-            {/* Hero Section */}
-            <section className="relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl "></div>
-              <div className="relative grid lg:grid-cols-2 gap-12 items-center py-12 lg:py-20 px-4 sm:px-8">
-                <div className="space-y-8 text-center lg:text-left">
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-sm font-medium">
-                      <i className="fas fa-star text-yellow-500"></i>
-                      Professional Speech Therapy Platform
-                    </div>
-                    <h1 className="text-2xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
-                      <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                        समय आधारित
-                      </span>
-                      <br />
-                      <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                        अभ्यास
-                      </span>
-                    </h1>
-                    <div className="prose prose-lg max-w-none prose-gray dark:prose-invert">
-                      Advanced timer-based speech therapy exercises designed to
-                      help you overcome stuttering with scientific precision and
-                      personal tracking.
-                    </div>
+  <div className="space-y-16">
+    {/* Hero Section */}
+    <section className="relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl "></div>
+      <div className="relative grid lg:grid-cols-2 gap-12 items-center py-12 lg:py-20 px-4 sm:px-8">
+        <div className="space-y-8 text-center lg:text-left">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-sm font-medium">
+              <i className="fas fa-star text-yellow-500"></i>
+              Professional Speech Therapy Platform
+            </div>
+            <h1 className="text-2xl md:text-6xl lg:text-7xl font-extrabold leading-tight">
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                समय आधारित
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                अभ्यास
+              </span>
+            </h1>
+            <div className="prose prose-lg max-w-none prose-gray dark:prose-invert">
+              Advanced timer-based speech therapy exercises designed to
+              help you overcome stuttering with scientific precision and
+              personal tracking.
+            </div>
+          </div>
+
+          {/* Enhanced Stats with Corrected Streak */}
+          <div className="grid grid-cols-2 gap-4 md:gap-6">
+            {[
+              {
+                id: "daily-streak",
+                value: (() => {
+                  // ✅ CORRECTED STREAK CALCULATION
+                  if (!records?.sounds?.length) return 0;
+                  
+                  // Get user's sound records sorted by date (newest first)
+                  const userRecords = records.sounds
+                    .filter(record => record.userId === user?.uid)
+                    .sort((a, b) => {
+                      const dateA = a.timestamp?.seconds 
+                        ? new Date(a.timestamp.seconds * 1000)
+                        : new Date(a.timestamp);
+                      const dateB = b.timestamp?.seconds 
+                        ? new Date(b.timestamp.seconds * 1000)
+                        : new Date(b.timestamp);
+                      return dateB.getTime() - dateA.getTime();
+                    });
+
+                  if (userRecords.length === 0) return 0;
+
+                  // Group records by date
+                  const recordsByDate = {};
+                  userRecords.forEach(record => {
+                    try {
+                      const recordDate = record.timestamp?.seconds 
+                        ? new Date(record.timestamp.seconds * 1000)
+                        : new Date(record.timestamp);
+                      const dateKey = recordDate.toDateString();
+                      
+                      if (!recordsByDate[dateKey]) {
+                        recordsByDate[dateKey] = [];
+                      }
+                      recordsByDate[dateKey].push(record);
+                    } catch (error) {
+                      console.error("Invalid timestamp:", record);
+                    }
+                  });
+
+                  // Get unique practice dates (sorted newest first)
+                  const practiceDates = Object.keys(recordsByDate)
+                    .map(dateStr => new Date(dateStr))
+                    .sort((a, b) => b.getTime() - a.getTime());
+
+                  if (practiceDates.length === 0) return 0;
+
+                  // Calculate consecutive days streak
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  
+                  const yesterday = new Date(today);
+                  yesterday.setDate(yesterday.getDate() - 1);
+
+                  let streak = 0;
+                  let currentDate = new Date(today);
+
+                  // Check if practiced today or yesterday (grace period)
+                  const latestPracticeDate = new Date(practiceDates[0]);
+                  latestPracticeDate.setHours(0, 0, 0, 0);
+                  
+                  if (latestPracticeDate.getTime() < yesterday.getTime()) {
+                    return 0; // No practice in last 2 days, streak broken
+                  }
+
+                  // Start checking from most recent practice date
+                  if (latestPracticeDate.getTime() === today.getTime()) {
+                    currentDate = new Date(today);
+                  } else {
+                    currentDate = new Date(yesterday);
+                  }
+
+                  // Count consecutive days
+                  for (let i = 0; i < practiceDates.length; i++) {
+                    const practiceDate = new Date(practiceDates[i]);
+                    practiceDate.setHours(0, 0, 0, 0);
+                    
+                    if (practiceDate.getTime() === currentDate.getTime()) {
+                      streak++;
+                      currentDate.setDate(currentDate.getDate() - 1);
+                    } else if (practiceDate.getTime() < currentDate.getTime()) {
+                      // Gap in practice, streak ends
+                      break;
+                    }
+                  }
+
+                  return streak;
+                })(),
+                label: "Day Streak",
+                icon: "fas fa-fire",
+                color: "from-orange-500 to-red-500",
+              },
+              {
+                id: "total-sessions",
+                value: (() => {
+                  // ✅ USER-SPECIFIC TOTAL SESSIONS
+                  if (!records?.sounds?.length) return 0;
+                  return records.sounds.filter(record => record.userId === user?.uid).length;
+                })(),
+                label: "Total Sessions",
+                icon: "fas fa-chart-line",
+                color: "from-green-500 to-blue-500",
+              },
+            ].map((stat) => (
+              <div
+                key={`${stat.id}-${liveStatistics.lastUpdate || Date.now()}`}
+                className={`relative p-4 md:p-6 rounded-2xl transition-all duration-300 hover:-translate-y-2 group ${
+                  theme === "dark"
+                    ? "bg-gray-800/50 backdrop-blur-xl"
+                    : "bg-white/50 backdrop-blur-xl"
+                } border border-gray-200/20 dark:border-gray-700/20 shadow-xl`}
+              >
+                <div className="text-center space-y-3">
+                  <div
+                    className={`w-8 h-8 md:w-12 md:h-12 mx-auto rounded-xl bg-gradient-to-r ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <i
+                      className={`${stat.icon} text-white text-sm md:text-xl`}
+                    ></i>
                   </div>
-
-                  {/* Enhanced Stats */}
-                  <div className="grid grid-cols-2 gap-4 md:gap-6">
-                    {" "}
-                    {/* Changed from grid-cols-3 to grid-cols-2 */}
-                    {[
-                      {
-                        id: "daily-streak",
-                        value: liveStatistics.dailyStreak,
-                        label: "Streak",
-                        icon: "fas fa-fire",
-                        color: "from-orange-500 to-red-500",
-                      },
-                      {
-                        id: "total-sessions",
-                        value: liveStatistics.totalRecords, // Changed from totalSessions to totalRecords
-                        label: "Total Sessions",
-                        icon: "fas fa-chart-line", // Keeping the chart-line icon instead of trophy
-                        color: "from-green-500 to-blue-500",
-                      },
-                    ].map((stat) => (
-                      <div
-                        key={`${stat.id}-${liveStatistics.lastUpdate}`}
-                        className={`relative p-4 md:p-6 rounded-2xl transition-all duration-300 hover:-translate-y-2 group ${
-                          theme === "dark"
-                            ? "bg-gray-800/50 backdrop-blur-xl"
-                            : "bg-white/50 backdrop-blur-xl"
-                        } border border-gray-200/20 dark:border-gray-700/20 shadow-xl`}
-                      >
-                        <div className="text-center space-y-3">
-                          <div
-                            className={`w-8 h-8 md:w-12 md:h-12 mx-auto rounded-xl bg-gradient-to-r ${stat.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-                          >
-                            <i
-                              className={`${stat.icon} text-white text-sm md:text-xl`}
-                            ></i>
-                          </div>
-                          <div
-                            className={`text-2xl md:text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}
-                          >
-                            {stat.value}
-                          </div>
-                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
-                            {stat.label}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  <div
+                    className={`text-2xl md:text-3xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}
+                  >
+                    {stat.value}
                   </div>
-
-                  {/* CTA Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button
-                      className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-105 cursor-pointer"
-                      onClick={() => setCurrentView("exercises")}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
-                      <div className="relative flex items-center gap-3">
-                        <i className="fas fa-play-circle text-xl"></i>
-                        Start Practice Session
-                      </div>
-                    </button>
-
-                    <button
-                      className="group relative px-8 py-4  dark:border-gray-600 text-white dark:text-gray-300 rounded-2xl font-semibold text-xl  bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-purple-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-105 cursor-pointer"
-                      onClick={() => setCurrentView("records")}
-                    >
-                      <i className="fas fa-chart-bar mr-3"></i>
-                      View Progress
-                    </button>
+                  <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
+                    {stat.label}
                   </div>
                 </div>
 
-                {/* Enhanced Visual */}
-                <div className="flex justify-center lg:justify-end">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-                    <div
-                      className={`relative w-60 h-60 md:w-80 md:h-80 rounded-full flex flex-col items-center justify-center shadow-2xl border-8 ${
-                        theme === "dark"
-                          ? "bg-gradient-to-br from-gray-800 to-gray-700 border-purple-500/50"
-                          : "bg-gradient-to-br from-white to-blue-50 border-blue-500/50"
-                      } backdrop-blur-xl`}
-                    >
-                      <div className="text-center space-y-4">
-                        {/* <div className="text-3xl md:text-5xl font-mono font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                          {formatTime(
-                            Object.values(soundTimers).reduce(
-                              (max, timer) => Math.max(max, timer.time),
-                              0
-                            )
-                          )}
-                        </div> */}
-                        <div className="text-3xl  md:text-3xl text-gray-500 dark:text-gray-400 font-medium">
-                          " Just Do It "
-                        </div>
-                        <div className="flex justify-center space-x-2">
-                          <div
-                            className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"
-                            style={{ animationDelay: "0ms" }}
-                          ></div>
-                          <div
-                            className="w-3 h-3 bg-purple-500 rounded-full animate-bounce"
-                            style={{ animationDelay: "150ms" }}
-                          ></div>
-                          <div
-                            className="w-3 h-3 bg-pink-500 rounded-full animate-bounce"
-                            style={{ animationDelay: "300ms" }}
-                          ></div>
-                        </div>
-                      </div>
+                {/* ✅ ADD STREAK INDICATOR */}
+                {stat.id === "daily-streak" && stat.value > 0 && (
+                  <div className="absolute -top-2 -right-2">
+                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                      🔥 {stat.value > 7 ? "Hot!" : "Keep Going!"}
                     </div>
                   </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-105 cursor-pointer"
+              onClick={() => setCurrentView("exercises")}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"></div>
+              <div className="relative flex items-center gap-3">
+                <i className="fas fa-play-circle text-xl"></i>
+                Start Practice Session
+              </div>
+            </button>
+
+            <button
+              className="group relative px-8 py-4  dark:border-gray-600 text-white dark:text-gray-300 rounded-2xl font-semibold text-xl  bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-purple-500/25 transition-all duration-300 hover:-translate-y-1 hover:scale-105 cursor-pointer"
+              onClick={() => setCurrentView("records")}
+            >
+              <i className="fas fa-chart-bar mr-3"></i>
+              View Progress
+            </button>
+          </div>
+        </div>
+
+        {/* Enhanced Visual */}
+        <div className="flex justify-center lg:justify-end">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+            <div
+              className={`relative w-60 h-60 md:w-80 md:h-80 rounded-full flex flex-col items-center justify-center shadow-2xl border-8 ${
+                theme === "dark"
+                  ? "bg-gradient-to-br from-gray-800 to-gray-700 border-purple-500/50"
+                  : "bg-gradient-to-br from-white to-blue-50 border-blue-500/50"
+              } backdrop-blur-xl`}
+            >
+              <div className="text-center space-y-4">
+                <div className="text-3xl  md:text-3xl text-gray-500 dark:text-gray-400 font-medium">
+                  " Just Do It "
+                </div>
+                <div className="flex justify-center space-x-2">
+                  <div
+                    className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  ></div>
+                  <div
+                    className="w-3 h-3 bg-purple-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  ></div>
+                  <div
+                    className="w-3 h-3 bg-pink-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  ></div>
                 </div>
               </div>
-            </section>
-
-            {/* Features Grid */}
-            <section className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {[
-                {
-                  icon: "fas fa-microphone",
-                  title: "Voice Training",
-                  description:
-                    "Professional speech exercises with real-time feedback",
-                  color: "from-blue-500 to-cyan-500",
-                },
-                {
-                  icon: "fas fa-chart-line",
-                  title: "Progress Tracking",
-                  description: "Detailed analytics and improvement metrics",
-                  color: "from-green-500 to-emerald-500",
-                },
-                {
-                  icon: "fas fa-clock",
-                  title: "Timed Sessions",
-                  description:
-                    "Structured practice with optimal time management",
-                  color: "from-purple-500 to-violet-500",
-                },
-                {
-                  icon: "fas fa-trophy",
-                  title: "Achievement System",
-                  description: "Motivation through goals and milestones",
-                  color: "from-orange-500 to-red-500",
-                },
-              ].map((feature, index) => (
-                <div
-                  key={index}
-                  className={`group p-8 rounded-3xl transition-all duration-300 hover:-translate-y-2 ${
-                    theme === "dark" ? "bg-gray-800/50" : "bg-white/50"
-                  } backdrop-blur-xl border border-gray-200/20 dark:border-gray-700/20 shadow-xl`}
-                >
-                  <div className="space-y-4">
-                    <div
-                      className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-                    >
-                      <i className={`${feature.icon} text-white text-2xl`}></i>
-                    </div>
-                    <h3 className="text-xl font-bold">{feature.title}</h3>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {feature.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </section>
+            </div>
           </div>
-        )}
+        </div>
+      </div>
+    </section>
+
+    {/* Features Grid - Rest remains the same */}
+    <section className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {[
+        {
+          icon: "fas fa-microphone",
+          title: "Voice Training",
+          description:
+            "Professional speech exercises with real-time feedback",
+          color: "from-blue-500 to-cyan-500",
+        },
+        {
+          icon: "fas fa-chart-line",
+          title: "Progress Tracking",
+          description: "Detailed analytics and improvement metrics",
+          color: "from-green-500 to-emerald-500",
+        },
+        {
+          icon: "fas fa-clock",
+          title: "Timed Sessions",
+          description:
+            "Structured practice with optimal time management",
+          color: "from-purple-500 to-violet-500",
+        },
+        {
+          icon: "fas fa-trophy",
+          title: "Achievement System",
+          description: "Motivation through goals and milestones",
+          color: "from-orange-500 to-red-500",
+        },
+      ].map((feature, index) => (
+        <div
+          key={index}
+          className={`group p-8 rounded-3xl transition-all duration-300 hover:-translate-y-2 ${
+            theme === "dark" ? "bg-gray-800/50" : "bg-white/50"
+          } backdrop-blur-xl border border-gray-200/20 dark:border-gray-700/20 shadow-xl`}
+        >
+          <div className="space-y-4">
+            <div
+              className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+            >
+              <i className={`${feature.icon} text-white text-2xl`}></i>
+            </div>
+            <h3 className="text-xl font-bold">{feature.title}</h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              {feature.description}
+            </p>
+          </div>
+        </div>
+      ))}
+    </section>
+  </div>
+)}
+
 
         {/* Enhanced Sound Timer Practice */}
 {currentView === "exercises" && (
