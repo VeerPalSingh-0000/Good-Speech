@@ -32,7 +32,7 @@ const VarnmalaView = ({ varnmalaTimer, showVarnmala, startVarnmalaTimer, pauseVa
 
       <div className="flex flex-col items-center gap-8">
         {/* Visual Timer */}
-        <div className="relative w-64 h-64">
+        <div className="relative w-80 h-80">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
             <circle cx="60" cy="60" r="54" fill="none" strokeWidth="12" className="text-slate-200 dark:text-slate-700" />
             <motion.circle
@@ -42,7 +42,7 @@ const VarnmalaView = ({ varnmalaTimer, showVarnmala, startVarnmalaTimer, pauseVa
               strokeLinecap="round"
               pathLength="1"
               strokeDasharray="1"
-              animate={{ strokeDashoffset: 1 - (varnmalaTimer.time % 600) / 600 }}
+              animate={{ strokeDashoffset: 1 - (varnmalaTimer.time % 600) / 300 }}
               transition={{ duration: 1, ease: "linear" }}
             />
             <defs>
