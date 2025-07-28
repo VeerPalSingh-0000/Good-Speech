@@ -1,10 +1,10 @@
 // src/features/hindi/hooks/useHindiTimers.js
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { formatTime, getStoryName, calculateQuality } from '../utilities/helpers';
 import { hindiStories, storyTargets } from '../data/stories';
 
-export const useHindiTimers = (saveToFirebase, showNotification) => {
+export const useHindiTimers = (saveToFirebase, showNotification, records) => { // <-- Records are now passed in
   const [soundTimers, setSoundTimers] = useState({
     आ: { time: 0, isRunning: false },
     ई: { time: 0, isRunning: false },
@@ -12,14 +12,25 @@ export const useHindiTimers = (saveToFirebase, showNotification) => {
   });
   const [varnmalaTimer, setVarnmalaTimer] = useState({ time: 0, isRunning: false, isPaused: false, laps: [] });
   const [storyTimer, setStoryTimer] = useState({ time: 0, isRunning: false, isPaused: false, currentStory: 'short', targetTime: 300 });
-  
   const [currentStory, setCurrentStory] = useState(null);
   const [showStory, setShowStory] = useState(false);
   const [showVarnmala, setShowVarnmala] = useState(false);
 
   const intervals = useRef({});
 
-  // --- Sound Timer Functions ---
+  // Calculate all-time bests from historical records
+  const bestTimes = useMemo(() => {
+    const bests = { 'आ': 0, 'ई': 0, 'ऊ': 0 };
+    if (records?.sounds) {
+      records.sounds.forEach(rec => {
+        if (rec.time > (bests[rec.sound] || 0)) {
+          bests[rec.sound] = rec.time;
+        }
+      });
+    }
+    return bests;
+  }, [records]);
+
   const startSoundTimer = useCallback((sound) => {
     if (soundTimers[sound].isRunning) return;
     setSoundTimers(prev => ({ ...prev, [sound]: { ...prev[sound], isRunning: true } }));
@@ -31,16 +42,32 @@ export const useHindiTimers = (saveToFirebase, showNotification) => {
   const stopSoundTimer = useCallback((sound, shouldRecord = false) => {
     clearInterval(intervals.current[sound]);
     const currentTime = soundTimers[sound].time;
-    setSoundTimers(prev => ({ ...prev, [sound]: { time: shouldRecord ? 0 : currentTime, isRunning: false } }));
+    
+    // Always reset the live timer
+    setSoundTimers(prev => ({ ...prev, [sound]: { time: 0, isRunning: false } }));
     
     if (shouldRecord && currentTime > 0) {
-      const record = { sound, time: currentTime, timestamp: new Date() };
+      // THE FIX: Compare against the true best time from history
+      const isNewBest = currentTime > (bestTimes[sound] || 0);
+      
+      const record = {
+        sound,
+        time: currentTime,
+        isNewBest: isNewBest, // This flag is now accurate
+        timestamp: new Date(),
+        sessionCount: ((records?.sounds || []).filter(r => r.sound === sound).length) + 1,
+        // improvement logic can also be enhanced here
+      };
       saveToFirebase('sounds', record);
-      showNotification(`${sound} का समय (${formatTime(currentTime)}) रिकॉर्ड किया गया`, "success");
+      
+      if (isNewBest) {
+        showNotification(`नया सर्वश्रेष्ठ समय! ${formatTime(currentTime)}`, "success");
+      } else {
+        showNotification(`${sound} का समय (${formatTime(currentTime)}) रिकॉर्ड किया गया`, "info");
+      }
     }
-  }, [soundTimers, saveToFirebase, showNotification]);
+  }, [soundTimers, saveToFirebase, showNotification, bestTimes, records]);
 
-  // --- Varnmala Timer Functions ---
   const startVarnmalaTimer = useCallback(() => {
     if (varnmalaTimer.isRunning) return;
     setShowVarnmala(true);
@@ -80,8 +107,7 @@ export const useHindiTimers = (saveToFirebase, showNotification) => {
     setVarnmalaTimer({ time: 0, isRunning: false, isPaused: false, laps: [] });
     setShowVarnmala(false);
   }, [varnmalaTimer, saveToFirebase, showNotification]);
-  
-  // --- Story Timer Functions ---
+
   const startStoryTimer = useCallback(() => {
     if (storyTimer.isRunning) return;
     const storiesOfType = hindiStories[storyTimer.currentStory] || hindiStories.short;
@@ -99,7 +125,7 @@ export const useHindiTimers = (saveToFirebase, showNotification) => {
     if (!storyTimer.isRunning) return;
     clearInterval(intervals.current.story);
     setStoryTimer(prev => ({...prev, isRunning: false, isPaused: true}));
-    setShowStory(false); // <-- THE FIX: This now also hides the story modal
+    setShowStory(false);
     showNotification("पठन टाइमर रोक दिया गया", "info");
   }, [storyTimer, showNotification]);
   

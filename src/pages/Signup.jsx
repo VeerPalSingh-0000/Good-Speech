@@ -2,11 +2,18 @@ import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { motion } from 'framer-motion';
-import { auth, db } from '../../firebase';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { auth, db } from '../../firebase'; // Adjust path as needed
 
+// The onSignup prop is no longer needed
 const Signup = ({ switchToLogin }) => {
-  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -40,21 +47,34 @@ const Signup = ({ switchToLogin }) => {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
       const displayName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+
+      // 1. Update the profile in Firebase Auth
       await updateProfile(user, { displayName });
+
+      // 2. Save additional details to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email,
         createdAt: new Date(),
         uid: user.uid,
-        displayName,
+        displayName: displayName
       });
+
+      // 3. THE FIX: Force a reload of the user object.
+      // This will trigger the onAuthStateChanged listener in App.jsx
+      // with the new displayName, making it the single source of truth.
+      await auth.currentUser.reload();
+      
+      // The onAuthStateChanged listener will now handle navigation automatically.
+      
     } catch (error) {
+      console.error('Signup error:', error);
+      let errorMessage = 'An error occurred during signup';
       if (error.code === 'auth/email-already-in-use') {
-        setErrors({ submit: 'This email is already registered. Please sign in.' });
-      } else {
-        setErrors({ submit: 'Signup failed. Please try again.' });
+        errorMessage = 'This email is already registered. Please sign in.';
       }
+      setErrors({ submit: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -109,7 +129,7 @@ const Signup = ({ switchToLogin }) => {
             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 hover:text-white">{showConfirmPassword ? <FaEyeSlash /> : <FaEye />}</button>
           </div>
           <button type="submit" disabled={loading} className="w-full py-3 font-semibold text-white bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-500 disabled:bg-slate-500 transition-colors flex justify-center items-center">
-            {loading ? <svg className="animate-spin h-5 w-5 text-white" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> : 'Create Account'}
+            {loading ? <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> : 'Create Account'}
           </button>
         </form>
 

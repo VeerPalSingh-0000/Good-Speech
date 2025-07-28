@@ -100,7 +100,7 @@ const HistoryView = ({ records }) => {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">अभ्यास इतिहास</h2>
+        <h2 className="p-4 text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">अभ्यास इतिहास</h2>
         <p className="text-slate-500 mt-2">यहाँ आपके सभी सत्रों का विस्तृत विश्लेषण है।</p>
       </div>
 
@@ -148,7 +148,16 @@ const HistoryView = ({ records }) => {
                                   ) : '--'}
                                 </td>
                               ))}
-                              <td className="p-4 text-center">{hasNewBest && <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 text-xs font-bold rounded-full">New Best!</span>}</td>
+                              {/* THE FIX: Added a ternary operator to show a placeholder */}
+                              <td className="p-4 text-center">
+                                {hasNewBest ? (
+                                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 text-xs font-bold rounded-full">
+                                    New Best!
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">--</span>
+                                )}
+                              </td>
                             </tr>
                           )
                         })}
