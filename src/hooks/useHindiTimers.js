@@ -58,37 +58,45 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
         }, 100);
     }, []); // Empty dependency array makes this function stable
 
-    const stopSoundTimer = useCallback((sound, shouldRecord = false) => {
-        clearInterval(intervals.current[sound]);
-        intervals.current[sound] = null;
+const stopSoundTimer = useCallback((sound, shouldRecord = false) => {
+  clearInterval(intervals.current[sound]);
+  intervals.current[sound] = null;
 
-        let finalTime = 0;
-        setSoundTimers(prev => {
-            finalTime = prev[sound].time; // Capture the final time safely
-            return {
-                ...prev,
-                [sound]: { time: 0, isRunning: false }
-            };
-        });
-        
-        if (shouldRecord && finalTime > 0) {
-            // BUG FIX: Comparison was incorrect. Lower is better.
-            const isNewBest = finalTime < bestTimes[sound];
-            const record = {
-                sound,
-                time: finalTime,
-                isNewBest,
-                timestamp: new Date(),
-                sessionCount: ((records?.sounds || []).filter(r => r.sound === sound).length) + 1,
-            };
-            saveToFirebase('sounds', record);
-            
-            const message = isNewBest
-                ? `नया सर्वश्रेष्ठ समय! ${formatTime(finalTime)}`
-                : `${sound} का समय (${formatTime(finalTime)}) रिकॉर्ड किया गया`;
-            showNotification(message, isNewBest ? "success" : "info");
-        }
-    }, [saveToFirebase, showNotification, bestTimes, records]);
+  // Use a functional update to get the latest time
+  setSoundTimers(prev => {
+    const finalTime = prev[sound].time;
+
+    if (shouldRecord && finalTime > 0) {
+      // Logic for saving the record (this part is fine)
+      const isNewBest = finalTime < (bestTimes[sound] || Infinity);
+      const record = {
+        sound,
+        time: finalTime,
+        isNewBest,
+        timestamp: new Date(),
+        sessionCount: ((records?.sounds || []).filter(r => r.sound === sound).length) + 1,
+      };
+      saveToFirebase('sounds', record);
+      
+      const message = isNewBest
+        ? `नया सर्वश्रेष्ठ समय! ${formatTime(finalTime)}`
+        : `${sound} का समय (${formatTime(finalTime)}) रिकॉर्ड किया गया`;
+      showNotification(message, isNewBest ? "success" : "info");
+
+      // ✅ FIX: Only reset time to 0 when recording
+      return {
+        ...prev,
+        [sound]: { time: 0, isRunning: false }
+      };
+    } else {
+      // ✅ FIX: For a pause, just update the running state and keep the time
+      return {
+        ...prev,
+        [sound]: { ...prev[sound], isRunning: false }
+      };
+    }
+  });
+}, [saveToFirebase, showNotification, bestTimes, records]);
 
     // --- VARNMALA TIMER FUNCTIONS ---
     const startVarnmalaTimer = useCallback(() => {
@@ -98,6 +106,7 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
         intervals.current.varnmala = setInterval(() => {
             setVarnmalaTimer(prev => ({ ...prev, time: prev.time + 1 }));
         }, 100);
+      
         showNotification("वर्णमाला टाइमर शुरू!", "info");
     }, [showNotification]);
 
@@ -121,18 +130,28 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
         });
     }, [showNotification]);
 
-    const stopVarnmalaTimer = useCallback((shouldRecord = false) => {
-        clearInterval(intervals.current.varnmala);
-        intervals.current.varnmala = null;
+const stopVarnmalaTimer = useCallback((shouldRecord = false) => {
+    clearInterval(intervals.current.varnmala);
+    intervals.current.varnmala = null;
 
-        if (shouldRecord && varnmalaTimer.time > 0) {
-            const quality = calculateQuality(varnmalaTimer.time / 10);
-            const record = { time: varnmalaTimer.time, quality, laps: varnmalaTimer.laps, timestamp: new Date() };
+    // Use a functional update to get the latest state safely
+    setVarnmalaTimer(prevTimer => {
+        if (shouldRecord && prevTimer.time > 0) {
+            const quality = calculateQuality(prevTimer.time / 10);
+            const record = { 
+                time: prevTimer.time, 
+                quality, 
+                laps: prevTimer.laps, 
+                timestamp: new Date() 
+            };
             saveToFirebase('varnmala', record);
             showNotification(`वर्णमाला अभ्यास (${quality}) रिकॉर्ड किया गया`, "success");
         }
-        setVarnmalaTimer({ time: 0, isRunning: false, isPaused: false, laps: [] });
-    }, [varnmalaTimer, saveToFirebase, showNotification]);
+        // Return the new, reset state
+        return { time: 0, isRunning: false, isPaused: false, laps: [] };
+    });
+// Dependency array no longer needs 'varnmalaTimer'
+}, [saveToFirebase, showNotification]);
     
     // --- STORY TIMER FUNCTIONS ---
     const startStoryTimer = useCallback(() => {
@@ -168,23 +187,28 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
         showNotification("पठन टाइमर रीसेट कर दिया गया", "info");
     }, [showNotification]);
 
-    const stopStoryTimer = useCallback((storyToRecord) => {
-        clearInterval(intervals.current.story);
-        intervals.current.story = null;
+const stopStoryTimer = useCallback((storyToRecord) => {
+    clearInterval(intervals.current.story);
+    intervals.current.story = null;
 
-        if (storyTimer.time > 0) {
+    // Use a functional update here as well
+    setStoryTimer(prevTimer => {
+        if (prevTimer.time > 0) {
             const record = {
                 storyTitle: storyToRecord?.title || "Unknown",
-                time: storyTimer.time,
+                time: prevTimer.time,
                 timestamp: new Date(),
             };
             saveToFirebase('stories', record);
-            showNotification(`पठन अभ्यास (${formatTime(storyTimer.time)}) रिकॉर्ड किया गया`, "success");
+            showNotification(`पठन अभ्यास (${formatTime(prevTimer.time)}) रिकॉर्ड किया गया`, "success");
         }
-        // Reset everything
-        setStoryTimer({ time: 0, isRunning: false, isPaused: false });
-        setCurrentStory(null);
-    }, [storyTimer, saveToFirebase, showNotification]);
+        return { time: 0, isRunning: false, isPaused: false };
+    });
+
+    // Also reset the story outside the timer state update
+    setCurrentStory(null);
+// Dependency array no longer needs 'storyTimer'
+}, [saveToFirebase, showNotification]);
 
     return {
         soundTimers,

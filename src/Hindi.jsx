@@ -32,7 +32,7 @@ const LoadingScreen = () => (
 
 const Hindi = ({ user, onLogout }) => {
     const [currentView, setCurrentView] = useState("home");
-
+     const [showVarnmala, setShowVarnmala] = useState(false);
     const navItems = [
         { key: "home", label: "Home", icon: "fas fa-home" },
         { key: "exercises", label: "स्वर अभ्यास", icon: "fas fa-microphone" },
@@ -53,8 +53,17 @@ const Hindi = ({ user, onLogout }) => {
     // --- HOOKS AS SINGLE SOURCE OF TRUTH ---
     // All state and logic is now correctly managed by these hooks.
     const { records, isLoading, saveToFirebase, deleteRecord, storyBookmarks, lineBookmarks, toggleStoryBookmark, toggleLineBookmark } = useHindiRecords(user, showNotification);
+      console.log("Checking for bookmark functions:", { toggleStoryBookmark, toggleLineBookmark });
     const timerProps = useHindiTimers(saveToFirebase, showNotification, records);
+     const handleStartVarnmala = () => {
+        timerProps.startVarnmalaTimer(); // Call original function from the hook
+        setShowVarnmala(true);          // Set UI state to visible
+    };
 
+    const handleStopVarnmala = (shouldRecord) => {
+        timerProps.stopVarnmalaTimer(shouldRecord); // Call original function from the hook
+        setShowVarnmala(false);                     // Set UI state to hidden
+    };
     // This component is now clean. It just gets props from hooks and passes them down.
     
     const renderView = () => {
@@ -75,7 +84,12 @@ const Hindi = ({ user, onLogout }) => {
                 return <ExercisesView {...viewProps} />;
             
             case "varnmala":
-                return <VarnmalaView {...viewProps} />;
+                return <VarnmalaView 
+                {...viewProps} // Pass all the other props
+                showVarnmala={showVarnmala} // Pass the visibility state
+                startVarnmalaTimer={handleStartVarnmala} // Override with your new start handler
+                stopVarnmalaTimer={handleStopVarnmala}   // Override with your new stop handler
+            />;
             
             case "stories":
                 // Pass the specific bookmark props to StoriesView

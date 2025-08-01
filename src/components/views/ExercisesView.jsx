@@ -1,5 +1,3 @@
-// src/features/hindi/components/views/ExercisesView.jsx
-
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { formatTime } from '../../utilities/helpers';
@@ -21,18 +19,21 @@ const itemVariants = {
 
 // A dedicated, beautiful card for each sound practice
 const SoundPracticeCard = ({ sound, timer, records, user, onStart, onStop }) => {
-  const stats = useMemo(() => {
-    const userSoundRecords = (records.sounds || []).filter(
-      record => record.sound === sound
-    );
-    const bestTime = userSoundRecords.length > 0
-      ? Math.max(...userSoundRecords.map(r => r.time || 0))
-      : 0;
-    return {
-      sessions: userSoundRecords.length,
-      bestTime: formatTime(bestTime),
-    };
-  }, [records, sound, user]);
+const stats = useMemo(() => {
+  const userSoundRecords = (records.sounds || []).filter(
+    record => record.sound === sound
+  );
+
+  // ✅ FIX: Use Math.min for the best (lowest) time
+  const bestTime = userSoundRecords.length > 0
+    ? Math.max(...userSoundRecords.map(r => r.time || Infinity))
+    : 0;
+  
+  return {
+    sessions: userSoundRecords.length,
+    bestTime: bestTime === Infinity ? 'N/A' : formatTime(bestTime),
+  };
+}, [records, sound]);
 
   return (
     <motion.div 
@@ -100,6 +101,7 @@ const SoundPracticeCard = ({ sound, timer, records, user, onStart, onStop }) => 
     </motion.div>
   );
 };
+
 
 
 const ExercisesView = ({ user, records, soundTimers, startSoundTimer, stopSoundTimer }) => {

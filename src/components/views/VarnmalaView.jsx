@@ -1,6 +1,3 @@
-// src/features/hindi/components/views/VarnmalaView.jsx
-
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatTime } from '../../utilities/helpers';
 import AnimatedButton from '../ui/AnimatedButton'; // Assuming you have this component
