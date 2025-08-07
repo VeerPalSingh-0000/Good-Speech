@@ -1,5 +1,3 @@
-// src/features/hindi/data/stories.js
-
 // सभी कहानियाँ अब एक ही सरल ऐरे में हैं।
 // विस्तारित अभ्यास के लिए इन्हें बहुत लंबी कहानियों से बदल दिया गया है।
 export const hindiStories = [
