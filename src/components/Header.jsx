@@ -1,80 +1,135 @@
-// src/components/Header.jsx
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LogOut, Menu, X } from 'lucide-react';
 
 const Header = ({ user, onLogout, currentView, setCurrentView }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Set dark mode based on system preference or local storage, but without a toggle
+  useEffect(() => {
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
 
   const navItems = [
     { key: "home", label: "Home", icon: "fas fa-home" },
     { key: "exercises", label: "स्वर अभ्यास", icon: "fas fa-microphone" },
     { key: "varnmala", label: "वर्णमाला", icon: "fas fa-list" },
     { key: "stories", label: "पठन", icon: "fas fa-book" },
-    { key: "records", label: "रिकॉर्ड्स", icon: "fas fa-chart-line" },
     { key: "history", label: "History", icon: "fas fa-history" },
   ];
 
   const handleNavClick = (view) => {
     setCurrentView(view);
-    setMobileMenuOpen(false); // Close mobile menu on selection
+    setMobileMenuOpen(false);
   };
+
+  const NavButton = ({ item, isMobile = false }) => (
+    <motion.button
+      key={item.key}
+      onClick={() => handleNavClick(item.key)}
+      className={`relative flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
+        isMobile ? 'text-lg' : 'text-sm'
+      } ${
+        currentView === item.key
+          ? 'text-white'
+          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+      }`}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      {currentView === item.key && (
+        <motion.div
+          layoutId={isMobile ? "mobile-active-pill" : "desktop-active-pill"}
+          className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg"
+          style={{ borderRadius: 8 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-3">
+        <i className={`${item.icon} w-5 text-center`}></i>
+        {/* ✅ FIX: Added whitespace-nowrap to prevent text from breaking into two lines */}
+        <span className="whitespace-nowrap">{item.label}</span>
+      </span>
+    </motion.button>
+  );
 
   return (
     <>
-      <header className="sticky top-0 z-40 backdrop-blur-lg bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo and Brand Name */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <i className="fas fa-comment text-xl text-white"></i>
+      <header className="sticky top-0 z-40 w-full backdrop-blur-lg bg-white/70 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative flex items-center justify-between h-20">
+            
+            {/* Left Side: Logo */}
+            <motion.div 
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => handleNavClick('home')}
+              whileHover={{ scale: 1.05 }}
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <i className="fas fa-comment-dots text-2xl text-white"></i>
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
                 SpeechGood
               </h1>
-            </div>
+            </motion.div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-2">
-              {navItems.map(item => (
-                <button
-                  key={item.key}
-                  onClick={() => handleNavClick(item.key)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    currentView === item.key
-                      ? 'bg-purple-600 text-white shadow-lg scale-105'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <i className={item.icon}></i>
-                  <span>{item.label}</span>
-                </button>
-              ))}
+            {/* Center navigation */}
+            <nav className="hidden lg:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
+                    {navItems.map(item => <NavButton item={item} />)}
+                </div>
             </nav>
 
-            {/* User Info and Logout (Desktop) */}
-            <div className="hidden lg:flex items-center gap-4">
-                <div className="text-right">
-                    <p className="font-semibold text-sm">{user.displayName || user.email}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Welcome back!</p>
+            {/* Right Side: User Info and Mobile Menu */}
+            <div className="flex items-center justify-end gap-4">
+                {/* User Info and Actions (Desktop) */}
+                <div className="hidden lg:flex items-center gap-4">
+                  <div className="relative group">
+                    <button className="flex items-center gap-2 p-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                      <img src={user.photoURL || `https://api.dicebear.com/6.x/initials/svg?seed=${user.email}`} alt="User" className="w-8 h-8 rounded-full" />
+                      <span className="font-semibold text-sm pr-2">{user.displayName || user.email.split('@')[0]}</span>
+                    </button>
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border dark:border-slate-700 p-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
+                      <div className="p-2 text-center border-b dark:border-slate-700">
+                        <p className="font-bold">{user.displayName}</p>
+                        <p className="text-xs text-slate-500">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={onLogout}
+                        className="w-full flex items-center gap-3 mt-1 p-2 rounded-md font-semibold text-left text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                      >
+                        <LogOut size={16} />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              <button
-                onClick={onLogout}
-                className="px-4 py-2 rounded-lg font-medium bg-rose-500 hover:bg-rose-600 text-white transition-colors shadow-md hover:shadow-lg"
-              >
-                Logout
-              </button>
-            </div>
 
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'} text-2xl`}></i>
-              </button>
+                {/* Mobile Menu Button */}
+                <div className="lg:hidden">
+                  <motion.button
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="p-2 rounded-full bg-slate-100 dark:bg-slate-800"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <AnimatePresence initial={false} mode="wait">
+                      <motion.div
+                        key={mobileMenuOpen ? 'x' : 'menu'}
+                        initial={{ rotate: -90, opacity: 0 }}
+                        animate={{ rotate: 0, opacity: 1 }}
+                        exit={{ rotate: 90, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {mobileMenuOpen ? <X/> : <Menu />}
+                      </motion.div>
+                    </AnimatePresence>
+                  </motion.button>
+                </div>
             </div>
           </div>
         </div>
@@ -84,34 +139,29 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="lg:hidden absolute top-20 left-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg shadow-lg border-b border-slate-200 dark:border-slate-700 z-30"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="lg:hidden fixed top-20 left-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg border-b border-slate-200 dark:border-slate-700 z-30"
           >
             <nav className="flex flex-col gap-2 p-4">
-              {navItems.map(item => (
-                <button
-                  key={item.key}
-                  onClick={() => handleNavClick(item.key)}
-                  className={`flex items-center gap-4 p-4 rounded-lg font-semibold text-left transition-colors text-lg ${
-                    currentView === item.key
-                      ? 'bg-purple-600 text-white'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <i className={`${item.icon} w-6 text-center`}></i>
-                  <span>{item.label}</span>
-                </button>
-              ))}
+              {navItems.map(item => <NavButton item={item} isMobile={true} />)}
               <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
-              <button
-                onClick={onLogout}
-                className="flex items-center gap-4 p-4 rounded-lg font-semibold text-left transition-colors text-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10"
-              >
-                <i className="fas fa-sign-out-alt w-6 text-center"></i>
-                <span>Logout</span>
-              </button>
+              <div className="flex items-center justify-between p-2">
+                <div className="flex items-center gap-3">
+                  <img src={user.photoURL || `https://api.dicebear.com/6.x/initials/svg?seed=${user.email}`} alt="User" className="w-10 h-10 rounded-full" />
+                  <div>
+                    <p className="font-bold">{user.displayName || user.email.split('@')[0]}</p>
+                    <p className="text-xs text-slate-500">{user.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-2 p-3 rounded-lg font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                >
+                  <LogOut size={20} />
+                </button>
+              </div>
             </nav>
           </motion.div>
         )}
