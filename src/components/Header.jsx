@@ -56,7 +56,7 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
             {/* User Info and Logout (Desktop) */}
             <div className="hidden lg:flex items-center gap-4">
                 <div className="text-right">
-                    <p className="font-semibold text-sm">{user.displayName }</p>
+                    <p className="font-semibold text-sm">{user.displayName || user.email}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Welcome back!</p>
                 </div>
               <button
