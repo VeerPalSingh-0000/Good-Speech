@@ -24,16 +24,18 @@ const stats = useMemo(() => {
     record => record.sound === sound
   );
 
-  // ✅ FIX: Use Math.min for the best (lowest) time
+ 
   const bestTime = userSoundRecords.length > 0
-    ? Math.max(...userSoundRecords.map(r => r.time || Infinity))
+    ? Math.max(...userSoundRecords.map(r => r.time || 0))
     : 0;
   
   return {
     sessions: userSoundRecords.length,
-    bestTime: bestTime === Infinity ? 'N/A' : formatTime(bestTime),
+    bestTime: formatTime(bestTime),
   };
 }, [records, sound]);
+
+
 
   return (
     <motion.div 

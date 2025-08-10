@@ -259,6 +259,7 @@ const HistoryView = ({ records }) => {
       </div>
 
       {/* Varnmala  section */}
+      {/* Varnmala  section */}
       <div className="space-y-4">
         <SectionHeader
           title="वर्णमाला अभ्यास रिकॉर्ड"
@@ -274,111 +275,114 @@ const HistoryView = ({ records }) => {
             className="overflow-hidden"
           >
             <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-inner">
-              <table className="w-full text-left">
-                <thead className="bg-slate-100 dark:bg-slate-700">
-                  <tr>
-                    <th className="p-4 rounded-tl-lg w-16">क्र.सं.</th>
-                    <th className="p-4 rounded-tl-lg">समय</th>
-                    <th className="p-4">गुणवत्ता</th>
-                    <th className="p-4 rounded-tr-lg">दिनांक</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                  {(records.varnmala || []).map((rec, i) => (
-                    <tr key={i}>
-                      <td className="p-4 text-slate-500 dark:text-slate-400">
-                        {i + 1}
-                      </td>
-                      <td className="p-4 font-mono">{formatTime(rec.time)}</td>
-                      <td className="p-4 font-semibold">
-                        {rec.quality || calculateQuality(rec.time / 10)}
-                      </td>
-                      <td className="p-4">{formatSafeDate(rec.timestamp)}</td>
+              {/* ✅ FIX: Add this scrolling wrapper div */}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[500px] text-left">
+                  <thead className="bg-slate-100 dark:bg-slate-700">
+                    <tr>
+                      <th className="p-4 rounded-tl-lg w-16">क्र.सं.</th>
+                      <th className="p-4">समय</th>
+                      <th className="p-4">गुणवत्ता</th>
+                      <th className="p-4 rounded-tr-lg">दिनांक</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {(records.varnmala || []).map((rec, i) => (
+                      <tr key={i}>
+                        <td className="p-4 text-slate-500 dark:text-slate-400">
+                          {i + 1}
+                        </td>
+                        <td className="p-4 font-mono">
+                          {formatTime(rec.time)}
+                        </td>
+                        <td className="p-4 font-semibold">
+                          {rec.quality || calculateQuality(rec.time / 10)}
+                        </td>
+                        <td className="p-4 whitespace-nowrap">
+                          {formatSafeDate(rec.timestamp)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Message for no records */}
+              {(records.varnmala || []).length === 0 && (
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                  <p>No Varnmala records found.</p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </div>
       {/* Stories section */}
+      {/* Stories section */}
       <div className="space-y-4">
-    <SectionHeader
-        title="पठन अभ्यास रिकॉर्ड"
-        recordCount={records.stories?.length || 0}
-        sectionKey="stories"
-        icon="fas fa-book"
-    />
-    {openSection === "stories" && (
-        <motion.div
+        <SectionHeader
+          title="पठन अभ्यास रिकॉर्ड"
+          recordCount={records.stories?.length || 0}
+          sectionKey="stories"
+          icon="fas fa-book"
+        />
+        {openSection === "stories" && (
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
-        >
+          >
             <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-inner">
-                {/* Check if there are any records to display */}
+              {/* ✅ FIX: Add this scrolling wrapper div */}
+              <div className="overflow-x-auto">
                 {(records.stories || []).length > 0 ? (
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-100 dark:bg-slate-700">
-                            <tr>
-                                {/* S.No. Column */}
-                                <th className="p-4 rounded-tl-lg w-16">क्र.सं.</th>
-
-                                {/* Story Title Column */}
-                                <th className="p-4">कहानी</th>
-
-                                {/* Time Column */}
-                                <th className="p-4">समय</th>
-
-                                {/* Date Column */}
-                                <th className="p-4 rounded-tr-lg">दिनांक</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                            {(records.stories || []).map((rec, i) => (
-                                <tr
-                                    key={rec.id || i}
-                                    className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                                >
-                                    {/* S.No. Data */}
-                                    <td className="p-4 text-slate-500 dark:text-slate-400">
-                                        {i + 1}
-                                    </td>
-
-                                    {/* ✅ CORRECTED Story Title Data */}
-                                    <td
-                                        className="p-4 font-semibold max-w-xs truncate"
-                                        title={rec.storyTitle}
-                                    >
-                                        {rec.storyTitle || "N/A"}
-                                    </td>
-
-                                    {/* Time Data */}
-                                    <td className="p-4 font-mono">
-                                        {formatTime(rec.time)}
-                                    </td>
-
-                                    {/* Date Data */}
-                                    <td className="p-4">{formatSafeDate(rec.timestamp)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                  <table className="w-full min-w-[600px] text-left">
+                    <thead className="bg-slate-100 dark:bg-slate-700">
+                      <tr>
+                        <th className="p-4 rounded-tl-lg w-16">क्र.सं.</th>
+                        <th className="p-4">कहानी</th>
+                        <th className="p-4">समय</th>
+                        <th className="p-4 rounded-tr-lg">दिनांक</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                      {(records.stories || []).map((rec, i) => (
+                        <tr
+                          key={rec.id || i}
+                          className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                        >
+                          <td className="p-4 text-slate-500 dark:text-slate-400">
+                            {i + 1}
+                          </td>
+                          <td
+                            className="p-4 font-semibold max-w-xs truncate"
+                            title={rec.storyTitle}
+                          >
+                            {rec.storyTitle || "N/A"}
+                          </td>
+                          <td className="p-4 font-mono">
+                            {formatTime(rec.time)}
+                          </td>
+                          <td className="p-4 whitespace-nowrap">
+                            {formatSafeDate(rec.timestamp)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 ) : (
-                    // Message to show when there are no records
-                    <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                        <p>No story records found.</p>
-                        <p className="text-sm mt-1">
-                            Complete a reading session to see your records here.
-                        </p>
-                    </div>
+                  <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                    <p>No story records found.</p>
+                    <p className="text-sm mt-1">
+                      Complete a reading session to see your records here.
+                    </p>
+                  </div>
                 )}
+              </div>
             </div>
-        </motion.div>
-    )}
-</div>
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };
