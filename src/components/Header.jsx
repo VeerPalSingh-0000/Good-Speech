@@ -1,18 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Menu, X } from 'lucide-react';
 
+// ✅ FIX: Moved NavButton outside of the Header component to prevent re-definition on every render.
+// It now receives currentView and handleNavClick as props.
+const NavButton = ({ item, isMobile = false, currentView, handleNavClick }) => (
+  <motion.button
+    key={item.key}
+    onClick={() => handleNavClick(item.key)}
+    className={`relative flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
+      isMobile ? 'text-lg' : 'text-sm'
+    } ${
+      currentView === item.key
+        ? 'text-white'
+        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+    }`}
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+  >
+    {currentView === item.key && (
+      <motion.div
+        layoutId={isMobile ? "mobile-active-pill" : "desktop-active-pill"}
+        className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg"
+        style={{ borderRadius: 8 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      />
+    )}
+    <span className="relative z-10 flex items-center gap-3">
+      <i className={`${item.icon} w-5 text-center`}></i>
+      <span className="whitespace-nowrap">{item.label}</span>
+    </span>
+  </motion.button>
+);
+
 const Header = ({ user, onLogout, currentView, setCurrentView }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Set dark mode based on system preference or local storage, but without a toggle
-  useEffect(() => {
-    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
 
   const navItems = [
     { key: "home", label: "Home", icon: "fas fa-home" },
@@ -26,36 +48,6 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
     setCurrentView(view);
     setMobileMenuOpen(false);
   };
-
-  const NavButton = ({ item, isMobile = false }) => (
-    <motion.button
-      key={item.key}
-      onClick={() => handleNavClick(item.key)}
-      className={`relative flex items-center gap-3 w-full text-left px-4 py-2 rounded-lg font-semibold transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
-        isMobile ? 'text-lg' : 'text-sm'
-      } ${
-        currentView === item.key
-          ? 'text-white'
-          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-      }`}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-    >
-      {currentView === item.key && (
-        <motion.div
-          layoutId={isMobile ? "mobile-active-pill" : "desktop-active-pill"}
-          className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg"
-          style={{ borderRadius: 8 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        />
-      )}
-      <span className="relative z-10 flex items-center gap-3">
-        <i className={`${item.icon} w-5 text-center`}></i>
-        {/* ✅ FIX: Added whitespace-nowrap to prevent text from breaking into two lines */}
-        <span className="whitespace-nowrap">{item.label}</span>
-      </span>
-    </motion.button>
-  );
 
   return (
     <>
@@ -80,7 +72,8 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
             {/* Center navigation */}
             <nav className="hidden lg:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
-                    {navItems.map(item => <NavButton item={item} />)}
+                    {/* ✅ FIX: Pass required props to the stable NavButton component */}
+                    {navItems.map(item => <NavButton key={item.key} item={item} currentView={currentView} handleNavClick={handleNavClick} />)}
                 </div>
             </nav>
 
@@ -145,7 +138,8 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
             className="lg:hidden fixed top-20 left-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg border-b border-slate-200 dark:border-slate-700 z-30"
           >
             <nav className="flex flex-col gap-2 p-4">
-              {navItems.map(item => <NavButton item={item} isMobile={true} />)}
+              {/* ✅ FIX: Pass required props to the stable NavButton component */}
+              {navItems.map(item => <NavButton key={item.key} item={item} isMobile={true} currentView={currentView} handleNavClick={handleNavClick} />)}
               <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
               <div className="flex items-center justify-between p-2">
                 <div className="flex items-center gap-3">
