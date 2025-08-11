@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Menu, X } from 'lucide-react';
 
-// ✅ FIX: Moved NavButton outside of the Header component to prevent re-definition on every render.
-// It now receives currentView and handleNavClick as props.
+// NavButton component is kept outside to prevent re-renders
 const NavButton = ({ item, isMobile = false, currentView, handleNavClick }) => (
   <motion.button
     key={item.key}
@@ -41,6 +40,7 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
     { key: "exercises", label: "स्वर अभ्यास", icon: "fas fa-microphone" },
     { key: "varnmala", label: "वर्णमाला", icon: "fas fa-list" },
     { key: "stories", label: "पठन", icon: "fas fa-book" },
+    { key: "records", label: "Record", icon: "fas fa-record-vinyl" },
     { key: "history", label: "History", icon: "fas fa-history" },
   ];
 
@@ -70,9 +70,9 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
             </motion.div>
 
             {/* Center navigation */}
-            <nav className="hidden lg:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            {/* ✅ FIX: Changed breakpoint from lg:flex to xl:flex */}
+            <nav className="hidden xl:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
-                    {/* ✅ FIX: Pass required props to the stable NavButton component */}
                     {navItems.map(item => <NavButton key={item.key} item={item} currentView={currentView} handleNavClick={handleNavClick} />)}
                 </div>
             </nav>
@@ -80,7 +80,8 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
             {/* Right Side: User Info and Mobile Menu */}
             <div className="flex items-center justify-end gap-4">
                 {/* User Info and Actions (Desktop) */}
-                <div className="hidden lg:flex items-center gap-4">
+                {/* ✅ FIX: Changed breakpoint from lg:flex to xl:flex */}
+                <div className="hidden xl:flex items-center gap-4">
                   <div className="relative group">
                     <button className="flex items-center gap-2 p-2 rounded-full bg-slate-100 dark:bg-slate-800">
                       <img src={user.photoURL || `https://api.dicebear.com/6.x/initials/svg?seed=${user.email}`} alt="User" className="w-8 h-8 rounded-full" />
@@ -103,7 +104,8 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
                 </div>
 
                 {/* Mobile Menu Button */}
-                <div className="lg:hidden">
+                {/* ✅ FIX: Changed breakpoint from lg:hidden to xl:hidden */}
+                <div className="xl:hidden">
                   <motion.button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     className="p-2 rounded-full bg-slate-100 dark:bg-slate-800"
@@ -131,14 +133,14 @@ const Header = ({ user, onLogout, currentView, setCurrentView }) => {
       {/* Mobile Navigation Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
+          // ✅ FIX: Changed breakpoint from lg:hidden to xl:hidden
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden fixed top-20 left-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg border-b border-slate-200 dark:border-slate-700 z-30"
+            className="xl:hidden fixed top-20 left-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg border-b border-slate-200 dark:border-slate-700 z-30"
           >
             <nav className="flex flex-col gap-2 p-4">
-              {/* ✅ FIX: Pass required props to the stable NavButton component */}
               {navItems.map(item => <NavButton key={item.key} item={item} isMobile={true} currentView={currentView} handleNavClick={handleNavClick} />)}
               <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
               <div className="flex items-center justify-between p-2">
