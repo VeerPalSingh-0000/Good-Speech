@@ -66,7 +66,7 @@ const HomeView = ({ user, records, setCurrentView }) => {
     };
   }, [records]);
 
-  const dailyGoal = 5;
+  const dailyGoal = 11;
   const sessionsToday = useMemo(() => {
     const todayString = new Date().toDateString();
     return [...(records.sounds || []), ...(records.varnmala || []), ...(records.stories || [])]
