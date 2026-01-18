@@ -1,6 +1,7 @@
 // src/Hindi.jsx
 
 import React, { useState } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
 // Import all components, hooks, and data
@@ -16,6 +17,7 @@ import { useHindiRecords } from './hooks/useHindiRecords';
 import { useHindiTimers } from './hooks/useHindiTimers';
 import { hindiStories } from './data/stories';
 
+// A cleaner, self-contained loading component
 const LoadingScreen = () => (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-indigo-900 flex flex-col items-center justify-center text-white gap-4">
         <div className="relative w-24 h-24">
@@ -31,8 +33,37 @@ const LoadingScreen = () => (
 );
 
 const Hindi = ({ user, onLogout }) => {
-    const [currentView, setCurrentView] = useState("home");
-     const [showVarnmala, setShowVarnmala] = useState(false);
+    // --- ROUTING HOOKS ---
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // --- STATE ---
+    const [showVarnmala, setShowVarnmala] = useState(false);
+
+    // --- CUSTOM HOOKS (Single Source of Truth) ---
+    const showNotification = (message, type = "info") => {
+        switch (type) {
+            case "success": toast.success(message); break;
+            case "error": toast.error(message); break;
+            default: toast(message); break;
+        }
+    };
+
+    const { 
+        records, 
+        isLoading, 
+        saveToFirebase, 
+        deleteRecord, 
+        storyBookmarks, 
+        lineBookmarks, 
+        toggleStoryBookmark, 
+        toggleLineBookmark 
+    } = useHindiRecords(user, showNotification);
+
+    const timerProps = useHindiTimers(saveToFirebase, showNotification, records);
+
+    // --- NAVIGATION ADAPTERS ---
+    // This allows your existing Header/Footer to work with React Router
     const navItems = [
         { key: "home", label: "Home", icon: "fas fa-home" },
         { key: "exercises", label: "स्वर अभ्यास", icon: "fas fa-microphone" },
@@ -42,91 +73,101 @@ const Hindi = ({ user, onLogout }) => {
         { key: "history", label: "History", icon: "fas fa-history" },
     ];
 
-    const showNotification = (message, type = "info") => {
-        switch (type) {
-            case "success": toast.success(message); break;
-            case "error": toast.error(message); break;
-            default: toast(message); break;
-        }
+    // Determine 'active' tab based on current URL path
+    const getCurrentView = () => {
+        const path = location.pathname.substring(1); // remove leading '/'
+        return path === '' ? 'home' : path;
     };
 
-    // --- HOOKS AS SINGLE SOURCE OF TRUTH ---
-    // All state and logic is now correctly managed by these hooks.
-    const { records, isLoading, saveToFirebase, deleteRecord, storyBookmarks, lineBookmarks, toggleStoryBookmark, toggleLineBookmark } = useHindiRecords(user, showNotification);
-      console.log("Checking for bookmark functions:", { toggleStoryBookmark, toggleLineBookmark });
-    const timerProps = useHindiTimers(saveToFirebase, showNotification, records);
-     const handleStartVarnmala = () => {
-        timerProps.startVarnmalaTimer(); // Call original function from the hook
-        setShowVarnmala(true);          // Set UI state to visible
+    // Helper to switch routes when Header/Footer buttons are clicked
+    const handleNavigation = (viewKey) => {
+        if (viewKey === 'home') navigate('/');
+        else navigate(`/${viewKey}`);
+    };
+
+    // --- HANDLERS ---
+    const handleStartVarnmala = () => {
+        timerProps.startVarnmalaTimer();
+        setShowVarnmala(true);
     };
 
     const handleStopVarnmala = (shouldRecord) => {
-        timerProps.stopVarnmalaTimer(shouldRecord); // Call original function from the hook
-        setShowVarnmala(false);                     // Set UI state to hidden
-    };
-    // This component is now clean. It just gets props from hooks and passes them down.
-    
-    const renderView = () => {
-        // Combine all props to pass down to the views
-        const viewProps = {
-            user,
-            records,
-            deleteRecord,
-            showNotification,
-            ...timerProps, // Spreads all timer state and functions
-        };
-
-        switch (currentView) {
-            case "home":
-                return <HomeView user={user} records={records} setCurrentView={setCurrentView} />;
-            
-            case "exercises":
-                return <ExercisesView {...viewProps} />;
-            
-            case "varnmala":
-                return <VarnmalaView 
-                {...viewProps} // Pass all the other props
-                showVarnmala={showVarnmala} // Pass the visibility state
-                startVarnmalaTimer={handleStartVarnmala} // Override with your new start handler
-                stopVarnmalaTimer={handleStopVarnmala}   // Override with your new stop handler
-            />;
-            
-            case "stories":
-                // Pass the specific bookmark props to StoriesView
-                return <StoriesView 
-                            {...viewProps} 
-                            stories={hindiStories}
-                            storyBookmarks={storyBookmarks}
-                            lineBookmarks={lineBookmarks}
-                            onToggleStoryBookmark={toggleStoryBookmark}
-                            onToggleLineBookmark={toggleLineBookmark}
-                        />;
-            
-            case "records":
-                // BUG FIX: Correctly pass the deleteRecord function
-                return <RecordsView records={records} deleteRecord={deleteRecord} />;
-
-            case "history":
-                return <HistoryView records={records} lineBookmarks={lineBookmarks} stories={hindiStories} />;
-            
-            default:
-                return <HomeView user={user} records={records} setCurrentView={setCurrentView} />;
-        }
+        timerProps.stopVarnmalaTimer(shouldRecord);
+        setShowVarnmala(false);
     };
 
     if (isLoading) {
         return <LoadingScreen />;
     }
 
+    // Shared props for all views
+    const commonProps = {
+        user,
+        records,
+        deleteRecord,
+        showNotification,
+        ...timerProps,
+    };
+
     return (
         <>
             <Toaster position="bottom-center" toastOptions={{ style: { background: '#1E293B', color: '#F1F5F9', border: '1px solid #334155' } }} />
+            
             <div className="min-h-screen bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-slate-200 font-sans flex flex-col">
-                <Header user={user} onLogout={onLogout} currentView={currentView} setCurrentView={setCurrentView} navItems={navItems} />
+                
+                {/* Header gets the adapter function to handle navigation */}
+                <Header 
+                    user={user} 
+                    onLogout={onLogout} 
+                    currentView={getCurrentView()} 
+                    setCurrentView={handleNavigation} 
+                    navItems={navItems} 
+                />
+
                 <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-                    {renderView()}
+                    <Routes>
+                        <Route path="/" element={
+                            <HomeView user={user} records={records} setCurrentView={handleNavigation} />
+                        } />
+                        
+                        <Route path="/exercises" element={
+                            <ExercisesView {...commonProps} />
+                        } />
+                        
+                        <Route path="/varnmala" element={
+                            <VarnmalaView 
+                                {...commonProps}
+                                showVarnmala={showVarnmala}
+                                startVarnmalaTimer={handleStartVarnmala}
+                                stopVarnmalaTimer={handleStopVarnmala}
+                            />
+                        } />
+                        
+                        <Route path="/stories" element={
+                            <StoriesView 
+                                {...commonProps}
+                                stories={hindiStories}
+                                storyBookmarks={storyBookmarks}
+                                lineBookmarks={lineBookmarks}
+                                onToggleStoryBookmark={toggleStoryBookmark}
+                                onToggleLineBookmark={toggleLineBookmark}
+                            />
+                        } />
+                        
+                        <Route path="/records" element={
+                            <RecordsView records={records} deleteRecord={deleteRecord} />
+                        } />
+                        
+                        <Route path="/history" element={
+                            <HistoryView records={records} lineBookmarks={lineBookmarks} stories={hindiStories} />
+                        } />
+
+                        {/* Fallback route: redirects unknown paths to Home */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
                 </main>
-                <Footer setCurrentView={setCurrentView} navItems={navItems} />
+
+                <Footer setCurrentView={handleNavigation} navItems={navItems} />
             </div>
         </>
     );
