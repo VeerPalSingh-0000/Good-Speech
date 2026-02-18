@@ -1,11 +1,21 @@
 // src/hooks/useHindiRecords.js
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 // ✅ Import the new functions
-import { addResult, subscribeToResults, deleteResult, subscribeToBookmarks, saveBookmarks } from '../../firestore'; 
+import {
+  addResult,
+  subscribeToResults,
+  deleteResult,
+  subscribeToBookmarks,
+  saveBookmarks,
+} from "../../firestore";
 
 export const useHindiRecords = (user, showNotification) => {
-  const [records, setRecords] = useState({ sounds: [], varnmala: [], stories: [] });
+  const [records, setRecords] = useState({
+    sounds: [],
+    varnmala: [],
+    stories: [],
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // State for bookmarks
@@ -44,92 +54,112 @@ export const useHindiRecords = (user, showNotification) => {
   }, [user]);
 
   // ACTION: Toggle Story Bookmark
-  const toggleStoryBookmark = useCallback(async (storyId) => {
-    if (!user?.uid) return;
+  const toggleStoryBookmark = useCallback(
+    async (storyId) => {
+      if (!user?.uid) return;
 
-    // Calculate new state based on current state
-    let newBookmarks;
-    if (storyBookmarks.includes(storyId)) {
-      newBookmarks = storyBookmarks.filter(id => id !== storyId);
-      showNotification("Story bookmark removed.", "info");
-    } else {
-      newBookmarks = [...storyBookmarks, storyId];
-      showNotification("Story bookmarked!", "success");
-    }
+      // Calculate new state based on current state
+      let newBookmarks;
+      if (storyBookmarks.includes(storyId)) {
+        newBookmarks = storyBookmarks.filter((id) => id !== storyId);
+        showNotification("Story bookmark removed.", "info");
+      } else {
+        newBookmarks = [...storyBookmarks, storyId];
+        showNotification("Story bookmarked!", "success");
+      }
 
-    // 1. Optimistic Update (Immediate UI change)
-    setStoryBookmarks(newBookmarks);
+      // 1. Optimistic Update (Immediate UI change)
+      setStoryBookmarks(newBookmarks);
 
-    // 2. Persist to Cloud
-    try {
-      await saveBookmarks(user.uid, { storyBookmarks: newBookmarks });
-    } catch (error) {
-      console.error("Failed to save bookmark to cloud", error);
-      // Optional: Revert state here if save fails
-      showNotification("Failed to sync bookmark.", "error");
-    }
-  }, [storyBookmarks, user, showNotification]);
+      // 2. Persist to Cloud
+      try {
+        await saveBookmarks(user.uid, { storyBookmarks: newBookmarks });
+      } catch (error) {
+        console.error("Failed to save bookmark to cloud", error);
+        // Optional: Revert state here if save fails
+        showNotification("Failed to sync bookmark.", "error");
+      }
+    },
+    [storyBookmarks, user, showNotification],
+  );
 
   // ACTION: Toggle Line Bookmark
-  const toggleLineBookmark = useCallback(async (storyId, lineIndex) => {
-    if (!user?.uid) return;
+  const toggleLineBookmark = useCallback(
+    async (storyId, lineIndex) => {
+      if (!user?.uid) return;
 
-    const currentStoryLines = lineBookmarks[storyId] || [];
-    let updatedStoryLines;
+      const currentStoryLines = lineBookmarks[storyId] || [];
+      let updatedStoryLines;
 
-    if (currentStoryLines.includes(lineIndex)) {
-      updatedStoryLines = currentStoryLines.filter(idx => idx !== lineIndex);
-    } else {
-      updatedStoryLines = [...currentStoryLines, lineIndex].sort((a, b) => a - b);
-    }
-
-    const newLineBookmarks = {
-      ...lineBookmarks,
-      [storyId]: updatedStoryLines
-    };
-
-    // 1. Optimistic Update
-    setLineBookmarks(newLineBookmarks);
-
-    // 2. Persist to Cloud
-    try {
-      await saveBookmarks(user.uid, { lineBookmarks: newLineBookmarks });
-    } catch (error) {
-      console.error("Failed to save line bookmark to cloud", error);
-    }
-  }, [lineBookmarks, user]);
-
-  const saveToFirebase = useCallback(async (type, data) => {
-    if (user?.uid) {
-      try {
-        await addResult(user.uid, type, data);
-      } catch (error) {
-        showNotification(`Failed to save ${type} data to cloud.`, "error");
-        console.error("Firebase save error:", error);
+      if (currentStoryLines.includes(lineIndex)) {
+        updatedStoryLines = currentStoryLines.filter(
+          (idx) => idx !== lineIndex,
+        );
+      } else {
+        updatedStoryLines = [...currentStoryLines, lineIndex].sort((a, b) => {
+          // Handle mixed types: numbers first, then strings
+          if (typeof a === "number" && typeof b === "number") return a - b;
+          if (typeof a === "string" && typeof b === "string")
+            return a.localeCompare(b);
+          return typeof a === "number" ? -1 : 1;
+        });
       }
-    }
-  }, [user, showNotification]);
 
-  const deleteRecordFromFirebase = useCallback(async (recordId) => {
+      const newLineBookmarks = {
+        ...lineBookmarks,
+        [storyId]: updatedStoryLines,
+      };
+
+      // 1. Optimistic Update
+      setLineBookmarks(newLineBookmarks);
+
+      // 2. Persist to Cloud
+      try {
+        await saveBookmarks(user.uid, { lineBookmarks: newLineBookmarks });
+      } catch (error) {
+        console.error("Failed to save line bookmark to cloud", error);
+      }
+    },
+    [lineBookmarks, user],
+  );
+
+  const saveToFirebase = useCallback(
+    async (type, data) => {
+      if (user?.uid) {
+        try {
+          await addResult(user.uid, type, data);
+        } catch (error) {
+          showNotification(`Failed to save ${type} data to cloud.`, "error");
+          console.error("Firebase save error:", error);
+        }
+      }
+    },
+    [user, showNotification],
+  );
+
+  const deleteRecordFromFirebase = useCallback(
+    async (recordId) => {
       if (user?.uid && recordId) {
         try {
           await deleteResult(recordId);
           showNotification("रिकॉर्ड हटा दिया गया", "success");
-        } catch(error) {
+        } catch (error) {
           showNotification("रिकॉर्ड हटाने में त्रुटि", "error");
           console.error("Error deleting record:", error);
         }
       }
-  }, [user, showNotification]);
+    },
+    [user, showNotification],
+  );
 
-  return { 
-    records, 
-    isLoading, 
-    saveToFirebase, 
+  return {
+    records,
+    isLoading,
+    saveToFirebase,
     deleteRecord: deleteRecordFromFirebase,
     storyBookmarks,
     lineBookmarks,
     toggleStoryBookmark,
-    toggleLineBookmark
+    toggleLineBookmark,
   };
 };

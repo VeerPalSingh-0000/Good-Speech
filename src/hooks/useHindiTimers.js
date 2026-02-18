@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 
 import { formatTime, calculateQuality } from "../utilities/helpers";
 
-import { hindiStories } from "../data/stories";
+import { allStories } from '../data/stories/index';
 
 export const useHindiTimers = (saveToFirebase, showNotification, records) => {
   const [soundTimers, setSoundTimers] = useState({
@@ -210,7 +210,7 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
 
     if (!currentStory) {
       const randomStory =
-        hindiStories[Math.floor(Math.random() * hindiStories.length)];
+        allStories[Math.floor(Math.random() * allStories.length)];
 
       setCurrentStory(randomStory);
     }
