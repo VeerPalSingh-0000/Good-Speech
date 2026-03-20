@@ -30,6 +30,7 @@ export default defineConfig({
         ]
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB to handle larger index bundle
         // Cache API responses and assets for offline
         runtimeCaching: [
           {
@@ -50,8 +51,7 @@ export default defineConfig({
       }
     })
   ],
-  // server: {
-  //   port: 5500,
-  //   open: true
-  // }
+  build: {
+    chunkSizeWarningLimit: 3000,
+  }
 })
