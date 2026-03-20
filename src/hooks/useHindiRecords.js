@@ -8,7 +8,8 @@ import {
   deleteResult,
   subscribeToBookmarks,
   saveBookmarks,
-} from "../../firestore";
+  uploadAudio
+} from "../lib/firestore";
 
 export const useHindiRecords = (user, showNotification) => {
   const [records, setRecords] = useState({
@@ -124,10 +125,17 @@ export const useHindiRecords = (user, showNotification) => {
   );
 
   const saveToFirebase = useCallback(
-    async (type, data) => {
+    async (type, data, audioBlob = null) => {
       if (user?.uid) {
         try {
-          await addResult(user.uid, type, data);
+          const updatedData = { ...data };
+          if (audioBlob) {
+            const audioUrl = await uploadAudio(user.uid, type, audioBlob);
+            if (audioUrl) {
+              updatedData.audioUrl = audioUrl;
+            }
+          }
+          await addResult(user.uid, type, updatedData);
         } catch (error) {
           showNotification(`Failed to save ${type} data to cloud.`, "error");
           console.error("Firebase save error:", error);

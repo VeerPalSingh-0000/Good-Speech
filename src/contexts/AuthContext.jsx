@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { auth } from '../../firebase'; // Adjust this path to your firebase.js config file
+import { auth } from '../lib/firebase'; // Adjust this path to your firebase.js config file
 import { 
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
@@ -7,7 +7,8 @@ import {
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
 const AuthContext = React.createContext();
@@ -47,6 +48,10 @@ export function AuthProvider({ children }) {
     return Promise.resolve();
   }
 
+  function resetPassword(email) {
+    return sendPasswordResetEmail(auth, email);
+  }
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
@@ -63,7 +68,8 @@ export function AuthProvider({ children }) {
     login,
     loginWithGoogle,
     logout,
-    updateUserProfile
+    updateUserProfile,
+    resetPassword
   };
 
   // Render children only after the initial auth check is complete

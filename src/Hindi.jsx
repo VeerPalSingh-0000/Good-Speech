@@ -6,35 +6,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
 
 import Header from './components/Header';
+import BottomNav from './components/BottomNav';
 import HomeView from './components/views/HomeView';
 import ExercisesView from './components/views/ExercisesView';
 import VarnmalaView from './components/views/VarnmalaView';
 import StoriesView from './components/views/StoriesView';
 import RecordsView from './components/views/RecordsView';
 import HistoryView from './components/views/HistoryView';
+import BreathingView from './components/views/BreathingView';
+import TongueTwistersView from './components/views/TongueTwistersView';
+import ProfileView from './components/views/ProfileView';
+import EducationView from './components/views/EducationView';
 import Footer from './components/Footer';
 import { useHindiRecords } from './hooks/useHindiRecords';
 import { useHindiTimers } from './hooks/useHindiTimers';
 import { allStories } from './data/stories/index';
-
-// Simple loading screen
-const LoadingScreen = memo(() => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex flex-col items-center justify-center text-white gap-4">
-    <div className="w-20 h-20 relative">
-      <div className="absolute inset-0 border-4 border-purple-400/30 rounded-full" />
-      <div className="absolute inset-0 border-4 border-transparent border-t-purple-500 rounded-full animate-spin" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-500 rounded-xl flex items-center justify-center">
-          <i className="fas fa-comment-dots text-xl text-white" />
-        </div>
-      </div>
-    </div>
-    <h2 className="text-xl font-bold">Loading SpeechGood</h2>
-    <p className="text-slate-400 text-sm">Preparing your data...</p>
-  </div>
-));
-
-LoadingScreen.displayName = 'LoadingScreen';
+import LoadingScreen from './components/ui/LoadingScreen';
 
 // Simple page transition
 const PageTransition = memo(({ children }) => (
@@ -72,11 +59,15 @@ const Hindi = ({ user, onLogout }) => {
 
   const navItems = useMemo(() => [
     { key: "home", label: "Home", icon: "fas fa-home" },
-    { key: "exercises", label: "स्वर अभ्यास", icon: "fas fa-microphone" },
-    { key: "varnmala", label: "वर्णमाला", icon: "fas fa-list" },
-    { key: "stories", label: "पठन", icon: "fas fa-book" },
-    { key: "records", label: "रिकॉर्ड्स", icon: "fas fa-chart-line" },
-    { key: "history", label: "History", icon: "fas fa-history" },
+    { key: "exercises", label: "Practice", icon: "fas fa-microphone" },
+    { key: "varnmala", label: "Varnmala", icon: "fas fa-list" },
+    { key: "stories", label: "Stories", icon: "fas fa-book" },
+    { key: "breathing", label: "Breathing", icon: "fas fa-wind" },
+    { key: "twisters", label: "Twisters", icon: "fas fa-layer-group" },
+    { key: "records", label: "My Records", icon: "fas fa-compact-disc" },
+    { key: "learn", label: "Learn", icon: "fas fa-graduation-cap" },
+    { key: "history", label: "Analytics", icon: "fas fa-chart-line" },
+    { key: "profile", label: "Profile", icon: "fas fa-user-circle" }
   ], []);
 
   const getCurrentView = useCallback(() => {
@@ -114,24 +105,29 @@ const Hindi = ({ user, onLogout }) => {
         }} 
       />
       
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans flex flex-col">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans flex flex-col overflow-x-hidden">
         <Header user={user} onLogout={onLogout} currentView={getCurrentView()} setCurrentView={handleNavigation} navItems={navItems} />
 
-        <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full pb-24 xl:pb-6">
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<PageTransition><HomeView user={user} records={records} setCurrentView={handleNavigation} /></PageTransition>} />
               <Route path="/exercises" element={<PageTransition><ExercisesView {...commonProps} /></PageTransition>} />
               <Route path="/varnmala" element={<PageTransition><VarnmalaView {...commonProps} showVarnmala={showVarnmala} startVarnmalaTimer={handleStartVarnmala} stopVarnmalaTimer={handleStopVarnmala} /></PageTransition>} />
               <Route path="/stories" element={<PageTransition><StoriesView {...commonProps} stories={allStories} storyBookmarks={storyBookmarks} lineBookmarks={lineBookmarks} onToggleStoryBookmark={toggleStoryBookmark} onToggleLineBookmark={toggleLineBookmark} /></PageTransition>} />
+              <Route path="/breathing" element={<PageTransition><BreathingView /></PageTransition>} />
+              <Route path="/twisters" element={<PageTransition><TongueTwistersView /></PageTransition>} />
               <Route path="/records" element={<PageTransition><RecordsView records={records} deleteRecord={deleteRecord} /></PageTransition>} />
               <Route path="/history" element={<PageTransition><HistoryView records={records} lineBookmarks={lineBookmarks} stories={allStories} /></PageTransition>} />
+              <Route path="/learn" element={<PageTransition><EducationView /></PageTransition>} />
+              <Route path="/profile" element={<PageTransition><ProfileView user={user} records={records} onLogout={onLogout} /></PageTransition>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>
         </main>
 
         <Footer setCurrentView={handleNavigation} navItems={navItems} />
+        <BottomNav currentView={getCurrentView()} setCurrentView={handleNavigation} />
       </div>
     </>
   );

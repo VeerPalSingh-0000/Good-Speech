@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatTime } from '../../utilities/helpers';
 import AnimatedButton from '../ui/AnimatedButton';
 import { FaPlay, FaPause, FaSave } from 'react-icons/fa';
+import { useAudioRecorder } from '../../hooks/useAudioRecorder';
+import AudioVisualizer from '../ui/AudioVisualizer';
 
 // Varnmala data - memoized outside component
 const VARNMALA_DATA = {
@@ -217,9 +219,32 @@ const VarnmalaView = ({
   pauseVarnmalaTimer, 
   stopVarnmalaTimer 
 }) => {
-  const handleRecord = useCallback(() => {
-    stopVarnmalaTimer(true);
-  }, [stopVarnmalaTimer]);
+  const { isRecording, recorderState, audioUrl, startRecording, stopRecording, pauseRecording, resumeRecording, clearRecording, analyser } = useAudioRecorder();
+
+  const handleStart = async () => {
+    try {
+      if (recorderState === 'idle') {
+        if (audioUrl) clearRecording();
+        await startRecording();
+      } else if (recorderState === 'paused') {
+        resumeRecording();
+      }
+      startVarnmalaTimer();
+    } catch (err) {
+      console.error(err);
+      startVarnmalaTimer();
+    }
+  };
+
+  const handlePause = () => {
+    pauseRecording();
+    pauseVarnmalaTimer();
+  };
+
+  const handleRecord = useCallback(async () => {
+    const blob = await stopRecording();
+    stopVarnmalaTimer(blob);
+  }, [stopRecording, stopVarnmalaTimer]);
 
   return (
     <motion.div 
@@ -253,11 +278,27 @@ const VarnmalaView = ({
         <div className="p-6 md:p-8 flex flex-col items-center gap-6">
           <TimerRing time={varnmalaTimer.time} isRunning={varnmalaTimer.isRunning} />
 
+          <div className="h-16 flex flex-col items-center justify-center w-full max-w-[280px]">
+            {varnmalaTimer.isRunning && analyser ? (
+              <AudioVisualizer 
+                analyser={analyser} 
+                isRecording={varnmalaTimer.isRunning} 
+                colors={['#8b5cf6', '#ec4899']}
+                width={280}
+                height={50}
+              />
+            ) : audioUrl ? (
+              <audio src={audioUrl} controls className="w-full opacity-90 transition-opacity hover:opacity-100" />
+            ) : (
+              <div className="h-10" />
+            )}
+          </div>
+
           {/* Control Buttons */}
           <div className="flex flex-wrap justify-center gap-3">
             {/* Play button */}
             <motion.button
-              onClick={startVarnmalaTimer}
+              onClick={handleStart}
               disabled={varnmalaTimer.isRunning}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
                 varnmalaTimer.isRunning 
@@ -271,7 +312,7 @@ const VarnmalaView = ({
             
             {/* Pause button */}
             <motion.button
-              onClick={pauseVarnmalaTimer}
+              onClick={handlePause}
               disabled={!varnmalaTimer.isRunning}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
                 !varnmalaTimer.isRunning 

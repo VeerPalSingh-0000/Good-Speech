@@ -177,6 +177,40 @@ export const deleteResult = async (id) => {
   }
 };
 
+/* ---------- STORAGE (NEW) ---------- */
+// FAILING BACK to Base64 String conversion!
+// Because the Google Cloud Billing account is inactive/absent, Firebase Storage cannot be provisioned.
+// We instead convert the short audio blobs into Base64 Strings, which are lightweight enough to be saved directly into the Firestore database alongside your results!
+export const uploadAudio = async (userId, type, audioBlob) => {
+  if (!audioBlob) return null;
+  
+  // Firestore hard limit is 1MB per document. Base64 encoding inflates the blob by ~33%.
+  // Max safe Blob size is ~700KB. Files over this will silently skip audio saving but preserve stats!
+  const MAX_BLOB_SIZE = 700 * 1024; // 700 KB
+  if (audioBlob.size > MAX_BLOB_SIZE) {
+    console.warn(`Audio recording is too large (${(audioBlob.size / 1024 / 1024).toFixed(2)} MB). Skipping audio save to prevent Firestore 1MB document crash.`);
+    return null; 
+  }
+  
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        resolve(base64String); // This is a tiny "data:audio/webm;base64,....." string!
+      };
+      reader.onerror = (error) => {
+        console.error("FileReader failed to convert audio to Base64:", error);
+        reject(error);
+      };
+      reader.readAsDataURL(audioBlob);
+    } catch (error) {
+      console.error("Error converting audio to Base64:", error);
+      reject(error);
+    }
+  });
+};
+
 /* ---------- read helpers ---------- */
 
 const massageSnapshot = (snap) => {

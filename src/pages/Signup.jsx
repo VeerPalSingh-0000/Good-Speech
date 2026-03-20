@@ -4,10 +4,10 @@ import React, { useState, memo } from 'react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { motion } from 'framer-motion';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaUserPlus } from 'react-icons/fa';
-import { auth, db } from '../../firebase';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaUserPlus, FaTimes } from 'react-icons/fa';
+import { auth, db } from '../lib/firebase';
 
-const Signup = ({ switchToLogin }) => {
+const Signup = ({ switchToLogin, onBack }) => {
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', password: '', confirmPassword: ''
   });
@@ -71,6 +71,16 @@ const Signup = ({ switchToLogin }) => {
         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600/30 via-purple-500/30 to-pink-500/30 rounded-3xl blur-lg" />
         
         <div className="relative p-8 space-y-5 bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10">
+          
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <FaTimes size={20} />
+            </button>
+          )}
+
           <div className="text-center space-y-3">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
               <FaUserPlus className="text-2xl text-white" />

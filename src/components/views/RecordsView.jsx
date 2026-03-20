@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatTime, formatSafeDate, calculateQuality } from '../../utilities/helpers';
-import { FaTrash, FaMicrophone, FaList, FaBook, FaChevronDown } from 'react-icons/fa';
+import { FaTrash, FaMicrophone, FaList, FaBook, FaChevronDown, FaHeadphones } from 'react-icons/fa';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -50,6 +50,12 @@ const RecordsView = ({
     const varnmalaRecords = [...(records?.varnmala || [])].sort((a,b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
     const storyRecords = [...(records?.stories || [])].sort((a,b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
 
+    const allRecordsWithAudio = [
+        ...soundRecords.map(r => ({ ...r, exerciseType: 'स्वर' })),
+        ...varnmalaRecords.map(r => ({ ...r, exerciseType: 'वर्णमाला' })),
+        ...storyRecords.map(r => ({ ...r, exerciseType: 'कहानी' }))
+    ].filter(r => r.audioUrl).sort((a,b) => (b.timestamp?.seconds || b.timestamp) - (a.timestamp?.seconds || a.timestamp));
+
     const sections = [
         { 
             key: 'sounds', 
@@ -94,6 +100,27 @@ const RecordsView = ({
                     <td className="p-4 font-semibold">{rec.percentage || 0}%</td>
                     <td className="p-4 text-slate-600 dark:text-slate-400">{formatSafeDate(rec.timestamp)}</td>
                     <td className="p-4"><button onClick={() => deleteRecord(rec.id, 'stories')} aria-label={`Delete record for ${rec.storyTitle}`} className="text-slate-400 hover:text-red-500 transition-colors"><FaTrash /></button></td>
+                </tr>
+            )
+        },
+        { 
+            key: 'audio', 
+            title: 'ऑडियो रिकॉर्डिंग (Audio Recordings)', 
+            icon: <FaHeadphones size={20} />, 
+            records: allRecordsWithAudio,
+            headers: ['अभ्यास (Type)', 'रिकॉर्डिंग (Listen)', 'दिनांक (Date)', 'Action'],
+            renderRow: (rec) => (
+                <tr key={`${rec.id}-audio`}>
+                    <td className="p-4 font-bold text-slate-700 dark:text-slate-300">
+                        {rec.exerciseType} 
+                        {rec.exerciseType === 'स्वर' ? ` (${rec.sound})` : ''}
+                        {rec.exerciseType === 'कहानी' ? ` (${rec.storyTitle || "N/A"})` : ''}
+                    </td>
+                    <td className="p-4 py-2">
+                        <audio src={rec.audioUrl} controls className="h-10 w-48 md:w-64" />
+                    </td>
+                    <td className="p-4 text-slate-600 dark:text-slate-400">{formatSafeDate(rec.timestamp)}</td>
+                    <td className="p-4"><button onClick={() => deleteRecord(rec.id)} aria-label="Delete recording" className="text-slate-400 hover:text-red-500 transition-colors"><FaTrash /></button></td>
                 </tr>
             )
         }

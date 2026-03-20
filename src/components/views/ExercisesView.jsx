@@ -31,10 +31,9 @@ const soundColors = {
 
 const defaultColors = { gradient: 'from-purple-500 to-pink-600', bg: 'bg-purple-500', glow: 'shadow-purple-500/30' };
 
-// Memoized Sound Practice Card
+
 const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
   const colors = soundColors[sound] || defaultColors;
-  
   const stats = useMemo(() => {
     const userSoundRecords = (records.sounds || []).filter(record => record.sound === sound);
     const bestTime = userSoundRecords.length > 0 ? Math.max(...userSoundRecords.map(r => r.time || 0)) : 0;
@@ -43,6 +42,14 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
 
   const progress = Math.min(timer.time / 600, 1); // Cap at 60 seconds
   const isActive = timer.isRunning;
+
+  const handleStart = () => {
+    onStart(sound);
+  };
+
+  const handleStop = (shouldRecord) => {
+    onStop(sound, shouldRecord);
+  };
 
   return (
     <motion.div 
@@ -128,11 +135,12 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
             </div>
           </div>
 
+
           {/* Control buttons */}
           <div className="flex justify-center gap-3">
             {/* Play button */}
             <motion.button
-              onClick={() => onStart(sound)}
+              onClick={handleStart}
               disabled={isActive}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
                 isActive 
@@ -146,7 +154,7 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
             
             {/* Pause button */}
             <motion.button
-              onClick={() => onStop(sound, false)}
+              onClick={() => handleStop(false)}
               disabled={!isActive}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
                 !isActive 
@@ -160,7 +168,7 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
             
             {/* Save button */}
             <motion.button
-              onClick={() => onStop(sound, true)}
+              onClick={() => handleStop(true)}
               disabled={timer.time === 0}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
                 timer.time === 0 

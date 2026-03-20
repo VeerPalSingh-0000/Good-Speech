@@ -5,6 +5,9 @@
 @import "tailwindcss";
 @import '@fortawesome/fontawesome-free/css/all.css';
 
+/* Enable manual dark mode toggle for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ================================== */
 /* 🎯 CSS CUSTOM PROPERTIES (TOKENS)  */
 /* ================================== */
@@ -405,4 +408,24 @@ h1, h2, h3, h4, h5, h6 {
 
 .dark .orb {
   opacity: 0.4;
+}
+
+/* ================================== */
+/* 🎉 CELEBRATION FALLBACK ANIMATIONS */
+/* ================================== */
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti-piece {
+  position: fixed;
+  top: -50px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary-500);
+  pointer-events: none;
+  z-index: 9999;
+  animation: confetti-fall 4s linear forwards;
 }

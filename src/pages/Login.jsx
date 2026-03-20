@@ -3,10 +3,10 @@
 import React, { useState, memo } from 'react';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { motion } from 'framer-motion';
-import { auth } from '../../firebase';
-import { FaGoogle, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaComment } from 'react-icons/fa';
+import { auth } from '../lib/firebase';
+import { FaGoogle, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaComment, FaTimes } from 'react-icons/fa';
 
-const Login = ({ switchToSignup }) => {
+const Login = ({ switchToSignup, onBack }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -61,6 +61,16 @@ const Login = ({ switchToSignup }) => {
         <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/30 via-pink-500/30 to-cyan-500/30 rounded-3xl blur-lg" />
         
         <div className="relative p-8 space-y-6 bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10">
+          
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <FaTimes size={20} />
+            </button>
+          )}
+
           {/* Logo and title */}
           <div className="text-center space-y-3">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-600 via-pink-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">

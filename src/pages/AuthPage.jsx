@@ -1,20 +1,24 @@
 // src/pages/AuthPage.jsx
 
 import React, { useState } from 'react';
+import Landing from './Landing';
 import Login from './Login';
 import Signup from './Signup';
 
 const AuthPage = () => {
-  const [isLoginView, setIsLoginView] = useState(true);
+  const [view, setView] = useState('landing'); // 'landing', 'login', 'signup'
 
-  // These functions will be passed to the Login and Signup components
-  const switchToSignup = () => setIsLoginView(false);
-  const switchToLogin = () => setIsLoginView(true);
+  // Callbacks
+  const switchToSignup = () => setView('signup');
+  const switchToLogin = () => setView('login');
+  const switchToLanding = () => setView('landing');
 
-  if (isLoginView) {
-    return <Login switchToSignup={switchToSignup} />;
+  if (view === 'landing') {
+    return <Landing onLogin={switchToLogin} onGetStarted={switchToSignup} />;
+  } else if (view === 'login') {
+    return <Login switchToSignup={switchToSignup} onBack={switchToLanding} />;
   } else {
-    return <Signup switchToLogin={switchToLogin} />;
+    return <Signup switchToLogin={switchToLogin} onBack={switchToLanding} />;
   }
 };
 
