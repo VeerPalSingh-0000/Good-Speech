@@ -1,6 +1,45 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaGraduationCap, FaQuestionCircle, FaLightbulb, FaPlayCircle, FaBookOpen } from 'react-icons/fa';
+import { FaGraduationCap, FaQuestionCircle, FaLightbulb, FaPlayCircle, FaBookOpen, FaPlay } from 'react-icons/fa';
+
+const YouTubeVideo = ({ videoId, title }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  return (
+    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 group shadow-lg">
+      {!isLoaded ? (
+        <button 
+          className="absolute inset-0 w-full h-full"
+          onClick={() => setIsLoaded(true)}
+          aria-label={`Play ${title}`}
+        >
+          <img 
+            src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`} 
+            alt={title}
+            loading="lazy"
+            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white shadow-xl transform group-hover:scale-110 transition-transform">
+              <FaPlay className="text-2xl ml-1" />
+            </div>
+          </div>
+        </button>
+      ) : (
+        <iframe
+          width="100%"
+          height="100%"
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+          title={title}
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0"
+        />
+      )}
+    </div>
+  );
+};
 
 const EducationView = () => {
   const [activeTab, setActiveTab] = useState('articles');
@@ -114,10 +153,35 @@ const EducationView = () => {
         )}
 
         {activeTab === 'videos' && (
-          <div className="text-center py-12">
-            <FaPlayCircle className="text-6xl text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300">Video Guides Coming Soon</h3>
-            <p className="text-slate-500">We are curating the best YouTube tutorials for stammering therapy...</p>
+          <div className="space-y-10">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Video Masterclass</h3>
+              <p className="text-slate-500 mt-2">Curated Youtube guides for speech therapy</p>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 border-b border-slate-200 dark:border-slate-700 pb-2">Stuttering Tips & Modification</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <YouTubeVideo videoId="r-C0a7sFfP0" title="How To Stop Stuttering" />
+                <YouTubeVideo videoId="t-oA2eB_x5s" title="Stuttering Modification Techniques" />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-xl font-bold text-blue-600 dark:text-blue-400 border-b border-slate-200 dark:border-slate-700 pb-2">Breathing Exercises</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <YouTubeVideo videoId="1_BxsNnuKrc" title="Diaphragmatic Breathing for Speech" />
+                <YouTubeVideo videoId="1_BxsNnuKrc" title="Breath Control Techniques" />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-xl font-bold text-purple-600 dark:text-purple-400 border-b border-slate-200 dark:border-slate-700 pb-2">Vocal Warmups</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <YouTubeVideo videoId="Q5hS7e4zMcI" title="Daily Vocal Warmup Routine" />
+                <YouTubeVideo videoId="-S_pIqOEqL4" title="Tongue and Lip Trills" />
+              </div>
+            </div>
           </div>
         )}
 

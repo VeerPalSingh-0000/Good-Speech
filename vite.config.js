@@ -52,6 +52,16 @@ export default defineConfig({
     })
   ],
   build: {
-    chunkSizeWarningLimit: 3000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          'vendor-charts': ['recharts'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-pdf': ['pdfjs-dist', 'react-pdf']
+        }
+      }
+    }
   }
 })

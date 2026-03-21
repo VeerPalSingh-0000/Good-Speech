@@ -9,6 +9,7 @@ const DarkModeToggle = ({ isDark, onToggle }) => {
         type="checkbox" 
         checked={isDark} 
         onChange={onToggle} 
+        aria-label="Toggle Dark Mode"
         className="peer opacity-0 w-0 h-0" 
       />
 

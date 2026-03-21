@@ -19,9 +19,19 @@ export const useHindiRecords = (user, showNotification) => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // State for bookmarks
-  const [storyBookmarks, setStoryBookmarks] = useState([]);
-  const [lineBookmarks, setLineBookmarks] = useState({});
+  // State for user settings & bookmarks
+  const [userSettings, setUserSettings] = useState({
+    storyBookmarks: [],
+    lineBookmarks: {},
+    hasCompletedOnboarding: false,
+    languagePreference: 'Hindi',
+    speechGoals: [],
+    practiceTime: 15,
+    notificationsEnabled: false,
+  });
+
+  const storyBookmarks = userSettings.storyBookmarks;
+  const lineBookmarks = userSettings.lineBookmarks;
 
   // 1. SYNC: Fetch/Subscribe to RECORDS (Existing)
   useEffect(() => {
@@ -37,20 +47,26 @@ export const useHindiRecords = (user, showNotification) => {
     }
   }, [user]);
 
-  // 2. SYNC: Fetch/Subscribe to BOOKMARKS (New)
+  // 2. SYNC: Fetch/Subscribe to BOOKMARKS & SETTINGS (New)
   useEffect(() => {
     if (user?.uid) {
       // This listener connects to the "users/{uid}" document
-      // It will fire whenever ANY device updates the bookmarks
+      // It will fire whenever ANY device updates the bookmarks/settings
       const unsubscribe = subscribeToBookmarks(user.uid, (data) => {
-        setStoryBookmarks(data.storyBookmarks);
-        setLineBookmarks(data.lineBookmarks);
+        setUserSettings(data);
       });
       return () => unsubscribe();
     } else {
       // Reset if no user
-      setStoryBookmarks([]);
-      setLineBookmarks({});
+      setUserSettings({
+        storyBookmarks: [],
+        lineBookmarks: {},
+        hasCompletedOnboarding: false,
+        languagePreference: 'Hindi',
+        speechGoals: [],
+        practiceTime: 15,
+        notificationsEnabled: false,
+      });
     }
   }, [user]);
 
@@ -70,7 +86,7 @@ export const useHindiRecords = (user, showNotification) => {
       }
 
       // 1. Optimistic Update (Immediate UI change)
-      setStoryBookmarks(newBookmarks);
+      setUserSettings(prev => ({ ...prev, storyBookmarks: newBookmarks }));
 
       // 2. Persist to Cloud
       try {
@@ -112,7 +128,7 @@ export const useHindiRecords = (user, showNotification) => {
       };
 
       // 1. Optimistic Update
-      setLineBookmarks(newLineBookmarks);
+      setUserSettings(prev => ({ ...prev, lineBookmarks: newLineBookmarks }));
 
       // 2. Persist to Cloud
       try {
@@ -123,6 +139,22 @@ export const useHindiRecords = (user, showNotification) => {
     },
     [lineBookmarks, user],
   );
+
+  // ACTION: Update User Settings
+  const updateUserSettings = useCallback(async (newSettings) => {
+    if (!user?.uid) return;
+
+    // Optimistic Update
+    setUserSettings(prev => ({ ...prev, ...newSettings }));
+
+    // Persist
+    try {
+      await saveBookmarks(user.uid, newSettings);
+    } catch (error) {
+      console.error("Failed to save settings: ", error);
+      showNotification("Failed to update settings.", "error");
+    }
+  }, [user, showNotification]);
 
   const saveToFirebase = useCallback(
     async (type, data, audioBlob = null) => {
@@ -169,5 +201,7 @@ export const useHindiRecords = (user, showNotification) => {
     lineBookmarks,
     toggleStoryBookmark,
     toggleLineBookmark,
+    userSettings,
+    updateUserSettings,
   };
 };

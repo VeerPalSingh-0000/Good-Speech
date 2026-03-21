@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaBookmark, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaBookmark, FaChevronLeft, FaChevronRight, FaMicrophone, FaStop } from 'react-icons/fa';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
@@ -20,8 +21,56 @@ const StoryDisplayModal = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
+  const [textContent, setTextContent] = useState(story.content || "");
+  const [textLoading, setTextLoading] = useState(!!story.dataUrl);
+  const [textError, setTextError] = useState(false);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(600);
+  
+  const { isListening, startListening, stopListening, compareToTarget, supported, resetTranscript } = useSpeechRecognition('hi-IN');
+  const [showPronunciation, setShowPronunciation] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      stopListening();
+    }
+  }, []);
+
+  // Fetch story content dynamically if dataUrl is provided
+  useEffect(() => {
+    if (story.dataUrl && !story.content) {
+      setTextLoading(true);
+      setTextError(false);
+      fetch(story.dataUrl)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch story data');
+          return res.json();
+        })
+        .then(data => {
+          // data could be an array of stories (like harryPotter.json) or a single object
+          if (Array.isArray(data)) {
+            const foundStory = data.find(s => s.id === story.id);
+            if (foundStory) {
+              setTextContent(foundStory.content || "");
+            } else {
+              throw new Error('Story not found in fetched data');
+            }
+          } else {
+            setTextContent(data.content || "");
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching story content:', err);
+          setTextError(true);
+        })
+        .finally(() => {
+          setTextLoading(false);
+        });
+    } else {
+      setTextContent(story.content || "");
+      setTextLoading(false);
+    }
+  }, [story]);
 
   // Measure container width for responsive PDF rendering
   useEffect(() => {
@@ -37,10 +86,10 @@ const StoryDisplayModal = ({
 
   const storyLines = useMemo(
     () =>
-      story.content
-        ? story.content.split("\n").filter((line) => line.trim() !== "")
+      textContent
+        ? textContent.split("\n").filter((line) => line.trim() !== "")
         : [],
-    [story.content],
+    [textContent],
   );
 
   const handleAddPageBookmark = () => {
@@ -213,8 +262,22 @@ const StoryDisplayModal = ({
             </>
           ) : (
             <div className="overflow-y-auto h-full p-8 space-y-4">
-              {storyLines.map((line, index) => {
+              {textLoading && (
+                <div className="flex flex-col items-center justify-center gap-3 py-16">
+                  <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">Loading story content...</p>
+                </div>
+              )}
+              {textError && (
+                <div className="flex flex-col items-center justify-center gap-3 py-16">
+                  <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
+                  <p className="text-red-400 text-sm">Failed to load story content.</p>
+                </div>
+              )}
+              {!textLoading && !textError && storyLines.map((line, index) => {
                 const isLineBookmarked = lineBookmarks.includes(index);
+                const lineResults = showPronunciation ? compareToTarget(line) : [];
+
                 return (
                   <div key={index} className="flex items-stretch gap-4 group">
                     <div
@@ -227,9 +290,17 @@ const StoryDisplayModal = ({
                       }`}
                       title={isLineBookmarked ? "Remove bookmark" : "Add bookmark"}
                     />
-                    <p className="flex-1 text-lg leading-relaxed text-slate-700 dark:text-slate-300 py-1">
-                      {line}
-                    </p>
+                    <div className="flex-1 text-lg leading-relaxed text-slate-700 dark:text-slate-300 py-1 flex flex-wrap gap-[0.25rem]">
+                      {!showPronunciation ? (
+                         <span>{line}</span>
+                      ) : (
+                         lineResults.map((result, i) => (
+                           <span key={i} className={`transition-colors duration-300 ${result.isCorrect ? 'text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-900/40 rounded px-1' : ''}`}>
+                             {result.word}
+                           </span>
+                         ))
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -238,10 +309,27 @@ const StoryDisplayModal = ({
         </div>
 
         {!story.pdfUrl && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700 shrink-0">
+          <div className="p-4 border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-4">
+            {supported && (
+               <button
+                 onClick={() => {
+                   if (isListening) {
+                     stopListening();
+                     setShowPronunciation(false);
+                   } else {
+                     resetTranscript();
+                     startListening();
+                     setShowPronunciation(true);
+                   }
+                 }}
+                 className={`flex-1 py-3 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${isListening ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300'}`}
+               >
+                 {isListening ? <><FaStop /> Stop Reading</> : <><FaMicrophone /> Practice Reading aloud</>}
+               </button>
+            )}
             <button
               onClick={onClose}
-              className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors focus:outline-none focus:ring-4 focus:ring-purple-500/50"
+              className="flex-1 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors focus:outline-none focus:ring-4 focus:ring-purple-500/50"
             >
               Close
             </button>
@@ -256,7 +344,9 @@ StoryDisplayModal.propTypes = {
   story: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     title: PropTypes.string.isRequired,
-    content: PropTypes.string.isRequired,
+    content: PropTypes.string,
+    dataUrl: PropTypes.string,
+    pdfUrl: PropTypes.string,
   }).isRequired,
   onClose: PropTypes.func.isRequired,
   lineBookmarks: PropTypes.arrayOf(

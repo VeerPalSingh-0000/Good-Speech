@@ -1,11 +1,12 @@
 // src/App.jsx
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useAuth } from './contexts/AuthContext';
-import Hindi from './Hindi.jsx';
-import AuthPage from './pages/AuthPage.jsx';
 import LoadingScreen from './components/ui/LoadingScreen.jsx';
 import './App.css';
+
+const Hindi = lazy(() => import('./Hindi.jsx'));
+const AuthPage = lazy(() => import('./pages/AuthPage.jsx'));
 
 function App() {
   // 1. Get 'logout' from the AuthContext
@@ -25,12 +26,14 @@ function App() {
 
   return (
     <div className="App">
-      {currentUser ? (
-        // 2. Pass handleLogout to the Hindi component
-        <Hindi user={currentUser} onLogout={handleLogout} />
-      ) : (
-        <AuthPage />
-      )}
+      <Suspense fallback={<LoadingScreen />}>
+        {currentUser ? (
+          // 2. Pass handleLogout to the Hindi component
+          <Hindi user={currentUser} onLogout={handleLogout} />
+        ) : (
+          <AuthPage />
+        )}
+      </Suspense>
     </div>
   );
 }

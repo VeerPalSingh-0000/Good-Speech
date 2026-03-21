@@ -7,6 +7,7 @@ import {
   formatSafeDate,
   calculateQuality,
 } from "../../utilities/helpers";
+import ShareProgress from '../ui/ShareProgress';
 
 // SAFE RECHARTS PULLER - Prevents app crash if library is still installing (Slow npm)
 const SafeRecharts = () => {
@@ -28,6 +29,7 @@ const SafeRecharts = () => {
 const HistoryView = ({ records }) => {
   const { Recharts, error: rechartsError } = SafeRecharts();
   const [openSection, setOpenSection] = useState("sounds");
+  const reportRef = React.useRef(null);
 
   const stats = useMemo(() => {
     const allRecords = [
@@ -209,14 +211,19 @@ const HistoryView = ({ records }) => {
   );
 
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h2 className="p-4 text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          अभ्यास इतिहास
-        </h2>
-        <p className="text-slate-500 mt-2">
-          यहाँ आपके सभी सत्रों का विस्तृत विश्लेषण है।
-        </p>
+    <div className="space-y-8" ref={reportRef}>
+      <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="text-center md:text-left mb-6 md:mb-0">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            अभ्यास इतिहास
+          </h2>
+          <p className="text-slate-500 mt-2">
+            यहाँ आपके सभी सत्रों का विस्तृत विश्लेषण है।
+          </p>
+        </div>
+        <div>
+           <ShareProgress targetRef={reportRef} title="My Lifetime Overview" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -338,9 +345,7 @@ const HistoryView = ({ records }) => {
                         <thead>
                           <tr className="bg-slate-100 dark:bg-slate-700">
                             <th className="p-4 rounded-tl-lg">S.No.</th>
-                            <th className="p-4 text-center">आ</th>
-                            <th className="p-4 text-center">ई</th>
-                            <th className="p-4 text-center">ऊ</th>
+                            <th className="p-4">Practiced Sounds</th>
                             <th className="p-4 rounded-tr-lg text-center">
                               Status
                             </th>
@@ -357,29 +362,19 @@ const HistoryView = ({ records }) => {
                               return (
                                 <tr key={session}>
                                   <td className="p-4 font-bold">{session}</td>
-                                  {["आ", "ई", "ऊ"].map((sound) => (
-                                    <td
-                                      key={sound}
-                                      className="p-4 text-center font-mono"
-                                    >
-                                      {sessionData[sound] ? (
-                                        <span
-                                          className={
-                                            sessionData[sound].isNewBest
-                                              ? "text-yellow-500 font-bold"
-                                              : ""
-                                          }
-                                        >
-                                          {formatTime(sessionData[sound].time)}
-                                          {sessionData[sound].isNewBest &&
-                                            " 🏆"}
-                                        </span>
-                                      ) : (
-                                        "--"
-                                      )}
-                                    </td>
-                                  ))}
-                                  {/* THE FIX: Added a ternary operator to show a placeholder */}
+                                  <td className="p-4">
+                                    <div className="flex flex-wrap gap-2">
+                                      {Object.keys(sessionData).map(sound => (
+                                          <div key={sound} className="bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-lg text-sm border border-slate-200 dark:border-slate-700 font-mono shadow-sm">
+                                            <span className="font-bold text-blue-500 dark:text-blue-400 mr-2">{sound}</span>
+                                            <span className={sessionData[sound].isNewBest ? "text-yellow-500 font-bold" : "text-slate-600 dark:text-slate-300"}>
+                                              {formatTime(sessionData[sound].time)}
+                                              {sessionData[sound].isNewBest && " 🏆"}
+                                            </span>
+                                          </div>
+                                      ))}
+                                    </div>
+                                  </td>
                                   <td className="p-4 text-center">
                                     {hasNewBest ? (
                                       <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 text-xs font-bold rounded-full">

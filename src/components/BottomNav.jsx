@@ -18,6 +18,7 @@ const BottomNav = ({ currentView, setCurrentView }) => {
           return (
             <button
               key={tab.key}
+              aria-label={tab.label}
               onClick={() => setCurrentView(tab.key)}
               className="relative flex flex-col items-center justify-center w-full h-full space-y-1 focus:outline-none"
             >

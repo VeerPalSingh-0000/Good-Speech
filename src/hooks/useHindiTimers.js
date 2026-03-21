@@ -7,10 +7,16 @@ import { allStories } from '../data/stories/index';
 export const useHindiTimers = (saveToFirebase, showNotification, records) => {
   const [soundTimers, setSoundTimers] = useState({
     आ: { time: 0, isRunning: false },
-
     ई: { time: 0, isRunning: false },
-
     ऊ: { time: 0, isRunning: false },
+    क: { time: 0, isRunning: false },
+    ख: { time: 0, isRunning: false },
+    ग: { time: 0, isRunning: false },
+    घ: { time: 0, isRunning: false },
+    त: { time: 0, isRunning: false },
+    थ: { time: 0, isRunning: false },
+    द: { time: 0, isRunning: false },
+    ध: { time: 0, isRunning: false },
   });
 
   const [varnmalaTimer, setVarnmalaTimer] = useState({
@@ -57,7 +63,11 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
   // --- MEMOIZED VALUES ---
 
   const bestTimes = useMemo(() => {
-    const bests = { आ: 0 , ई: 0 , ऊ: 0  };
+    const bests = { 
+        आ: 0 , ई: 0 , ऊ: 0,
+        क: 0 , ख: 0 , ग: 0, घ: 0,
+        त: 0 , थ: 0 , द: 0, ध: 0, 
+    };
 
     if (records?.sounds) {
       records.sounds.forEach((rec) => {

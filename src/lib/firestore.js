@@ -84,9 +84,8 @@ const cleanData = (data) => {
   return cleaned;
 };
 
-/* ---------- BOOKMARKS (USER SETTINGS) ---------- */
-// ✅ NEW: Save user-specific settings (bookmarks)
-export const saveBookmarks = async (userId, data) => {
+/* ---------- USER SETTINGS & BOOKMARKS ---------- */
+export const saveUserSettings = async (userId, data) => {
   try {
     if (!userId) throw new Error('User ID required');
     
@@ -97,13 +96,15 @@ export const saveBookmarks = async (userId, data) => {
     await setDoc(userRef, data, { merge: true });
     
   } catch (error) {
-    console.error('Error saving bookmarks:', error);
+    console.error('Error saving user settings:', error);
     throw error;
   }
 };
 
-// ✅ NEW: Real-time listener for user settings
-export const subscribeToBookmarks = (userId, cb) => {
+// Kept for backwards compatibility if needed, but redirects to saveUserSettings
+export const saveBookmarks = saveUserSettings;
+
+export const subscribeToUserSettings = (userId, cb) => {
   if (!userId) return () => {};
 
   const userRef = doc(db, 'users', userId);
@@ -113,16 +114,32 @@ export const subscribeToBookmarks = (userId, cb) => {
       const data = docSnap.data();
       cb({
         storyBookmarks: data.storyBookmarks || [],
-        lineBookmarks: data.lineBookmarks || {}
+        lineBookmarks: data.lineBookmarks || {},
+        hasCompletedOnboarding: data.hasCompletedOnboarding || false,
+        languagePreference: data.languagePreference || 'Hindi',
+        speechGoals: data.speechGoals || [],
+        practiceTime: data.practiceTime || 15,
+        notificationsEnabled: data.notificationsEnabled || false,
       });
     } else {
       // If user doc doesn't exist yet, return empty defaults
-      cb({ storyBookmarks: [], lineBookmarks: {} });
+      cb({ 
+        storyBookmarks: [], 
+        lineBookmarks: {},
+        hasCompletedOnboarding: false,
+        languagePreference: 'Hindi',
+        speechGoals: [],
+        practiceTime: 15,
+        notificationsEnabled: false,
+      });
     }
   }, (error) => {
-    console.error("Error syncing bookmarks:", error);
+    console.error("Error syncing user settings:", error);
   });
 };
+
+// Legacy support
+export const subscribeToBookmarks = subscribeToUserSettings;
 
 /* ---------- CRUD (Existing) ---------- */
 

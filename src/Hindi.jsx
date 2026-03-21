@@ -1,23 +1,25 @@
 // src/Hindi.jsx - Optimized version
 
-import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast, { Toaster } from 'react-hot-toast';
 
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
-import HomeView from './components/views/HomeView';
-import ExercisesView from './components/views/ExercisesView';
-import VarnmalaView from './components/views/VarnmalaView';
-import StoriesView from './components/views/StoriesView';
-import RecordsView from './components/views/RecordsView';
-import HistoryView from './components/views/HistoryView';
-import BreathingView from './components/views/BreathingView';
-import TongueTwistersView from './components/views/TongueTwistersView';
-import ProfileView from './components/views/ProfileView';
-import EducationView from './components/views/EducationView';
 import Footer from './components/Footer';
+
+const HomeView = lazy(() => import('./components/views/HomeView'));
+const ExercisesView = lazy(() => import('./components/views/ExercisesView'));
+const VarnmalaView = lazy(() => import('./components/views/VarnmalaView'));
+const StoriesView = lazy(() => import('./components/views/StoriesView'));
+const RecordsView = lazy(() => import('./components/views/RecordsView'));
+const HistoryView = lazy(() => import('./components/views/HistoryView'));
+const BreathingView = lazy(() => import('./components/views/BreathingView'));
+const TongueTwistersView = lazy(() => import('./components/views/TongueTwistersView'));
+const ProfileView = lazy(() => import('./components/views/ProfileView'));
+const EducationView = lazy(() => import('./components/views/EducationView'));
+const OnboardingView = lazy(() => import('./components/views/OnboardingView'));
 import { useHindiRecords } from './hooks/useHindiRecords';
 import { useHindiTimers } from './hooks/useHindiTimers';
 import { allStories } from './data/stories/index';
@@ -52,7 +54,8 @@ const Hindi = ({ user, onLogout }) => {
 
   const { 
     records, isLoading, saveToFirebase, deleteRecord, 
-    storyBookmarks, lineBookmarks, toggleStoryBookmark, toggleLineBookmark 
+    storyBookmarks, lineBookmarks, toggleStoryBookmark, toggleLineBookmark,
+    userSettings, updateUserSettings
   } = useHindiRecords(user, showNotification);
 
   const timerProps = useHindiTimers(saveToFirebase, showNotification, records);
@@ -95,6 +98,8 @@ const Hindi = ({ user, onLogout }) => {
 
   if (isLoading) return <LoadingScreen />;
 
+  const showOnboarding = userSettings && !userSettings.hasCompletedOnboarding;
+
   return (
     <>
       <Toaster 
@@ -108,21 +113,28 @@ const Hindi = ({ user, onLogout }) => {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans flex flex-col overflow-x-hidden">
         <Header user={user} onLogout={onLogout} currentView={getCurrentView()} setCurrentView={handleNavigation} navItems={navItems} />
 
-        <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full pb-24 xl:pb-6">
+        <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full pb-24 xl:pb-6 relative">
           <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
-              <Route path="/" element={<PageTransition><HomeView user={user} records={records} setCurrentView={handleNavigation} /></PageTransition>} />
-              <Route path="/exercises" element={<PageTransition><ExercisesView {...commonProps} /></PageTransition>} />
-              <Route path="/varnmala" element={<PageTransition><VarnmalaView {...commonProps} showVarnmala={showVarnmala} startVarnmalaTimer={handleStartVarnmala} stopVarnmalaTimer={handleStopVarnmala} /></PageTransition>} />
-              <Route path="/stories" element={<PageTransition><StoriesView {...commonProps} stories={allStories} storyBookmarks={storyBookmarks} lineBookmarks={lineBookmarks} onToggleStoryBookmark={toggleStoryBookmark} onToggleLineBookmark={toggleLineBookmark} /></PageTransition>} />
-              <Route path="/breathing" element={<PageTransition><BreathingView /></PageTransition>} />
-              <Route path="/twisters" element={<PageTransition><TongueTwistersView /></PageTransition>} />
-              <Route path="/records" element={<PageTransition><RecordsView records={records} deleteRecord={deleteRecord} /></PageTransition>} />
-              <Route path="/history" element={<PageTransition><HistoryView records={records} lineBookmarks={lineBookmarks} stories={allStories} /></PageTransition>} />
-              <Route path="/learn" element={<PageTransition><EducationView /></PageTransition>} />
-              <Route path="/profile" element={<PageTransition><ProfileView user={user} records={records} onLogout={onLogout} /></PageTransition>} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            {showOnboarding && (
+              <Suspense key="onboarding" fallback={<LoadingScreen />}>
+                <OnboardingView userSettings={userSettings} updateUserSettings={updateUserSettings} />
+              </Suspense>
+            )}
+            <Suspense key="routes" fallback={<LoadingScreen />}>
+              <Routes location={location} key={location.pathname}>
+                <Route path="/" element={<PageTransition><HomeView user={user} records={records} setCurrentView={handleNavigation} /></PageTransition>} />
+                <Route path="/exercises" element={<PageTransition><ExercisesView {...commonProps} /></PageTransition>} />
+                <Route path="/varnmala" element={<PageTransition><VarnmalaView {...commonProps} showVarnmala={showVarnmala} startVarnmalaTimer={handleStartVarnmala} stopVarnmalaTimer={handleStopVarnmala} /></PageTransition>} />
+                <Route path="/stories" element={<PageTransition><StoriesView {...commonProps} stories={allStories} storyBookmarks={storyBookmarks} lineBookmarks={lineBookmarks} onToggleStoryBookmark={toggleStoryBookmark} onToggleLineBookmark={toggleLineBookmark} /></PageTransition>} />
+                <Route path="/breathing" element={<PageTransition><BreathingView /></PageTransition>} />
+                <Route path="/twisters" element={<PageTransition><TongueTwistersView /></PageTransition>} />
+                <Route path="/records" element={<PageTransition><RecordsView records={records} deleteRecord={deleteRecord} /></PageTransition>} />
+                <Route path="/history" element={<PageTransition><HistoryView records={records} lineBookmarks={lineBookmarks} stories={allStories} /></PageTransition>} />
+                <Route path="/learn" element={<PageTransition><EducationView /></PageTransition>} />
+                <Route path="/profile" element={<PageTransition><ProfileView user={user} records={records} onLogout={onLogout} userSettings={userSettings} updateUserSettings={updateUserSettings} /></PageTransition>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
           </AnimatePresence>
         </main>
 

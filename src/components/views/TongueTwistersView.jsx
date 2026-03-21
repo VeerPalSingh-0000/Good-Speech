@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaPlay, FaStop, FaTachometerAlt, FaLayerGroup, FaInfoCircle } from 'react-icons/fa';
+import { FaPlay, FaStop, FaTachometerAlt, FaLayerGroup, FaInfoCircle, FaMicrophone, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 
 const TONGUE_TWISTERS = [
   {
@@ -52,9 +53,13 @@ const TongueTwistersView = () => {
   const words = selectedTwister.text.split(' ');
   const timerRef = useRef(null);
 
+  const { isListening, stopListening, startListening, compareToTarget, supported } = useSpeechRecognition('hi-IN');
+  const pronunciationResults = compareToTarget(selectedTwister.text);
+
   // Stop playback when unmounting or selecting a new twister
   useEffect(() => {
     stopPlayback();
+    if (isListening) stopListening();
   }, [selectedTwister]);
 
   const startPlayback = () => {
@@ -146,21 +151,47 @@ const TongueTwistersView = () => {
 
             <div className="relative z-10 flex-grow flex flex-col items-center justify-center">
               {/* Display Words with Highlight */}
-              <div className="flex flex-wrap justify-center gap-x-3 gap-y-4 text-3xl md:text-5xl font-bold leading-normal text-slate-300 dark:text-slate-700">
-                {words.map((word, index) => (
-                  <motion.span
-                    key={`${index}-${word}`}
-                    className={`transition-colors duration-200 px-2 py-1 rounded-lg ${
-                      currentWordIndex === index 
-                        ? 'text-white bg-gradient-to-r from-orange-500 to-rose-500 shadow-lg transform scale-110' 
-                        : currentWordIndex > index 
-                          ? 'text-slate-800 dark:text-slate-200' 
-                          : 'text-slate-400 dark:text-slate-500'
-                    }`}
-                  >
-                    {word}
-                  </motion.span>
-                ))}
+              <div className="flex flex-wrap justify-center gap-x-3 gap-y-6 text-3xl md:text-5xl font-bold leading-normal">
+                {pronunciationResults.length > 0 ? (
+                   // Render Pronunciation check results (mapped from target text)
+                   pronunciationResults.map((result, index) => (
+                    <motion.span
+                      key={`${index}-${result.word}`}
+                      className={`transition-colors duration-200 px-2 py-1 rounded-lg ${
+                        currentWordIndex === index 
+                          ? 'text-white bg-gradient-to-r from-orange-500 to-rose-500 shadow-lg transform scale-110' 
+                          : result.isCorrect 
+                            ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/40 relative'
+                            : isListening 
+                              ? 'text-slate-400 dark:text-slate-500' // Pending
+                              : 'text-slate-800 dark:text-slate-200' // Default
+                       }`}
+                    >
+                      {result.word}
+                      {result.isCorrect && !isPlaying && (
+                         <div className="absolute -top-3 -right-3">
+                           <FaCheckCircle className="text-emerald-500 text-lg bg-white rounded-full" />
+                         </div>
+                      )}
+                    </motion.span>
+                  ))
+                ) : (
+                  // Fallback if useSpeechRecognition targets fail
+                  words.map((word, index) => (
+                    <motion.span
+                      key={`${index}-${word}`}
+                      className={`transition-colors duration-200 px-2 py-1 rounded-lg ${
+                        currentWordIndex === index 
+                          ? 'text-white bg-gradient-to-r from-orange-500 to-rose-500 shadow-lg transform scale-110' 
+                          : currentWordIndex > index 
+                            ? 'text-slate-800 dark:text-slate-200' 
+                            : 'text-slate-400 dark:text-slate-500'
+                      }`}
+                    >
+                      {word}
+                    </motion.span>
+                  ))
+                )}
               </div>
 
               {/* Syllable Breakdown View */}
@@ -210,15 +241,36 @@ const TongueTwistersView = () => {
                     </button>
                   )}
 
+                  {!isListening ? (
+                     <button
+                       onClick={() => {
+                         if (isPlaying) stopPlayback();
+                         startListening();
+                       }}
+                       disabled={!supported}
+                       className="px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-3 transform hover:scale-105 disabled:opacity-50"
+                       title={!supported ? "Speech recognition not supported in this browser" : "Practice aloud!"}
+                     >
+                       <FaMicrophone /> Speak Now
+                     </button>
+                   ) : (
+                     <button
+                       onClick={stopListening}
+                       className="px-6 py-3 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300 font-bold shadow transition-all flex items-center gap-3"
+                     >
+                       <FaStop /> Stop Listening
+                     </button>
+                   )}
+
                   {/* Toggle Syllable Breakdown */}
                   <button
                     onClick={() => setShowSyllables(!showSyllables)}
-                    disabled={isPlaying}
+                    disabled={isPlaying || isListening}
                     className={`px-6 py-3 rounded-full font-bold shadow transition-all text-sm border ${
                       showSyllables 
                         ? 'bg-indigo-500 text-white border-indigo-600' 
                         : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:bg-slate-800 dark:border-slate-700 dark:text-indigo-400'
-                    } ${isPlaying ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${(isPlaying || isListening) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {showSyllables ? 'Hide Syllables' : 'Show Syllables'}
                   </button>

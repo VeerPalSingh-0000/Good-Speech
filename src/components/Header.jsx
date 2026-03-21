@@ -93,6 +93,8 @@ const Header = ({ user, onLogout, currentView, setCurrentView, navItems = [] }) 
                 {profileMenuOpen && <div className="fixed inset-0 z-10" onClick={() => setProfileMenuOpen(false)} />}
                 
                 <button 
+                  aria-label="Toggle Profile Menu"
+                  aria-expanded={profileMenuOpen}
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                   className={`flex items-center gap-2 p-1.5 pr-3 rounded-full transition-all ${profileMenuOpen ? 'bg-slate-200 dark:bg-slate-700 ring-2 ring-purple-500/50' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                 >

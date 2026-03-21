@@ -4,17 +4,17 @@ import { FaUserCircle, FaCog, FaTrophy, FaFire, FaChartLine, FaSignOutAlt, FaShi
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
-const ProfileView = ({ user, records, onLogout }) => {
+const ProfileView = ({ user, records, onLogout, userSettings = {}, updateUserSettings = async () => {} }) => {
   const { resetPassword, updateUserProfile } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || 'Speech Learner');
   const [isEditing, setIsEditing] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(userSettings.notificationsEnabled || false);
+  const [practiceTime, setPracticeTime] = useState(userSettings.practiceTime || 15);
 
   useEffect(() => {
-    if ("Notification" in window) {
-      setPushEnabled(Notification.permission === 'granted');
-    }
-  }, []);
+    setPushEnabled(userSettings.notificationsEnabled || false);
+    setPracticeTime(userSettings.practiceTime || 15);
+  }, [userSettings]);
 
   // Derive stats
   const allRecords = [
@@ -52,21 +52,55 @@ const ProfileView = ({ user, records, onLogout }) => {
     }
 
     if (pushEnabled) {
-        toast("To disable notifications, please change your browser site settings.", { icon: "⚙️" });
-        return;
+      const newVal = false;
+      setPushEnabled(newVal);
+      await updateUserSettings({ notificationsEnabled: newVal });
+      toast.success("Push notifications disabled.");
+      return;
     }
     
     try {
       const permission = await window.Notification.requestPermission();
       if (permission === 'granted') {
           setPushEnabled(true);
-          new window.Notification("SpeechGood", { body: "Push notifications successfully enabled! We'll gently remind you to practice." });
+          await updateUserSettings({ notificationsEnabled: true });
+          
+          // Schedule the reminder locally (simulate by registering service worker if available)
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then((registration) => {
+              // Notification API is largely limited on client side without a push server,
+              // but we can send an immediate notification to confirm.
+              registration.showNotification("SpeechGood Reminders", {
+                body: "Push notifications successfully enabled! We'll gently remind you to practice.",
+                icon: "/pwa-192x192.png",
+                badge: "/masked-icon.svg"
+              });
+            });
+          } else {
+             new window.Notification("SpeechGood Reminders", { body: "Push notifications successfully enabled! We'll gently remind you to practice." });
+          }
           toast.success("Push notifications activated!");
       } else {
           toast.error("Permission denied. You can enable it in your browser settings.");
       }
     } catch (e) {
       toast.error("Unable to request permission.");
+    }
+  };
+
+  const handlePracticeTimeChange = async (e) => {
+    const newVal = parseInt(e.target.value);
+    setPracticeTime(newVal);
+  };
+
+  const savePracticeTime = async () => {
+    try {
+      if (practiceTime !== userSettings.practiceTime) {
+        await updateUserSettings({ practiceTime: practiceTime });
+        toast.success("Practice goal saved!");
+      }
+    } catch (err) {
+      toast.error("Failed to save practice target");
     }
   };
 
@@ -175,12 +209,22 @@ const ProfileView = ({ user, records, onLogout }) => {
             </h3>
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Daily Practice Goal (Minutes)</label>
-                <input type="range" min="5" max="60" step="5" defaultValue="15" className="w-full accent-purple-500" />
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-2xl font-black text-purple-600 dark:text-purple-400">{practiceTime} <span className="text-sm border-none bg-transparent">mins</span></span>
+                </div>
+                <input 
+                  type="range" min="5" max="60" step="5" 
+                  value={practiceTime} 
+                  onChange={handlePracticeTimeChange}
+                  onMouseUp={savePracticeTime}
+                  onTouchEnd={savePracticeTime}
+                  className="w-full accent-purple-500" 
+                />
                 <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>5 min</span>
-                  <span>15 min</span>
-                  <span>60 min</span>
+                  <span>5m</span>
+                  <span>15m</span>
+                  <span>30m</span>
+                  <span>60m</span>
                 </div>
               </div>
 

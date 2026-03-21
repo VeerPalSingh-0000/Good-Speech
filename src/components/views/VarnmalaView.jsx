@@ -1,12 +1,13 @@
 // src/components/views/VarnmalaView.jsx - Matching ExercisesView color template
 
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatTime } from '../../utilities/helpers';
 import AnimatedButton from '../ui/AnimatedButton';
-import { FaPlay, FaPause, FaSave } from 'react-icons/fa';
+import { FaPlay, FaPause, FaSave, FaCheckCircle } from 'react-icons/fa';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import AudioVisualizer from '../ui/AudioVisualizer';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 
 // Varnmala data - memoized outside component
 const VARNMALA_DATA = {
@@ -39,7 +40,7 @@ const letterVariants = {
 };
 
 // Letter Card Component - Memoized for performance
-const LetterCard = memo(({ char, category }) => {
+const LetterCard = memo(({ char, category, isSpoken }) => {
   const colors = sectionColors[category];
   
   return (
@@ -48,18 +49,26 @@ const LetterCard = memo(({ char, category }) => {
       whileHover={{ scale: 1.1, y: -4 }}
       whileTap={{ scale: 0.95 }}
       className="group relative"
+      tabIndex={0}
+      aria-label={`Hindi letter ${char} ${isSpoken ? '- Spoken correctly' : ''}`}
+      role="listitem"
     >
       {/* Glow effect on hover */}
       <div className={`absolute -inset-1 bg-gradient-to-r ${colors.gradient} rounded-xl blur opacity-0 group-hover:opacity-40 transition-opacity duration-300`} />
       
       {/* Card */}
-      <div className={`relative p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer`}>
+      <div className={`relative p-3 rounded-xl ${isSpoken ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700' : 'bg-white dark:bg-slate-800 border-slate-200/50 dark:border-slate-700/50'} border shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex items-center justify-center min-w-[3rem]`}>
         {/* Top gradient accent */}
-        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colors.gradient} rounded-t-xl`} />
+        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isSpoken ? 'from-emerald-400 to-green-500' : colors.gradient} rounded-t-xl`} />
         
-        <span className={`text-xl md:text-2xl font-bold bg-gradient-to-br ${colors.gradient} bg-clip-text text-transparent`}>
+        <span aria-hidden="true" className={`text-xl md:text-2xl font-bold ${isSpoken ? 'text-emerald-600 dark:text-emerald-400' : `bg-gradient-to-br ${colors.gradient} bg-clip-text text-transparent`}`}>
           {char}
         </span>
+        {isSpoken && (
+          <div className="absolute -top-2 -right-2">
+            <FaCheckCircle className="text-emerald-500 text-sm bg-white rounded-full" />
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -81,7 +90,12 @@ const SectionHeader = memo(({ title, subtitle, color }) => (
 SectionHeader.displayName = 'SectionHeader';
 
 // Varnmala Display Component - Memoized
-const VarnmalaDisplay = memo(() => {
+const VarnmalaDisplay = memo(({ transcript }) => {
+  const isCharSpoken = useCallback((char) => {
+    if (!transcript) return false;
+    return transcript.includes(char);
+  }, [transcript]);
+
   return (
     <motion.div
       variants={itemVariants}
@@ -111,13 +125,14 @@ const VarnmalaDisplay = memo(() => {
             color="from-violet-500 to-purple-600" 
           />
           <motion.div 
+            role="list"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             className="flex flex-wrap justify-center gap-2 md:gap-3"
           >
             {VARNMALA_DATA.swar.map((char, index) => (
-              <LetterCard key={`swar-${index}`} char={char} category="swar" />
+              <LetterCard key={`swar-${index}`} char={char} category="swar" isSpoken={isCharSpoken(char)} />
             ))}
           </motion.div>
         </div>
@@ -130,13 +145,14 @@ const VarnmalaDisplay = memo(() => {
             color="from-cyan-500 to-blue-600" 
           />
           <motion.div 
+            role="list"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             className="flex flex-wrap justify-center gap-2 md:gap-3"
           >
             {VARNMALA_DATA.vyanjan.map((char, index) => (
-              <LetterCard key={`vyanjan-${index}`} char={char} category="vyanjan" />
+              <LetterCard key={`vyanjan-${index}`} char={char} category="vyanjan" isSpoken={isCharSpoken(char)} />
             ))}
           </motion.div>
         </div>
@@ -149,13 +165,14 @@ const VarnmalaDisplay = memo(() => {
             color="from-pink-500 to-rose-600" 
           />
           <motion.div 
+            role="list"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             className="flex flex-wrap justify-center gap-2 md:gap-3"
           >
             {VARNMALA_DATA.sanyukt.map((char, index) => (
-              <LetterCard key={`sanyukt-${index}`} char={char} category="sanyukt" />
+              <LetterCard key={`sanyukt-${index}`} char={char} category="sanyukt" isSpoken={isCharSpoken(char)} />
             ))}
           </motion.div>
         </div>
@@ -196,7 +213,7 @@ const TimerRing = memo(({ time, isRunning }) => {
       
       {/* Timer display */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-        <span className={`text-3xl md:text-4xl font-bold font-mono tracking-wider ${isRunning ? 'text-slate-800 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+        <span aria-live="polite" className={`text-3xl md:text-4xl font-bold font-mono tracking-wider ${isRunning ? 'text-slate-800 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
           {formatTime(time)}
         </span>
         {isRunning && (
@@ -220,31 +237,44 @@ const VarnmalaView = ({
   stopVarnmalaTimer 
 }) => {
   const { isRecording, recorderState, audioUrl, startRecording, stopRecording, pauseRecording, resumeRecording, clearRecording, analyser } = useAudioRecorder();
+  const { isListening, startListening, stopListening, fullTranscript, resetTranscript } = useSpeechRecognition('hi-IN');
+
+  useEffect(() => {
+    return () => {
+      stopListening();
+    };
+  }, []);
 
   const handleStart = async () => {
     try {
       if (recorderState === 'idle') {
         if (audioUrl) clearRecording();
         await startRecording();
+        resetTranscript();
+        startListening();
       } else if (recorderState === 'paused') {
         resumeRecording();
+        startListening();
       }
       startVarnmalaTimer();
     } catch (err) {
       console.error(err);
       startVarnmalaTimer();
+      startListening();
     }
   };
 
   const handlePause = () => {
     pauseRecording();
+    stopListening();
     pauseVarnmalaTimer();
   };
 
   const handleRecord = useCallback(async () => {
     const blob = await stopRecording();
+    stopListening();
     stopVarnmalaTimer(blob);
-  }, [stopRecording, stopVarnmalaTimer]);
+  }, [stopRecording, stopVarnmalaTimer, stopListening]);
 
   return (
     <motion.div 
@@ -298,6 +328,7 @@ const VarnmalaView = ({
           <div className="flex flex-wrap justify-center gap-3">
             {/* Play button */}
             <motion.button
+              aria-label="Start Varnmala Practice"
               onClick={handleStart}
               disabled={varnmalaTimer.isRunning}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
@@ -312,6 +343,7 @@ const VarnmalaView = ({
             
             {/* Pause button */}
             <motion.button
+              aria-label="Pause Varnmala Practice"
               onClick={handlePause}
               disabled={!varnmalaTimer.isRunning}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
@@ -326,6 +358,7 @@ const VarnmalaView = ({
             
             {/* Save button */}
             <motion.button
+              aria-label="Save Practice Session"
               onClick={handleRecord}
               disabled={varnmalaTimer.time === 0}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
@@ -344,9 +377,9 @@ const VarnmalaView = ({
       {/* Content Grid */}
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 justify-center">
         {/* Varnmala Display */}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto w-full">
           <AnimatePresence mode="wait">
-            {showVarnmala && <VarnmalaDisplay />}
+            {showVarnmala && <VarnmalaDisplay transcript={fullTranscript} />}
           </AnimatePresence>
         </div>
       </div>

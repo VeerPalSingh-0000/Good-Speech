@@ -1,9 +1,9 @@
 // src/components/views/ExercisesView.jsx - Enhanced aesthetic version
 
-import React, { useMemo, memo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo, memo, useState } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { formatTime } from '../../utilities/helpers';
-import { FaPlay, FaPause, FaSave, FaTrophy, FaFire } from 'react-icons/fa';
+import { FaPlay, FaPause, FaSave, FaTrophy, FaFire, FaMicrophone } from 'react-icons/fa';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -23,16 +23,21 @@ const soundColors = {
   'ई': { gradient: 'from-cyan-500 to-blue-600', bg: 'bg-cyan-500', glow: 'shadow-cyan-500/30' },
   'उ': { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-500', glow: 'shadow-violet-500/30' },
   'ऊ': { gradient: 'from-fuchsia-500 to-pink-600', bg: 'bg-fuchsia-500', glow: 'shadow-fuchsia-500/30' },
-  'ए': { gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-500', glow: 'shadow-blue-500/30' },
-  'ऐ': { gradient: 'from-indigo-500 to-violet-600', bg: 'bg-indigo-500', glow: 'shadow-indigo-500/30' },
-  'ओ': { gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-500', glow: 'shadow-amber-500/30' },
-  'औ': { gradient: 'from-red-500 to-rose-600', bg: 'bg-red-500', glow: 'shadow-red-500/30' },
+  'क': { gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-500', glow: 'shadow-blue-500/30' },
+  'ख': { gradient: 'from-indigo-500 to-violet-600', bg: 'bg-indigo-500', glow: 'shadow-indigo-500/30' },
+  'ग': { gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-500', glow: 'shadow-amber-500/30' },
+  'घ': { gradient: 'from-red-500 to-rose-600', bg: 'bg-red-500', glow: 'shadow-red-500/30' },
+  'त': { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-500', glow: 'shadow-teal-500/30' },
+  'थ': { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-500', glow: 'shadow-violet-500/30' },
+  'द': { gradient: 'from-pink-500 to-rose-600', bg: 'bg-pink-500', glow: 'shadow-pink-500/30' },
+  'ध': { gradient: 'from-orange-500 to-amber-600', bg: 'bg-orange-500', glow: 'shadow-orange-500/30' },
 };  
 
 const defaultColors = { gradient: 'from-purple-500 to-pink-600', bg: 'bg-purple-500', glow: 'shadow-purple-500/30' };
 
 
 const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
+  const shouldReduceMotion = useReducedMotion();
   const colors = soundColors[sound] || defaultColors;
   const stats = useMemo(() => {
     const userSoundRecords = (records.sounds || []).filter(record => record.sound === sound);
@@ -78,8 +83,8 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
             {/* Sound character */}
             <motion.div
               className={`relative p-5 text-7xl font-bold bg-gradient-to-br ${colors.gradient} bg-clip-text text-transparent`}
-              animate={isActive ? { scale: [1, 1.05, 1] } : {}}
-              transition={{ duration: 0.5, repeat: isActive ? Infinity : 0 }}
+              animate={isActive && !shouldReduceMotion ? { scale: [1, 1.05, 1] } : {}}
+              transition={{ duration: 0.5, repeat: isActive && !shouldReduceMotion ? Infinity : 0 }}
             >
               {sound}
             </motion.div>
@@ -123,7 +128,7 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
             
             {/* Timer display */}
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 ">
-              <span className={`text-2xl font-bold font-mono tracking-wider ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+              <span aria-live="polite" className={`text-2xl font-bold font-mono tracking-wider ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
                 {formatTime(timer.time)}
               </span>
               {isActive && (
@@ -140,6 +145,7 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
           <div className="flex justify-center gap-3">
             {/* Play button */}
             <motion.button
+              aria-label={`Start practice for ${sound}`}
               onClick={handleStart}
               disabled={isActive}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
@@ -154,6 +160,7 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
             
             {/* Pause button */}
             <motion.button
+              aria-label={`Pause practice for ${sound}`}
               onClick={() => handleStop(false)}
               disabled={!isActive}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
@@ -168,6 +175,7 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
             
             {/* Save button */}
             <motion.button
+              aria-label={`Save practice record for ${sound}`}
               onClick={() => handleStop(true)}
               disabled={timer.time === 0}
               className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
@@ -189,6 +197,13 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
 SoundPracticeCard.displayName = 'SoundPracticeCard';
 
 const ExercisesView = ({ user, records, soundTimers, startSoundTimer, stopSoundTimer }) => {
+  const [activeTab, setActiveTab] = useState('vowels');
+
+  const VOWELS = ['आ', 'ई', 'ऊ'];
+  const CONSONANTS = ['क', 'ख', 'ग', 'घ', 'त', 'थ', 'द', 'ध'];
+  
+  const currentSounds = activeTab === 'vowels' ? VOWELS : CONSONANTS;
+
   return (
     <motion.div 
       variants={containerVariants}
@@ -200,33 +215,62 @@ const ExercisesView = ({ user, records, soundTimers, startSoundTimer, stopSoundT
       <motion.div variants={itemVariants} className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm font-medium">
           <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-          स्वर अभ्यास
+          ध्वनि अभ्यास
         </div>
         <h2 className="text-4xl font-bold text-slate-800 dark:text-white">
-          Vowel Sound Practice
+          Sound Practice
         </h2>
         <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto">
-          Master Hindi vowel sounds with precision timing. Build muscle memory and improve speech fluency.
+          Practice your vowel and consonant sounds with precision timing. Build muscle memory and improve your fluency.
         </p>
       </motion.div>
 
-      {/* Cards grid */}
-      <motion.div 
-        variants={containerVariants}
-        className="flex flex-wrap justify-center gap-4 lg:gap-5"
-      >
-        {Object.keys(soundTimers).map(sound => (
-          <div key={sound} className="w-full sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] xl:w-[calc(25%-15px)] max-w-[320px]">
-            <SoundPracticeCard 
-              sound={sound}
-              timer={soundTimers[sound]}
-              records={records}
-              onStart={startSoundTimer}
-              onStop={stopSoundTimer}
-            />
-          </div>
-        ))}
-      </motion.div>
+      {/* Tabs */}
+      <div className="flex overflow-x-auto hide-scrollbar gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-full max-w-md mx-auto shadow-inner">
+        <button
+          onClick={() => setActiveTab('vowels')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
+            activeTab === 'vowels'
+              ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+          }`}
+        >
+          Vowels (स्वर)
+        </button>
+        <button
+          onClick={() => setActiveTab('consonants')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
+            activeTab === 'consonants'
+              ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+          }`}
+        >
+          Consonants (व्यंजन)
+        </button>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-wrap justify-center gap-4 lg:gap-5"
+        >
+          {currentSounds.map(sound => (
+            <div key={sound} className="w-full sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] xl:w-[calc(25%-15px)] max-w-[320px]">
+              <SoundPracticeCard 
+                sound={sound}
+                timer={soundTimers[sound] || { time: 0, isRunning: false }}
+                records={records}
+                onStart={startSoundTimer}
+                onStop={stopSoundTimer}
+              />
+            </div>
+          ))}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Tip section */}
       <motion.div 
