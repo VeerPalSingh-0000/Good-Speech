@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaMagic, FaSparkles, FaBookOpen } from 'react-icons/fa';
+import { FaMagic, FaBookOpen } from 'react-icons/fa';
+import { HiSparkles } from 'react-icons/hi'; 
 import { generateAIStory } from '../../../lib/gemini';
 
 const AIGenerator = ({ onStoryGenerated }) => {
@@ -74,7 +75,7 @@ const AIGenerator = ({ onStoryGenerated }) => {
             </>
           ) : (
             <>
-              <FaSparkles />
+              <HiSparkles />
               Generate Magic Story
             </>
           )}
