@@ -10,6 +10,7 @@ import StoryCard from "./stories/StoryCard";
 import StoryDisplayModal from "./stories/StoryDisplayModal";
 import StoryTimer from "./stories/StoryTimer";
 import Mascot from "../ui/Mascot";
+import AIGenerator from "./stories/AIGenerator";
 
 // Components Extracted to: src/components/views/stories/
 
@@ -134,6 +135,9 @@ const StoriesView = ({
         analyser={analyser}
         audioUrl={audioUrl}
       />
+
+      {/* AI Story Generator */}
+      <AIGenerator />
 
       {/* Story Selection */}
       <div className="space-y-6">

@@ -7,13 +7,13 @@ import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyB3HTbgd__Yq9DmLY60r47Uv0qlIRj-ha4",
-  authDomain: "speech-good.firebaseapp.com",
-  projectId: "speech-good",
-  storageBucket: "speech-good.appspot.com",
-  messagingSenderId: "42546792293",
-  appId: "1:42546792293:web:7796b7b9c0f4fb8f64838c",
-  measurementId: "G-QPX27Z5Q36"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

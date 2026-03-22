@@ -1,323 +1,379 @@
-import React, { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaMicrophone, FaBookOpen, FaChartLine, FaArrowRight, FaCommentDots, FaPlay, FaCheck, FaTimes, FaChevronDown } from 'react-icons/fa';
+// src/pages/Landing.jsx - Maximalist, Child-Focused, Vibrant Purple Design
+
+import React, { useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaMicrophoneAlt,
+  FaBook,
+  FaStar,
+  FaGamepad,
+  FaRocket,
+  FaPlay,
+  FaChevronDown,
+  FaMagic,
+  FaMedal,
+} from "react-icons/fa";
+
+// Reusable floating animation for background elements
+const floatingAnimation = {
+  y: ["-20px", "20px"],
+  rotate: [-10, 10],
+  transition: {
+    duration: 4,
+    repeat: Infinity,
+    repeatType: "reverse",
+    ease: "easeInOut",
+  },
+};
 
 const Landing = ({ onGetStarted, onLogin }) => {
   const howItWorksRef = useRef(null);
   const [openFaq, setOpenFaq] = useState(null);
 
   const scrollToSection = (ref) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth' });
+    ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const faqs = [
+    {
+      q: "Is this for kids or adults?",
+      a: "Both! While our games and stories are designed to be incredibly fun and engaging for children, adults love the tracking, analytics, and guided practice just as much. The core therapy principles apply to all ages.",
+    },
+    {
+      q: "Do I need special equipment?",
+      a: "Nope! Just a phone, tablet, or computer with a built-in microphone and a web browser. No fancy headsets required!",
+    },
+    {
+      q: "Will my child's data be private?",
+      a: "Absolutely. We take privacy seriously. All voice recordings are processed directly on your device and are never sent to or stored on our servers.",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans overflow-x-hidden selection:bg-purple-500/30">
-      {/* Background gradients */}
-      <div className="fixed inset-0 z-0 flex justify-center items-center pointer-events-none opacity-40">
-        <div className="absolute w-[800px] h-[800px] bg-gradient-to-tr from-purple-600/30 to-pink-500/30 blur-3xl rounded-full" />
+    <div className="min-h-screen bg-violet-700 font-sans overflow-x-hidden selection:bg-amber-400 selection:text-violet-900 relative">
+      {/* Maximalist Animated Background Elements */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Giant glowing orbs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-fuchsia-500 rounded-full mix-blend-screen filter blur-[100px] opacity-60 animate-pulse" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[800px] h-[800px] bg-cyan-400 rounded-full mix-blend-screen filter blur-[120px] opacity-40" />
+
+        {/* Floating shapes */}
+        <motion.div
+          animate={floatingAnimation}
+          className="absolute top-[15%] right-[10%] text-6xl text-amber-400 opacity-80"
+        >
+          <FaStar />
+        </motion.div>
+        <motion.div
+          animate={floatingAnimation}
+          transition={{
+            delay: 1,
+            duration: 5,
+            repeat: Infinity,
+            repeatType: "reverse",
+          }}
+          className="absolute top-[40%] left-[5%] text-7xl text-fuchsia-400 opacity-60"
+        >
+          <FaMagic />
+        </motion.div>
+        <motion.div
+          animate={floatingAnimation}
+          transition={{
+            delay: 2,
+            duration: 4.5,
+            repeat: Infinity,
+            repeatType: "reverse",
+          }}
+          className="absolute bottom-[20%] right-[15%] text-8xl text-cyan-400 opacity-50"
+        >
+          <FaRocket />
+        </motion.div>
       </div>
 
-      <div className="relative z-10">
-        {/* Navigation */}
-        <nav className="flex items-center justify-between p-6 md:px-12 max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-              <FaCommentDots className="text-xl text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
-              SpeechGood
-            </span>
+      {/* Navigation */}
+      <nav className="flex items-center justify-between gap-4 p-4 md:px-8 max-w-7xl mx-auto relative z-20 mt-4">
+        <motion.div
+          whileHover={{ scale: 1.05, rotate: -5 }}
+          className="flex items-center gap-3 cursor-pointer"
+        >
+          <div className="w-14 h-14 bg-amber-400 rounded-2xl flex items-center justify-center border-4 border-violet-900 shadow-[4px_4px_0px_rgba(76,29,149,1)]">
+            <FaGamepad className="text-3xl text-violet-900" />
           </div>
-          <div className="flex gap-4 items-center">
-            <button 
-              onClick={onLogin} 
-              className="text-slate-300 hover:text-white font-medium transition-colors"
-            >
-              Sign In
-            </button>
-            <button 
-              onClick={onGetStarted} 
-              className="btn-premium bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-2 px-6 rounded-full shadow-lg shadow-purple-500/30"
-            >
-              Get Started
-            </button>
-          </div>
-        </nav>
+          <span
+            className="text-3xl font-black tracking-tighter text-white drop-shadow-[0_4px_0_rgba(76,29,149,1)]"
+            style={{ WebkitTextStroke: "2px #4c1d95" }}
+          >
+            SpeechGood
+          </span>
+        </motion.div>
 
-        {/* Hero Section */}
-        <header className="flex flex-col items-center justify-center text-center px-6 pt-20 pb-32 max-w-5xl mx-auto">
+        <div className="flex gap-4 items-center">
+          <button
+            onClick={onLogin}
+            className="text-white hover:text-amber-400 font-bold text-xl transition-colors hidden sm:block drop-shadow-md"
+          >
+            Log In
+          </button>
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{
+              scale: 0.95,
+              y: 4,
+              boxShadow: "0px 0px 0px rgba(76,29,149,1)",
+            }}
+            onClick={onGetStarted}
+            className="bg-amber-400 text-violet-900 font-black text-base sm:text-lg py-2 px-4 sm:py-3 sm:px-8 rounded-full border-4 border-violet-900 shadow-[6px_6px_0px_rgba(76,29,149,1)] transition-all"
+          >
+            Play Now!
+          </motion.button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <header className="flex flex-col items-center justify-center text-center px-6 pt-12 pb-32 max-w-5xl mx-auto relative z-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", bounce: 0.5, duration: 0.8 }}
+          className="space-y-8 w-full flex flex-col items-center"
+        >
+          {/* Fun Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="space-y-8"
+            animate={{ rotate: [-2, 2, -2] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="inline-flex items-center justify-center gap-3 px-6 py-3 rounded-full bg-fuchsia-500 border-4 border-violet-900 text-white text-lg font-black tracking-wide shadow-[4px_4px_0px_rgba(76,29,149,1)] transform -rotate-2"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-sm font-medium mb-4">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
-              </span>
-              Empowering better communication today
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight font-display">
-              Overcome Stammering with <br className="hidden md:block" />
-              <span className="text-gradient-primary animate-shimmer">
-                Daily Practice
-              </span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-              Your personal, judgement-free zone for speech therapy. Track your progress, read engaging stories, and practice at your own pace.
+            <FaStar className="text-amber-300 text-xl" />
+            Play, Practice, and Shine!
+          </motion.div>
+
+          <h1
+            className="text-6xl md:text-8xl font-black tracking-tighter leading-[1.1] text-white drop-shadow-[0_6px_0_rgba(76,29,149,1)]"
+            style={{ WebkitTextStroke: "3px #4c1d95" }}
+          >
+            Discover Your <br />
+            <span
+              className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 drop-shadow-[0_6px_0_rgba(76,29,149,1)]"
+              style={{ WebkitTextStroke: "3px #4c1d95" }}
+            >
+              Super Voice!
+            </span>
+          </h1>
+
+          <p className="text-xl md:text-2xl text-violet-100 max-w-2xl mx-auto font-bold leading-relaxed bg-violet-900/40 p-6 rounded-3xl border-2 border-violet-400/30 backdrop-blur-sm">
+            The most fun way to practice speech every single day. Read magical
+            stories, play sound games, and watch your confidence soar!
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6 w-full max-w-xl mx-auto">
+            <motion.button
+              whileHover={{ scale: 1.05, y: -4 }}
+              whileTap={{
+                scale: 0.95,
+                y: 6,
+                boxShadow: "0px 0px 0px rgba(76,29,149,1)",
+              }}
+              onClick={onGetStarted}
+              className="w-full sm:w-auto bg-fuchsia-500 text-white text-2xl py-5 px-10 rounded-full font-black flex items-center justify-center gap-4 border-4 border-violet-900 shadow-[8px_8px_0px_rgba(76,29,149,1)] transition-all"
+            >
+              Start Adventure <FaRocket className="text-2xl" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05, y: -4 }}
+              whileTap={{
+                scale: 0.95,
+                y: 4,
+                boxShadow: "0px 0px 0px rgba(76,29,149,1)",
+              }}
+              onClick={() => scrollToSection(howItWorksRef)}
+              className="w-full sm:w-auto bg-cyan-400 text-violet-900 border-4 border-violet-900 text-xl py-5 px-10 rounded-full font-black shadow-[6px_6px_0px_rgba(76,29,149,1)] transition-all"
+            >
+              How it works
+            </motion.button>
+          </div>
+        </motion.div>
+      </header>
+
+      {/* Features - Bubbly Toy Box Style */}
+      <section
+        ref={howItWorksRef}
+        className="py-32 bg-cyan-400 border-t-8 border-violet-900 relative"
+      >
+        <div className="absolute top-0 left-0 w-full overflow-hidden leading-none transform -translate-y-full">
+          {/* SVG wave separator */}
+          <svg
+            viewBox="0 0 1200 120"
+            preserveAspectRatio="none"
+            className="relative block w-full h-16 text-cyan-400 fill-current"
+          >
+            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C75.29,31.25,152.88,58.8,230.12,68.62Z"></path>
+          </svg>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="text-center mb-20">
+            <h2
+              className="text-5xl md:text-7xl font-black tracking-tighter mb-6 text-white drop-shadow-[0_4px_0_rgba(76,29,149,1)]"
+              style={{ WebkitTextStroke: "2px #4c1d95" }}
+            >
+              Your Magical Toolkit
+            </h2>
+            <p className="text-2xl text-violet-900 font-bold max-w-2xl mx-auto bg-white/40 p-4 rounded-3xl border-4 border-violet-900">
+              Everything you need to level up your speaking powers!
             </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 w-full max-w-xl mx-auto">
-              <button 
-                onClick={onGetStarted}
-                className="w-full sm:w-1/2 btn-premium bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-size-200 animate-shimmer text-white text-lg py-4 px-8 rounded-full shadow-xl shadow-purple-500/25 flex items-center justify-center gap-3 active:scale-95 transition-transform"
-              >
-                Start Your Journey
-                <FaArrowRight className="text-sm" />
-              </button>
-              <button 
-                onClick={() => scrollToSection(howItWorksRef)}
-                className="w-full sm:w-1/2 px-8 py-4 text-lg font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/50 rounded-full backdrop-blur-md transition-all active:scale-95 shadow-lg"
-              >
-                See How It Works
-              </button>
-            </div>
-          </motion.div>
-        </header>
-
-        {/* See It In Action (Demo Preview) */}
-        <section className="relative px-4 pb-24 -mt-16 z-20">
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="max-w-5xl mx-auto relative rounded-3xl overflow-hidden glass-card shadow-2xl shadow-purple-500/10 border-2 border-slate-700/50"
-          >
-            <div className="bg-slate-800/80 h-10 w-full flex items-center px-4 gap-2 border-b border-slate-700/50">
-              <div className="w-3 h-3 rounded-full bg-red-500/80" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-              <div className="w-3 h-3 rounded-full bg-green-500/80" />
-            </div>
-            <div className="aspect-video bg-slate-900 relative flex items-center justify-center group cursor-pointer overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1542385151-efd9000785a0?auto=format&fit=crop&q=80&w=1200" alt="App Preview Interface" className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-              <div className="absolute w-20 h-20 bg-purple-600/90 rounded-full flex items-center justify-center text-white text-2xl shadow-2xl backdrop-blur-sm group-hover:scale-110 transition-transform duration-300 ring-4 ring-purple-500/30">
-                <FaPlay className="ml-1" />
-              </div>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Features Preview */}
-        <section className="bg-slate-900/80 backdrop-blur-3xl border-t border-slate-800 py-24 relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8">
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="glass-card p-8 rounded-3xl"
-            >
-              <div className="w-14 h-14 bg-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-inner border border-indigo-500/30">
-                <FaMicrophone />
-              </div>
-              <h3 className="text-2xl font-bold mb-4 font-display">Guided Exercises</h3>
-              <p className="text-slate-400 leading-relaxed">
-                Practice complex words and sounds with real-time feedback and structured daily routines.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="glass-card p-8 rounded-3xl"
-            >
-              <div className="w-14 h-14 bg-pink-500/20 text-pink-400 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-inner border border-pink-500/30">
-                <FaBookOpen />
-              </div>
-              <h3 className="text-2xl font-bold mb-4 font-display">Interactive Reading</h3>
-              <p className="text-slate-400 leading-relaxed">
-                Read engaging Hindi stories and folk tales. Control reading speed, highlight words, and master fluency.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="glass-card p-8 rounded-3xl"
-            >
-              <div className="w-14 h-14 bg-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-inner border border-cyan-500/30">
-                <FaChartLine />
-              </div>
-              <h3 className="text-2xl font-bold mb-4 font-display">Advanced Analytics</h3>
-              <p className="text-slate-400 leading-relaxed">
-                Watch yourself grow with detailed charts tracking your practice time, speed, and accuracy over weeks.
-              </p>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section className="py-24 px-6 max-w-7xl mx-auto border-t border-slate-800/50">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-white font-display mb-4">Loved by our Community</h2>
-            <p className="text-slate-400 text-lg">See how daily practice is changing lives in India and beyond.</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="glass-card p-8 rounded-3xl relative">
-              <div className="text-4xl text-purple-400 opacity-20 absolute top-6 left-6 font-serif">"</div>
-              <p className="text-slate-300 relative z-10 italic mb-8 mt-4">"SpeechGood created a safe environment where I felt comfortable practicing every single day. The gamification makes me want to come back."</p>
-              <div className="flex items-center gap-4 border-t border-slate-700/50 pt-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-cyan-400 to-indigo-500 flex items-center justify-center text-xl font-bold text-white">P</div>
-                <div>
-                  <p className="font-bold text-white">Priya S.</p>
-                  <p className="text-sm text-slate-400">Delhi, India</p>
-                </div>
-              </div>
-            </motion.div>
-            
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="glass-card p-8 rounded-3xl relative">
-              <div className="text-4xl text-pink-400 opacity-20 absolute top-6 left-6 font-serif">"</div>
-              <p className="text-slate-300 relative z-10 italic mb-8 mt-4">"I used to fear speaking Hindi at family gatherings. The Varnmala practice actually showed me exactly where my tongue was slipping up."</p>
-              <div className="flex items-center gap-4 border-t border-slate-700/50 pt-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 flex items-center justify-center text-xl font-bold text-white">R</div>
-                <div>
-                  <p className="font-bold text-white">Rahul K.</p>
-                  <p className="text-sm text-slate-400">Mumbai, India</p>
-                </div>
-              </div>
-            </motion.div>
-            
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="glass-card p-8 rounded-3xl relative md:col-span-2 lg:col-span-1">
-              <div className="text-4xl text-emerald-400 opacity-20 absolute top-6 left-6 font-serif">"</div>
-              <p className="text-slate-300 relative z-10 italic mb-8 mt-4">"The real-time highlighting when reading stories is fantastic. I finally feel in control of my breathing instead of rushing through words."</p>
-              <div className="flex items-center gap-4 border-t border-slate-700/50 pt-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-xl font-bold text-white">A</div>
-                <div>
-                  <p className="font-bold text-white">Amit V.</p>
-                  <p className="text-sm text-slate-400">Bangalore, India</p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Pricing / Feature Comparison */}
-        <section className="py-24 px-6 max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-white font-display mb-4">Choose Your Path</h2>
-            <p className="text-slate-400 text-lg">Start free, upgrade when you need advanced features.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-            {/* Free Tier */}
-            <div className="glass-card p-8 rounded-[2.5rem] border border-slate-700 relative">
-              <h3 className="text-2xl font-bold text-white mb-2">Basic</h3>
-              <div className="text-4xl font-bold text-white mb-6">₹0<span className="text-lg text-slate-500 font-normal"> / forever</span></div>
-              <ul className="space-y-4 mb-8 text-slate-300">
-                <li className="flex gap-3"><FaCheck className="text-emerald-500 shrink-0 mt-1" /> Basic Vowel sounds practice</li>
-                <li className="flex gap-3"><FaCheck className="text-emerald-500 shrink-0 mt-1" /> Limited community stories</li>
-                <li className="flex gap-3"><FaCheck className="text-emerald-500 shrink-0 mt-1" /> 7-day Analytics history</li>
-                <li className="flex gap-3 opacity-50"><FaTimes className="text-rose-500 shrink-0 mt-1" /> Real-time Speech-to-Text feedback</li>
-                <li className="flex gap-3 opacity-50"><FaTimes className="text-rose-500 shrink-0 mt-1" /> Premium Curated Guides</li>
-              </ul>
-              <button onClick={onGetStarted} className="w-full py-4 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-bold transition-all border border-slate-600">Start Free</button>
-            </div>
-
-            {/* Premium Tier */}
-            <div className="p-8 rounded-[2.5rem] relative bg-gradient-to-b from-purple-900/80 to-slate-900 border border-purple-500/50 shadow-2xl shadow-purple-900/50">
-              <div className="absolute top-0 right-8 -translate-y-1/2 bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white shadow-lg">Most Popular</div>
-              <h3 className="text-2xl font-bold text-purple-300 mb-2">Premium</h3>
-              <div className="text-4xl font-bold text-white mb-6">₹299<span className="text-lg text-purple-300/60 font-normal"> / month</span></div>
-              <ul className="space-y-4 mb-8 text-slate-200">
-                <li className="flex gap-3"><FaCheck className="text-pink-500 shrink-0 mt-1" /> Everything in Basic</li>
-                <li className="flex gap-3"><FaCheck className="text-pink-500 shrink-0 mt-1" /> Advanced Consonant & Varnmala Practice</li>
-                <li className="flex gap-3"><FaCheck className="text-pink-500 shrink-0 mt-1" /> Live Speech-to-Text Pronunciation Checks</li>
-                <li className="flex gap-3"><FaCheck className="text-pink-500 shrink-0 mt-1" /> Lifetime Analytics & Exporting</li>
-                <li className="flex gap-3"><FaCheck className="text-pink-500 shrink-0 mt-1" /> WhatsApp Notification Reminders</li>
-              </ul>
-              <button onClick={onGetStarted} className="w-full py-4 rounded-full btn-premium bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold transition-all shadow-xl shadow-pink-500/20 active:scale-95">Upgrade Later inside App</button>
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section className="py-24 px-6 max-w-3xl mx-auto border-t border-slate-800/50">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white font-display mb-4">Frequently Asked Questions</h2>
-          </div>
-          
-          <div className="space-y-4">
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
             {[
-              { q: "Is this a replacement for a Speech Therapist?", a: "No. SpeechGood is designed to be a companion tool. It works perfectly alongside professional speech therapy by providing you a structured way to complete your daily 'homework' and track progress." },
-              { q: "Do I need special equipment?", a: "Just an internet connection, a modern browser (like Chrome), and a built-in microphone on your phone or computer." },
-              { q: "Will my data be private?", a: "Yes, we utilize Firebase for secure student authentication. Your voice recordings are processed directly in your browser using the Web Speech API and are never stored on our servers." }
-            ].map((faq, i) => (
-              <div key={i} className="border border-slate-700/50 rounded-2xl bg-slate-800/30 overflow-hidden">
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full text-left p-6 font-bold flex justify-between items-center text-slate-200 hover:bg-slate-800/50 transition-colors">
-                  {faq.q}
-                  <FaChevronDown className={`transition-transform flex-shrink-0 ml-4 ${openFaq === i ? 'rotate-180 text-purple-400' : 'text-slate-500'}`} />
-                </button>
-                <AnimatePresence>
-                  {openFaq === i && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                      <div className="p-6 pt-0 text-slate-400 border-t border-slate-700/50 mt-2 leading-relaxed">
-                        {faq.a}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              {
+                icon: FaMicrophoneAlt,
+                title: "Magic Mic",
+                desc: "Speak into the magic microphone to practice sounds. Get instant, colorful feedback!",
+                color: "bg-fuchsia-400",
+              },
+              {
+                icon: FaBook,
+                title: "Story Quests",
+                desc: "Read amazing stories where words highlight as you go. You control the speed of the adventure!",
+                color: "bg-amber-400",
+              },
+              {
+                icon: FaMedal,
+                title: "Hero Trophies",
+                desc: "Earn points, level up, and unlock awesome badges every time you practice.",
+                color: "bg-emerald-400",
+              },
+            ].map((feature, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ type: "spring", bounce: 0.5, delay: idx * 0.15 }}
+                whileHover={{ y: -10, rotate: idx % 2 === 0 ? 2 : -2 }}
+                className={`${feature.color} p-8 rounded-[3rem] border-8 border-violet-900 shadow-[12px_12px_0px_rgba(76,29,149,1)] flex flex-col items-center text-center relative overflow-hidden`}
+              >
+                {/* Decorative highlight inside card */}
+                <div className="absolute top-4 left-6 w-16 h-8 bg-white/40 rounded-full blur-md transform -rotate-12" />
+
+                <div className="w-24 h-24 bg-white text-violet-900 rounded-full flex items-center justify-center text-5xl mb-8 shadow-[4px_4px_0px_rgba(76,29,149,1)] border-4 border-violet-900">
+                  <feature.icon />
+                </div>
+                <h3
+                  className="text-3xl font-black mb-4 text-white drop-shadow-[0_3px_0_rgba(76,29,149,1)]"
+                  style={{ WebkitTextStroke: "1px #4c1d95" }}
+                >
+                  {feature.title}
+                </h3>
+                <p className="text-violet-900 font-bold text-xl leading-relaxed">
+                  {feature.desc}
+                </p>
+              </motion.div>
             ))}
           </div>
-        </section>
-        
-        <script type="application/ld+json" dangerouslySetInnerHTML={{__html: `
-        {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          "mainEntity": [{
-            "@type": "Question",
-            "name": "Is this a replacement for a Speech Therapist?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. SpeechGood is designed to be a companion tool. It works perfectly alongside professional speech therapy by providing you a structured way to complete your daily homework and track progress."
-            }
-          }]
-        }
-        `}} />
+        </div>
+      </section>
 
-        {/* Final CTA */}
-        <section className="py-24 px-6 relative">
-          <div className="max-w-5xl mx-auto bg-gradient-to-br from-purple-900/50 to-indigo-900/50 border border-purple-500/20 rounded-[3rem] p-12 md:p-24 text-center glass overflow-hidden">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-pink-500/20 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2" />
-            
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 font-display">Ready to find your voice?</h2>
-            <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
-              Join thousands of others taking control of their speech journey today. It's free to get started.
-            </p>
-            <button 
-              onClick={onGetStarted}
-              className="btn-premium bg-white text-slate-900 text-lg py-4 px-12 rounded-full font-bold shadow-2xl hover:bg-slate-100 transition-all hover:scale-105 active:scale-95"
+      {/* FAQ Section - Building Blocks */}
+      <section className="py-32 px-6 max-w-4xl mx-auto relative z-10">
+        <div className="text-center mb-16">
+          <h2
+            className="text-5xl md:text-6xl font-black tracking-tighter mb-4 text-white drop-shadow-[0_4px_0_rgba(76,29,149,1)]"
+            style={{ WebkitTextStroke: "2px #4c1d95" }}
+          >
+            Parents Ask...
+          </h2>
+        </div>
+
+        <div className="space-y-6">
+          {faqs.map((faq, i) => (
+            <motion.div
+              key={i}
+              layout // Enables smooth layout transitions for siblings
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", bounce: 0.3, delay: i * 0.1 }}
+              className={`border-4 border-violet-900 rounded-[2rem] overflow-hidden shadow-[8px_8px_0px_rgba(76,29,149,1)] relative z-20 ${i % 2 === 0 ? "bg-fuchsia-600" : "bg-amber-500"
+                }`}
             >
-              Create Free Account
-            </button>
-          </div>
-        </section>
+              <button
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                aria-expanded={openFaq === i}
+                className="w-full text-left p-6 font-black text-2xl flex justify-between items-center text-white hover:bg-white/10 transition-colors"
+              >
+                <span className="pr-4">{faq.q}</span>
+                <motion.div
+                  animate={{ rotate: openFaq === i ? 180 : 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="w-12 h-12 min-w-[3rem] bg-white rounded-full flex items-center justify-center border-4 border-violet-900 shadow-[4px_4px_0px_rgba(76,29,149,1)]"
+                >
+                  <FaChevronDown className="text-violet-900" />
+                </motion.div>
+              </button>
 
-        {/* Super simple footer */}
-        <footer className="text-center py-8 text-slate-500 border-t border-white/5">
-          <p>© 2026 SpeechGood. Built for the community.</p>
-        </footer>
-      </div>
+              <AnimatePresence initial={false}>
+                {openFaq === i && (
+                  <motion.div
+                    key="content"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+                    className="bg-white border-t-4 border-violet-900"
+                  >
+                    <div className="p-8 font-bold text-xl text-violet-900 leading-relaxed">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Final Massive CTA */}
+      <section className="py-32 px-6 relative overflow-hidden bg-fuchsia-500 border-t-8 border-violet-900">
+        {/* Background stars */}
+        <div className="absolute top-10 left-10 text-6xl text-amber-400 opacity-50">
+          <FaStar />
+        </div>
+        <div className="absolute bottom-10 right-10 text-8xl text-cyan-400 opacity-50">
+          <FaStar />
+        </div>
+
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <motion.h2
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="text-6xl md:text-8xl font-black tracking-tighter mb-8 text-white drop-shadow-[0_8px_0_rgba(76,29,149,1)]"
+            style={{ WebkitTextStroke: "3px #4c1d95" }}
+          >
+            Ready to Play?
+          </motion.h2>
+          <p className="text-2xl text-violet-900 font-bold mb-12 bg-white p-6 rounded-3xl border-4 border-violet-900 shadow-[8px_8px_0px_rgba(76,29,149,1)] inline-block">
+            Join the fun and start your speech journey right now!
+          </p>
+          <br />
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: -3 }}
+            whileTap={{
+              scale: 0.9,
+              boxShadow: "0px 0px 0px rgba(76,29,149,1)",
+            }}
+            onClick={onGetStarted}
+            className="bg-amber-400 text-violet-900 text-3xl py-6 px-16 rounded-full font-black border-8 border-violet-900 shadow-[12px_12px_0px_rgba(76,29,149,1)] hover:bg-yellow-300 transition-colors inline-flex items-center gap-4"
+          >
+            Let's Go! <FaRocket />
+          </motion.button>
+        </div>
+      </section>
+
+      {/* Chunky Footer */}
+      <footer className="text-center py-10 font-bold text-xl border-t-8 border-violet-900 bg-violet-800 text-violet-300">
+        <p>© 2026 SpeechGood. Built for fun and learning!</p>
+      </footer>
     </div>
   );
 };
