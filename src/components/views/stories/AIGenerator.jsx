@@ -1,151 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { generateQuickStory } from '../../../lib/gemini';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
+import { FaMagic, FaSparkles, FaBookOpen } from 'react-icons/fa';
+import { generateAIStory } from '../../../lib/gemini';
 
-const loadingMessages = [
-  "Consulting the AI muses...",
-  "Building fascinating characters...",
-  "Crafting the perfect plot...",
-  "Choosing the best vocabulary...",
-  "Weaving it all together...",
-  "Polishing the final draft...",
-];
-
-export default function AIGenerator() {
-  const [language, setLanguage] = useState('Hindi');
-  const [story, setStory] = useState('');
+const AIGenerator = ({ onStoryGenerated }) => {
+  const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
-
-  // Cycle loading messages
-  useEffect(() => {
-    let msgInterval;
-    if (isGenerating) {
-      msgInterval = setInterval(() => {
-        setLoadingMsgIdx((prev) => (prev + 1) % loadingMessages.length);
-      }, 2500);
-    } else {
-      setLoadingMsgIdx(0);
-    }
-    return () => clearInterval(msgInterval);
-  }, [isGenerating]);
+  const [error, setError] = useState(null);
 
   const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+
     setIsGenerating(true);
-    setStory('');
+    setError(null);
     
     try {
-      const newStory = await generateQuickStory(language);
-      setStory(newStory);
-      toast.success("Story generated successfully!");
-    } catch (error) {
-      toast.error("Oops! Couldn't generate the story.");
+      const storyText = await generateAIStory(prompt);
+      const newStory = {
+        id: `ai-${Date.now()}`,
+        title: prompt.length > 20 ? prompt.substring(0, 20) + '...' : prompt,
+        content: storyText,
+        category: 'AI Generated',
+        isAI: true,
+        date: new Date().toLocaleDateString()
+      };
+      
+      onStoryGenerated(newStory);
+      setPrompt('');
+    } catch (err) {
+      setError("AI function respond nahi kar raha. Check karo Netlify settings!");
+      console.error(err);
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <div className="p-8 bg-white dark:bg-slate-800/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-          AI Story Studio
-        </h2>
-        
-        <div className="flex gap-3 items-center w-full sm:w-auto">
-          <select 
-            value={language} 
-            onChange={(e) => setLanguage(e.target.value)}
-            disabled={isGenerating}
-            className="p-3 w-full sm:w-40 border-2 border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-900/80 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-purple-500 outline-none transition-all disabled:opacity-50"
-          >
-            <option value="Hindi">Hindi</option>
-            <option value="English">English</option>
-            <option value="Marwari">Marwari</option>
-            <option value="Tamil">Tamil</option>
-            <option value="Telugu">Telugu</option>
-            <option value="Malayalam">Malayalam</option>
-            <option value="Kannada">Kannada</option>
-            <option value="Marathi">Marathi</option>
-            <option value="Gujarati">Gujarati</option>
-            <option value="Punjabi">Punjabi</option>
-            <option value="Bengali">Bengali</option>
-            <option value="Spanish">Spanish</option>
-            <option value="French">French</option>
-          </select>
-          
-          <button 
-            onClick={handleGenerate} 
-            disabled={isGenerating}
-            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-purple-500/30 transition-all active:scale-95 hover:shadow-xl hover:shadow-purple-500/40 disabled:opacity-70 disabled:active:scale-100 flex items-center justify-center gap-2"
-          >
-            {isGenerating ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating...
-              </span>
-            ) : (
-              '✨ Generate Magic'
-            )}
-          </button>
+    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-xl border border-purple-100 dark:border-slate-700">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-200 dark:shadow-none">
+          <FaMagic />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-white">AI Story Maker</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Kuch bhi likho, AI uski kahani bana dega</p>
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {isGenerating && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-              <div className="flex justify-between items-center text-sm font-semibold text-purple-600 dark:text-purple-400">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={loadingMsgIdx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {loadingMessages[loadingMsgIdx]}
-                  </motion.span>
-                </AnimatePresence>
-                <div className="flex gap-1">
-                  <span className="animate-bounce delay-75">✨</span>
-                  <span className="animate-bounce delay-150">✨</span>
-                  <span className="animate-bounce delay-300">✨</span>
-                </div>
-              </div>
-              <div className="space-y-3 relative overflow-hidden animate-pulse mt-4">
-                {/* Skeleton Paragraphs */}
-                <div className="h-3 bg-slate-300 dark:bg-slate-700 rounded-full w-3/4"></div>
-                <div className="h-3 bg-slate-300 dark:bg-slate-700 rounded-full w-full"></div>
-                <div className="h-3 bg-slate-300 dark:bg-slate-700 rounded-full w-5/6"></div>
-                <div className="h-3 bg-slate-300 dark:bg-slate-700 rounded-full w-full"></div>
-                <div className="h-3 bg-slate-300 dark:bg-slate-700 rounded-full w-2/3"></div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="space-y-4">
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Example: Ek sher aur chuhe ki dosti..."
+          className="w-full h-32 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 focus:border-purple-500 outline-none transition-all resize-none text-slate-700 dark:text-slate-200"
+          disabled={isGenerating}
+        />
 
-      {story && !isGenerating && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-6 p-8 bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-inner"
+        {error && <p className="text-red-500 text-sm px-2">{error}</p>}
+
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating || !prompt.trim()}
+          className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${
+            isGenerating || !prompt.trim()
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-200 dark:shadow-none'
+          }`}
         >
-          <p className="whitespace-pre-wrap leading-loose text-lg text-slate-700 dark:text-slate-300 font-medium">
-            {story}
-          </p>
-        </motion.div>
-      )}
+          {isGenerating ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Kahani Ban rahi hai...
+            </>
+          ) : (
+            <>
+              <FaSparkles />
+              Generate Magic Story
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+export default AIGenerator;
