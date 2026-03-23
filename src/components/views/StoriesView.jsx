@@ -143,105 +143,19 @@ const StoriesView = ({
 
   return (
     <div className="space-y-12">
-      {/* Header */}
+      {/* Header - Your Story Library */}
       <div className="text-center">
-        <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent pb-2">
-          पठन अभ्यास
+        <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          📚 Your Story Library
         </h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg max-w-2xl mx-auto">
-          Improve fluency and confidence with open-ended, timed reading
-          sessions.
+        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+          Browse and read from your collection of stories
         </p>
       </div>
 
-      {/* SECTION 1: Random 15-Min Stories */}
-      <div className="border-t-2 border-slate-300 dark:border-slate-700 pt-12">
-        <LanguageSelector
-          onSelectLanguage={handleLanguageSelect}
-          isLoading={isLoadingStory}
-        />
-
-        {storyError && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg text-red-700 dark:text-red-200"
-          >
-            <p>❌ {storyError}</p>
-            <button
-              onClick={() => {
-                setStoryError(null);
-                setCurrentStory(null);
-              }}
-              className="mt-2 text-sm font-semibold underline hover:no-underline"
-            >
-              Try Another Language
-            </button>
-          </motion.div>
-        )}
-      </div>
-
-      {/* SECTION 2: Story Reading Interface (if story selected) */}
-      {currentStory && showStory && (
-        <div className="border-t-2 border-slate-300 dark:border-slate-700 pt-12 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
-                {currentStory.title}
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 mt-1">
-                ~{currentStory.duration} • {currentStory.language}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setCurrentStory(null);
-                setShowStory(false);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg font-semibold transition-colors"
-            >
-              <FaArrowLeft /> Back
-            </button>
-          </div>
-
-          {/* Timer Display */}
-          <StoryTimer
-            storyTimer={storyTimer}
-            onStart={handleStart}
-            onPause={handlePause}
-            onReset={handleReset}
-            onStop={handleStop}
-            currentStory={currentStory}
-            analyser={analyser}
-            audioUrl={audioUrl}
-          />
-
-          {/* Story Content Display */}
-          <AnimatePresence>
-            {currentStory && (
-              <StoryDisplayModal
-                story={currentStory}
-                onClose={handleCloseModal}
-                lineBookmarks={lineBookmarks[currentStory.id] || []}
-                onToggleLineBookmark={onToggleLineBookmark}
-              />
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* SECTION 3: Browse Your Stories (PDF Library) */}
+      {/* SECTION 1: Story Library AT TOP */}
       {stories.length > 0 && (
-        <div className="border-t-2 border-slate-300 dark:border-slate-700 pt-12 space-y-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-              📚 Your Story Library
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400">
-              Browse and read from your collection of stories
-            </p>
-          </div>
-
+        <div className="space-y-6">
           {/* Timer Display */}
           <StoryTimer
             storyTimer={storyTimer}
@@ -257,34 +171,33 @@ const StoriesView = ({
           {/* Story Selection */}
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <h3 className="text-3xl font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                <FaBookOpen className="text-blue-500" />
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-white">
                 {selectedCategory && filter === "all"
                   ? selectedCategory
-                  : "Choose a Story"}
+                  : "Browse Stories"}
               </h3>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 {selectedCategory && filter === "all" && (
                   <button
                     onClick={handleBackToCategories}
-                    className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 font-semibold"
+                    className="text-sm px-3 py-1.5 text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 font-semibold"
                   >
-                    <FaArrowLeft /> Back
+                    ← Back
                   </button>
                 )}
-                <div className="flex items-center p-1 bg-slate-200 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center p-0.5 bg-slate-200 dark:bg-slate-800 rounded">
                   <button
                     onClick={() => {
                       setFilter("all");
                       setSelectedCategory(null);
                     }}
-                    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${filter === "all" ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-white shadow" : "text-slate-600 dark:text-slate-300"}`}
+                    className={`px-3 py-1 text-xs font-semibold rounded transition-colors ${filter === "all" ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-white shadow-sm" : "text-slate-600 dark:text-slate-300"}`}
                   >
-                    All Stories
+                    All
                   </button>
                   <button
                     onClick={() => setFilter("bookmarked")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${filter === "bookmarked" ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-white shadow" : "text-slate-600 dark:text-slate-300"}`}
+                    className={`px-3 py-1 text-xs font-semibold rounded transition-colors ${filter === "bookmarked" ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-white shadow-sm" : "text-slate-600 dark:text-slate-300"}`}
                   >
                     Bookmarked
                   </button>
@@ -296,10 +209,10 @@ const StoriesView = ({
               {filter === "all" && !selectedCategory ? (
                 <motion.div
                   key="categories"
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                  exit={{ opacity: 0, y: -15 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
                   {categories.map((cat) => (
                     <CategoryCard
@@ -314,7 +227,7 @@ const StoriesView = ({
                 <motion.div
                   key="stories"
                   layout
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
                   {filteredStories.map((story) => (
                     <StoryCard
@@ -330,18 +243,11 @@ const StoriesView = ({
             </AnimatePresence>
 
             {filteredStories.length === 0 && filter === "bookmarked" && (
-              <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700">
-                <Mascot
-                  mood="sleepy"
-                  size={120}
-                  className="mb-4 opacity-70 drop-shadow-lg"
-                />
-                <h4 className="text-xl font-semibold text-slate-700 dark:text-slate-300">
+              <div className="flex flex-col items-center justify-center py-12 bg-white dark:bg-slate-800/50 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700">
+                <Mascot mood="sleepy" size={100} className="mb-3 opacity-70" />
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   No Bookmarked Stories
                 </h4>
-                <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-sm text-center">
-                  Click the bookmark icon on a story to save it here!
-                </p>
               </div>
             )}
           </div>
@@ -358,6 +264,83 @@ const StoriesView = ({
           </AnimatePresence>
         </div>
       )}
+
+      {/* SECTION 2: Story Reading Interface */}
+      {currentStory && showStory && (
+        <div className="border-t-2 border-slate-300 dark:border-slate-700 pt-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {currentStory.title}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {currentStory.duration} • {currentStory.language}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setCurrentStory(null);
+                setShowStory(false);
+              }}
+              className="text-sm px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded font-semibold transition-colors"
+            >
+              Back
+            </button>
+          </div>
+
+          <StoryTimer
+            storyTimer={storyTimer}
+            onStart={handleStart}
+            onPause={handlePause}
+            onReset={handleReset}
+            onStop={handleStop}
+            currentStory={currentStory}
+            analyser={analyser}
+            audioUrl={audioUrl}
+          />
+
+          <AnimatePresence>
+            {currentStory && (
+              <StoryDisplayModal
+                story={currentStory}
+                onClose={handleCloseModal}
+                lineBookmarks={lineBookmarks[currentStory.id] || []}
+                onToggleLineBookmark={onToggleLineBookmark}
+              />
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* SECTION 3: Random 15-Minute Stories */}
+      <div className="border-t-2 border-slate-300 dark:border-slate-700 pt-8">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
+          🎲 Random 15-Minute Stories
+        </h2>
+        <LanguageSelector
+          onSelectLanguage={handleLanguageSelect}
+          isLoading={isLoadingStory}
+        />
+
+        {storyError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-200"
+          >
+            <p>❌ {storyError}</p>
+            <button
+              onClick={() => {
+                setStoryError(null);
+                setCurrentStory(null);
+              }}
+              className="mt-2 text-xs font-semibold underline"
+            >
+              Try Another Language
+            </button>
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };
