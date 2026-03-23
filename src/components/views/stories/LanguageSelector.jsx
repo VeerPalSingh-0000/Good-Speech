@@ -3,16 +3,40 @@ import { motion } from "framer-motion";
 import { FaSpinner } from "react-icons/fa";
 
 const LANGUAGES = [
-  { code: "hi", label: "हिंदी (Hindi)", flag: "🇮🇳" },
   { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "hi", label: "हिंदी (Hindi)", flag: "🇮🇳" },
+  { code: "es", label: "Español (Spanish)", flag: "🇪🇸" },
+  { code: "fr", label: "Français (French)", flag: "🇫🇷" },
+  { code: "de", label: "Deutsch (German)", flag: "🇩🇪" },
+  { code: "it", label: "Italiano (Italian)", flag: "🇮🇹" },
+  { code: "pt", label: "Português (Portuguese)", flag: "🇵🇹" },
+  { code: "ja", label: "日本語 (Japanese)", flag: "🇯🇵" },
+  { code: "zh", label: "中文 (Chinese)", flag: "🇨🇳" },
+  { code: "ko", label: "한국어 (Korean)", flag: "🇰🇷" },
+  { code: "ru", label: "Русский (Russian)", flag: "🇷🇺" },
+  { code: "ar", label: "العربية (Arabic)", flag: "🇸🇦" },
   { code: "ta", label: "தமிழ் (Tamil)", flag: "🇮🇳" },
   { code: "te", label: "తెలుగు (Telugu)", flag: "🇮🇳" },
   { code: "kn", label: "ಕನ್ನಡ (Kannada)", flag: "🇮🇳" },
   { code: "ml", label: "മലയാളം (Malayalam)", flag: "🇮🇳" },
+  { code: "bn", label: "বাংলা (Bengali)", flag: "🇧🇩" },
+  { code: "pa", label: "ਪੰਜਾਬੀ (Punjabi)", flag: "🇮🇳" },
+  { code: "gu", label: "ગુજરાતી (Gujarati)", flag: "🇮🇳" },
+  { code: "mr", label: "मराठी (Marathi)", flag: "🇮🇳" },
+  { code: "th", label: "ไทย (Thai)", flag: "🇹🇭" },
+  { code: "vi", label: "Tiếng Việt (Vietnamese)", flag: "🇻🇳" },
+  { code: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
+  { code: "pl", label: "Polski (Polish)", flag: "🇵🇱" },
+  { code: "tr", label: "Türkçe (Turkish)", flag: "🇹🇷" },
+  { code: "nl", label: "Nederlands (Dutch)", flag: "🇳🇱" },
+  { code: "sv", label: "Svenska (Swedish)", flag: "🇸🇪" },
+  { code: "da", label: "Dansk (Danish)", flag: "🇩🇰" },
+  { code: "fi", label: "Suomi (Finnish)", flag: "🇫🇮" },
+  { code: "no", label: "Norsk (Norwegian)", flag: "🇳🇴" },
 ];
 
 const LanguageSelector = ({ onSelectLanguage, isLoading = false }) => {
-  const [selectedLang, setSelectedLang] = useState(null);
+  const [selectedLang, setSelectedLang] = useState("");
 
   const handleSelect = async (langCode) => {
     setSelectedLang(langCode);
@@ -23,42 +47,35 @@ const LanguageSelector = ({ onSelectLanguage, isLoading = false }) => {
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-4"
     >
-      <div className="text-center">
-        <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Random 15-Minute Stories
+      <div>
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+          15-Minute Stories
         </h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
-          Select your language
+        <p className="text-slate-600 dark:text-slate-400">
+          Select your language to get started
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {LANGUAGES.map((lang) => (
-          <motion.button
-            key={lang.code}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => handleSelect(lang.code)}
-            disabled={isLoading || (selectedLang && selectedLang !== lang.code)}
-            className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-              selectedLang === lang.code
-                ? "border-purple-600 bg-purple-50 dark:bg-purple-900/40 shadow-md"
-                : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-purple-500"
-            } ${
-              isLoading || (selectedLang && selectedLang !== lang.code)
-                ? "opacity-50 cursor-not-allowed"
-                : "cursor-pointer"
-            }`}
-          >
-            <span className="text-3xl">{lang.flag}</span>
-            <span className="text-sm font-semibold">{lang.label}</span>
-            {selectedLang === lang.code && isLoading && (
-              <FaSpinner className="animate-spin text-purple-600 text-xs mt-1" />
-            )}
-          </motion.button>
-        ))}
+      <div className="flex gap-3">
+        <select
+          value={selectedLang}
+          onChange={(e) => handleSelect(e.target.value)}
+          disabled={isLoading}
+          className="flex-1 px-4 py-3 rounded-lg border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <option value="">Select a language...</option>
+          {LANGUAGES.map((lang) => (
+            <option key={lang.code} value={lang.code}>
+              {lang.flag} {lang.label}
+            </option>
+          ))}
+        </select>
+
+        {selectedLang && isLoading && (
+          <FaSpinner className="animate-spin text-slate-400 text-2xl" />
+        )}
       </div>
     </motion.div>
   );
