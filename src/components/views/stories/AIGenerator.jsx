@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaMagic, FaBookOpen } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi";
@@ -8,9 +8,26 @@ const AIGenerator = ({ onStoryGenerated }) => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+
+    const timer = setInterval(() => {
+      setCooldownSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldownSeconds]);
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || cooldownSeconds > 0) return;
 
     setIsGenerating(true);
     setError(null);
@@ -29,6 +46,12 @@ const AIGenerator = ({ onStoryGenerated }) => {
       onStoryGenerated(newStory);
       setPrompt("");
     } catch (err) {
+      if (
+        typeof err?.retryAfterSeconds === "number" &&
+        err.retryAfterSeconds > 0
+      ) {
+        setCooldownSeconds(err.retryAfterSeconds);
+      }
       setError(
         err?.message ||
           "Kahani generate nahi ho paayi. Thodi der baad fir try karo.",
@@ -68,9 +91,9 @@ const AIGenerator = ({ onStoryGenerated }) => {
 
         <button
           onClick={handleGenerate}
-          disabled={isGenerating || !prompt.trim()}
+          disabled={isGenerating || !prompt.trim() || cooldownSeconds > 0}
           className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${
-            isGenerating || !prompt.trim()
+            isGenerating || !prompt.trim() || cooldownSeconds > 0
               ? "bg-slate-200 text-slate-400 cursor-not-allowed"
               : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-200 dark:shadow-none"
           }`}
@@ -79,6 +102,11 @@ const AIGenerator = ({ onStoryGenerated }) => {
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Kahani Ban rahi hai...
+            </>
+          ) : cooldownSeconds > 0 ? (
+            <>
+              <HiSparkles />
+              Retry in {cooldownSeconds}s
             </>
           ) : (
             <>

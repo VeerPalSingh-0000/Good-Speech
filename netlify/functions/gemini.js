@@ -43,7 +43,14 @@ const generateWithFallback = async (genAI, modelCandidates, prompt) => {
   for (const modelName of modelCandidates) {
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          // Keep output concise to avoid blowing through token quota.
+          maxOutputTokens: 700,
+          temperature: 0.8,
+        },
+      });
       const text = result?.response?.text?.();
       if (!text) {
         failures.push(`Model ${modelName}: empty response`);
@@ -87,10 +94,10 @@ exports.handler = async (event) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const modelCandidates = buildModelCandidates();
 
-    const prompt =
-      customPrompt ||
-      `Write a creative, engaging, and easy-to-read short story in ${language}. 
-The story should take about 15 minutes to read aloud (roughly 1500 to 2000 words). 
+    const prompt = customPrompt
+      ? `${customPrompt}\n\nWrite the story in simple language, plain text only, and keep it under 350 words.`
+      : `Write a creative, engaging, and easy-to-read short story in ${language}. 
+The story should take about 3 to 5 minutes to read aloud (roughly 280 to 420 words). 
 Do not include a title or markdown formatting, just return the plain text of the story. 
 Make the vocabulary suitable for someone practicing their speaking and pronunciation skills.`;
 
@@ -124,6 +131,9 @@ Make the vocabulary suitable for someone practicing their speaking and pronuncia
       const retryHint = retryAfterSeconds
         ? `Please retry after about ${retryAfterSeconds} seconds.`
         : "Please retry after a short wait.";
+      const retryAfterAt = retryAfterSeconds
+        ? new Date(Date.now() + retryAfterSeconds * 1000).toISOString()
+        : null;
 
       return {
         statusCode: 429,
@@ -131,6 +141,8 @@ Make the vocabulary suitable for someone practicing their speaking and pronuncia
           error:
             "Gemini API quota/rate limit reached. Upgrade billing or wait for quota reset. " +
             retryHint,
+          retryAfterSeconds,
+          retryAfterAt,
         }),
       };
     }

@@ -1,13 +1,21 @@
 // src/lib/gemini.js
 
-const getErrorMessageFromResponse = async (response) => {
+const getErrorFromResponse = async (response) => {
   try {
     const data = await response.json();
-    if (data?.error) return data.error;
-    if (data?.message) return data.message;
-    return `Server error (${response.status})`;
+    return {
+      message:
+        data?.error || data?.message || `Server error (${response.status})`,
+      retryAfterSeconds:
+        typeof data?.retryAfterSeconds === "number"
+          ? data.retryAfterSeconds
+          : null,
+    };
   } catch {
-    return `Server error (${response.status})`;
+    return {
+      message: `Server error (${response.status})`,
+      retryAfterSeconds: null,
+    };
   }
 };
 
@@ -21,7 +29,10 @@ export const generateQuickStory = async (language = "Hindi") => {
     });
 
     if (!response.ok) {
-      throw new Error(await getErrorMessageFromResponse(response));
+      const errorInfo = await getErrorFromResponse(response);
+      const err = new Error(errorInfo.message);
+      err.retryAfterSeconds = errorInfo.retryAfterSeconds;
+      throw err;
     }
 
     const data = await response.json();
@@ -46,7 +57,10 @@ export const generateAIStory = async (prompt) => {
     });
 
     if (!response.ok) {
-      throw new Error(await getErrorMessageFromResponse(response));
+      const errorInfo = await getErrorFromResponse(response);
+      const err = new Error(errorInfo.message);
+      err.retryAfterSeconds = errorInfo.retryAfterSeconds;
+      throw err;
     }
 
     const data = await response.json();
