@@ -43,14 +43,7 @@ const generateWithFallback = async (genAI, modelCandidates, prompt) => {
   for (const modelName of modelCandidates) {
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          // Keep output concise to avoid blowing through token quota.
-          maxOutputTokens: 700,
-          temperature: 0.8,
-        },
-      });
+      const result = await model.generateContent(prompt);
       const text = result?.response?.text?.();
       if (!text) {
         failures.push(`Model ${modelName}: empty response`);
@@ -95,11 +88,8 @@ exports.handler = async (event) => {
     const modelCandidates = buildModelCandidates();
 
     const prompt = customPrompt
-      ? `${customPrompt}\n\nWrite the story in simple language, plain text only, and keep it under 350 words.`
-      : `Write a creative, engaging, and easy-to-read short story in ${language}. 
-The story should take about 3 to 5 minutes to read aloud (roughly 280 to 420 words). 
-Do not include a title or markdown formatting, just return the plain text of the story. 
-Make the vocabulary suitable for someone practicing their speaking and pronunciation skills.`;
+      ? `${customPrompt}`
+      : `Write a short story in ${language}. Keep it under 300 words, plain text only.`;
 
     const generated = await generateWithFallback(
       genAI,
