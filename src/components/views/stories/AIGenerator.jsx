@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaMagic, FaBookOpen } from 'react-icons/fa';
-import { HiSparkles } from 'react-icons/hi'; 
-import { generateAIStory } from '../../../lib/gemini';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaMagic, FaBookOpen } from "react-icons/fa";
+import { HiSparkles } from "react-icons/hi";
+import { generateAIStory } from "../../../lib/gemini";
 
 const AIGenerator = ({ onStoryGenerated }) => {
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
 
@@ -14,22 +14,25 @@ const AIGenerator = ({ onStoryGenerated }) => {
 
     setIsGenerating(true);
     setError(null);
-    
+
     try {
       const storyText = await generateAIStory(prompt);
       const newStory = {
         id: `ai-${Date.now()}`,
-        title: prompt.length > 20 ? prompt.substring(0, 20) + '...' : prompt,
+        title: prompt.length > 20 ? prompt.substring(0, 20) + "..." : prompt,
         content: storyText,
-        category: 'AI Generated',
+        category: "AI Generated",
         isAI: true,
-        date: new Date().toLocaleDateString()
+        date: new Date().toLocaleDateString(),
       };
-      
+
       onStoryGenerated(newStory);
-      setPrompt('');
+      setPrompt("");
     } catch (err) {
-      setError("AI function respond nahi kar raha. Check karo Netlify settings!");
+      setError(
+        err?.message ||
+          "Kahani generate nahi ho paayi. Thodi der baad fir try karo.",
+      );
       console.error(err);
     } finally {
       setIsGenerating(false);
@@ -43,8 +46,12 @@ const AIGenerator = ({ onStoryGenerated }) => {
           <FaMagic />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-slate-800 dark:text-white">AI Story Maker</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Kuch bhi likho, AI uski kahani bana dega</p>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-white">
+            AI Story Maker
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Kuch bhi likho, AI uski kahani bana dega
+          </p>
         </div>
       </div>
 
@@ -64,8 +71,8 @@ const AIGenerator = ({ onStoryGenerated }) => {
           disabled={isGenerating || !prompt.trim()}
           className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${
             isGenerating || !prompt.trim()
-              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-200 dark:shadow-none'
+              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-purple-200 dark:shadow-none"
           }`}
         >
           {isGenerating ? (

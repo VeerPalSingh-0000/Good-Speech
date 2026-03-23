@@ -1,5 +1,21 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+const extractRetrySeconds = (message) => {
+  const match = String(message || "").match(/retry in\s+([\d.]+)s/i);
+  if (!match) return null;
+  const seconds = Number.parseFloat(match[1]);
+  return Number.isFinite(seconds) ? Math.ceil(seconds) : null;
+};
+
+const isQuotaOrRateLimit = (message) => {
+  const normalized = String(message || "").toLowerCase();
+  return (
+    normalized.includes("429") ||
+    normalized.includes("quota exceeded") ||
+    normalized.includes("too many requests")
+  );
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
@@ -23,7 +39,8 @@ exports.handler = async (event) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt =
       customPrompt ||
@@ -47,9 +64,27 @@ Make the vocabulary suitable for someone practicing their speaking and pronuncia
       body: JSON.stringify({ text }),
     };
   } catch (error) {
+    const rawMessage = error?.message || "Unknown server error";
+
+    if (isQuotaOrRateLimit(rawMessage)) {
+      const retryAfterSeconds = extractRetrySeconds(rawMessage);
+      const retryHint = retryAfterSeconds
+        ? `Please retry after about ${retryAfterSeconds} seconds.`
+        : "Please retry after a short wait.";
+
+      return {
+        statusCode: 429,
+        body: JSON.stringify({
+          error:
+            "Gemini API quota/rate limit reached. Upgrade billing or wait for quota reset. " +
+            retryHint,
+        }),
+      };
+    }
+
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error?.message || "Unknown server error" }),
+      body: JSON.stringify({ error: rawMessage }),
     };
   }
 };
