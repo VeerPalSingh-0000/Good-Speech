@@ -10,7 +10,6 @@ import StoryCard from "./stories/StoryCard";
 import StoryDisplayModal from "./stories/StoryDisplayModal";
 import StoryTimer from "./stories/StoryTimer";
 import Mascot from "../ui/Mascot";
-import AIGenerator from "./stories/AIGenerator";
 
 // Components Extracted to: src/components/views/stories/
 
@@ -39,14 +38,24 @@ const StoriesView = ({
   const [filter, setFilter] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  const { isRecording, recorderState, audioUrl, startRecording, stopRecording, pauseRecording, resumeRecording, clearRecording, analyser } = useAudioRecorder();
+  const {
+    isRecording,
+    recorderState,
+    audioUrl,
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    clearRecording,
+    analyser,
+  } = useAudioRecorder();
 
   const handleStart = async () => {
     try {
-      if (recorderState === 'idle') {
+      if (recorderState === "idle") {
         if (audioUrl) clearRecording();
         await startRecording();
-      } else if (recorderState === 'paused') {
+      } else if (recorderState === "paused") {
         resumeRecording();
       }
       startStoryTimer();
@@ -136,9 +145,6 @@ const StoriesView = ({
         audioUrl={audioUrl}
       />
 
-      {/* AI Story Generator */}
-      <AIGenerator />
-
       {/* Story Selection */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -216,12 +222,17 @@ const StoriesView = ({
 
         {filteredStories.length === 0 && filter === "bookmarked" && (
           <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700">
-            <Mascot mood="sleepy" size={120} className="mb-4 opacity-70 drop-shadow-lg" />
+            <Mascot
+              mood="sleepy"
+              size={120}
+              className="mb-4 opacity-70 drop-shadow-lg"
+            />
             <h4 className="text-xl font-semibold text-slate-700 dark:text-slate-300">
               No Bookmarked Stories
             </h4>
             <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-sm text-center">
-              Click the bookmark icon on a story to save it here, and I'll wake up!
+              Click the bookmark icon on a story to save it here, and I'll wake
+              up!
             </p>
           </div>
         )}
