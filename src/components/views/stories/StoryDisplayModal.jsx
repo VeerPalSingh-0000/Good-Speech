@@ -1,11 +1,24 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaBookmark, FaChevronLeft, FaChevronRight, FaMicrophone, FaStop } from 'react-icons/fa';
-import { Document, Page, pdfjs } from 'react-pdf';
-import { useSpeechRecognition } from '../../../hooks/useSpeechRecognition';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
+import PropTypes from "prop-types";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaBookmark,
+  FaRegBookmark,
+  FaChevronLeft,
+  FaChevronRight,
+  FaMicrophone,
+  FaStop,
+} from "react-icons/fa";
+import { Document, Page, pdfjs } from "react-pdf";
+import { useSpeechRecognition } from "../../../hooks/useSpeechRecognition";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 
 // Set up the PDF.js worker from CDN - must match exactly with the pdfjs-dist version in the API
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
@@ -13,6 +26,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/buil
 const StoryDisplayModal = ({
   story,
   onClose,
+  onNextStory,
+  onToggleBookmark,
+  isBookmarked,
   lineBookmarks,
   onToggleLineBookmark,
 }) => {
@@ -26,14 +42,21 @@ const StoryDisplayModal = ({
   const [textError, setTextError] = useState(false);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(600);
-  
-  const { isListening, startListening, stopListening, compareToTarget, supported, resetTranscript } = useSpeechRecognition('hi-IN');
+
+  const {
+    isListening,
+    startListening,
+    stopListening,
+    compareToTarget,
+    supported,
+    resetTranscript,
+  } = useSpeechRecognition("hi-IN");
   const [showPronunciation, setShowPronunciation] = useState(false);
 
   useEffect(() => {
     return () => {
       stopListening();
-    }
+    };
   }, []);
 
   // Fetch story content dynamically if dataUrl is provided
@@ -42,25 +65,25 @@ const StoryDisplayModal = ({
       setTextLoading(true);
       setTextError(false);
       fetch(story.dataUrl)
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to fetch story data');
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch story data");
           return res.json();
         })
-        .then(data => {
+        .then((data) => {
           // data could be an array of stories (like harryPotter.json) or a single object
           if (Array.isArray(data)) {
-            const foundStory = data.find(s => s.id === story.id);
+            const foundStory = data.find((s) => s.id === story.id);
             if (foundStory) {
               setTextContent(foundStory.content || "");
             } else {
-              throw new Error('Story not found in fetched data');
+              throw new Error("Story not found in fetched data");
             }
           } else {
             setTextContent(data.content || "");
           }
         })
-        .catch(err => {
-          console.error('Error fetching story content:', err);
+        .catch((err) => {
+          console.error("Error fetching story content:", err);
           setTextError(true);
         })
         .finally(() => {
@@ -80,8 +103,8 @@ const StoryDisplayModal = ({
       }
     };
     updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
   const storyLines = useMemo(
@@ -115,8 +138,9 @@ const StoryDisplayModal = ({
     setPdfError(true);
   }, []);
 
-  const goToPrevPage = () => setCurrentPage(p => Math.max(1, p - 1));
-  const goToNextPage = () => setCurrentPage(p => Math.min(numPages || p, p + 1));
+  const goToPrevPage = () => setCurrentPage((p) => Math.max(1, p - 1));
+  const goToNextPage = () =>
+    setCurrentPage((p) => Math.min(numPages || p, p + 1));
 
   return (
     <motion.div
@@ -135,19 +159,97 @@ const StoryDisplayModal = ({
         className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-700 h-[85vh]"
       >
         {/* Header */}
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 shrink-0">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white truncate pr-4">
-            {story.title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-500 hover:text-red-500 transition-colors shrink-0"
-          >
-            <span className="sr-only">Close</span>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 shrink-0">
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-3">
+                {story.title}
+              </h2>
+
+              {/* Story Metadata */}
+              <div className="space-y-2 text-sm">
+                {/* Author and Difficulty */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {story.author && (
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                      <span>✍️ {story.author}</span>
+                    </div>
+                  )}
+                  {story.difficulty && (
+                    <span
+                      className={`px-3 py-1 rounded-full font-semibold text-xs ${
+                        story.difficulty === "Easy"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                          : story.difficulty === "Medium"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                      }`}
+                    >
+                      {story.difficulty}
+                    </span>
+                  )}
+                </div>
+
+                {/* Story Details */}
+                <div className="flex flex-wrap gap-4 text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
+                  {story.wordCount && <div>📖 {story.wordCount} words</div>}
+                  {story.duration && <div>⏱️ {story.duration}</div>}
+                  {story.category && <div>📂 {story.category}</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* Close and Next Buttons */}
+            <div className="flex gap-2 shrink-0">
+              {onToggleBookmark && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleBookmark();
+                  }}
+                  className="text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                  title={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+                >
+                  {isBookmarked ? (
+                    <FaBookmark
+                      size={20}
+                      className="text-purple-600 dark:text-purple-400"
+                    />
+                  ) : (
+                    <FaRegBookmark size={20} />
+                  )}
+                </button>
+              )}
+              {onNextStory && (
+                <button
+                  onClick={onNextStory}
+                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-sm transition-colors"
+                  title="Load next story"
+                >
+                  ⏭️ Next
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-slate-500 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <span className="sr-only">Close</span>
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Content Area */}
@@ -177,7 +279,9 @@ const StoryDisplayModal = ({
                 <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
                 <div className="flex gap-1 sm:gap-2">
                   {lineBookmarks.length === 0 && (
-                    <span className="text-xs text-slate-400 italic py-1">No pages saved</span>
+                    <span className="text-xs text-slate-400 italic py-1">
+                      No pages saved
+                    </span>
                   )}
                   {lineBookmarks.map((page) => {
                     if (typeof page !== "number") return null;
@@ -214,7 +318,7 @@ const StoryDisplayModal = ({
                   <FaChevronLeft size={14} />
                 </button>
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300 min-w-[80px] text-center">
-                  Page {currentPage} {numPages ? `/ ${numPages}` : ''}
+                  Page {currentPage} {numPages ? `/ ${numPages}` : ""}
                 </span>
                 <button
                   onClick={goToNextPage}
@@ -226,11 +330,16 @@ const StoryDisplayModal = ({
               </div>
 
               {/* PDF Renderer */}
-              <div ref={containerRef} className="flex-1 overflow-y-auto flex justify-center p-2 bg-slate-200 dark:bg-slate-950">
+              <div
+                ref={containerRef}
+                className="flex-1 overflow-y-auto flex justify-center p-2 bg-slate-200 dark:bg-slate-950"
+              >
                 {pdfLoading && (
                   <div className="flex flex-col items-center justify-center gap-3 py-16">
                     <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">Loading PDF...</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                      Loading PDF...
+                    </p>
                   </div>
                 )}
                 {pdfError && (
@@ -238,7 +347,7 @@ const StoryDisplayModal = ({
                     <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
                     <p className="text-red-400 text-sm">Failed to load PDF</p>
                     <button
-                      onClick={() => window.open(story.pdfUrl, '_blank')}
+                      onClick={() => window.open(story.pdfUrl, "_blank")}
                       className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700"
                     >
                       Open in new tab
@@ -265,45 +374,58 @@ const StoryDisplayModal = ({
               {textLoading && (
                 <div className="flex flex-col items-center justify-center gap-3 py-16">
                   <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">Loading story content...</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">
+                    Loading story content...
+                  </p>
                 </div>
               )}
               {textError && (
                 <div className="flex flex-col items-center justify-center gap-3 py-16">
                   <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
-                  <p className="text-red-400 text-sm">Failed to load story content.</p>
+                  <p className="text-red-400 text-sm">
+                    Failed to load story content.
+                  </p>
                 </div>
               )}
-              {!textLoading && !textError && storyLines.map((line, index) => {
-                const isLineBookmarked = lineBookmarks.includes(index);
-                const lineResults = showPronunciation ? compareToTarget(line) : [];
+              {!textLoading &&
+                !textError &&
+                storyLines.map((line, index) => {
+                  const isLineBookmarked = lineBookmarks.includes(index);
+                  const lineResults = showPronunciation
+                    ? compareToTarget(line)
+                    : [];
 
-                return (
-                  <div key={index} className="flex items-stretch gap-4 group">
-                    <div
-                      role="button"
-                      onClick={() => onToggleLineBookmark(story.id, index)}
-                      className={`w-2 rounded-full flex-shrink-0 cursor-pointer transition-all duration-300 ${
-                        isLineBookmarked
-                          ? "bg-purple-600"
-                          : "bg-slate-300 dark:bg-slate-600 hover:bg-purple-300"
-                      }`}
-                      title={isLineBookmarked ? "Remove bookmark" : "Add bookmark"}
-                    />
-                    <div className="flex-1 text-lg leading-relaxed text-slate-700 dark:text-slate-300 py-1 flex flex-wrap gap-[0.25rem]">
-                      {!showPronunciation ? (
-                         <span>{line}</span>
-                      ) : (
-                         lineResults.map((result, i) => (
-                           <span key={i} className={`transition-colors duration-300 ${result.isCorrect ? 'text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-900/40 rounded px-1' : ''}`}>
-                             {result.word}
-                           </span>
-                         ))
-                      )}
+                  return (
+                    <div key={index} className="flex items-stretch gap-4 group">
+                      <div
+                        role="button"
+                        onClick={() => onToggleLineBookmark(story.id, index)}
+                        className={`w-2 rounded-full flex-shrink-0 cursor-pointer transition-all duration-300 ${
+                          isLineBookmarked
+                            ? "bg-purple-600"
+                            : "bg-slate-300 dark:bg-slate-600 hover:bg-purple-300"
+                        }`}
+                        title={
+                          isLineBookmarked ? "Remove bookmark" : "Add bookmark"
+                        }
+                      />
+                      <div className="flex-1 text-lg leading-relaxed text-slate-700 dark:text-slate-300 py-1 flex flex-wrap gap-[0.25rem]">
+                        {!showPronunciation ? (
+                          <span>{line}</span>
+                        ) : (
+                          lineResults.map((result, i) => (
+                            <span
+                              key={i}
+                              className={`transition-colors duration-300 ${result.isCorrect ? "text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-900/40 rounded px-1" : ""}`}
+                            >
+                              {result.word}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           )}
         </div>
@@ -311,21 +433,29 @@ const StoryDisplayModal = ({
         {!story.pdfUrl && (
           <div className="p-4 border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-4">
             {supported && (
-               <button
-                 onClick={() => {
-                   if (isListening) {
-                     stopListening();
-                     setShowPronunciation(false);
-                   } else {
-                     resetTranscript();
-                     startListening();
-                     setShowPronunciation(true);
-                   }
-                 }}
-                 className={`flex-1 py-3 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${isListening ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300'}`}
-               >
-                 {isListening ? <><FaStop /> Stop Reading</> : <><FaMicrophone /> Practice Reading aloud</>}
-               </button>
+              <button
+                onClick={() => {
+                  if (isListening) {
+                    stopListening();
+                    setShowPronunciation(false);
+                  } else {
+                    resetTranscript();
+                    startListening();
+                    setShowPronunciation(true);
+                  }
+                }}
+                className={`flex-1 py-3 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 ${isListening ? "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300"}`}
+              >
+                {isListening ? (
+                  <>
+                    <FaStop /> Stop Reading
+                  </>
+                ) : (
+                  <>
+                    <FaMicrophone /> Practice Reading aloud
+                  </>
+                )}
+              </button>
             )}
             <button
               onClick={onClose}
@@ -347,8 +477,16 @@ StoryDisplayModal.propTypes = {
     content: PropTypes.string,
     dataUrl: PropTypes.string,
     pdfUrl: PropTypes.string,
+    author: PropTypes.string,
+    difficulty: PropTypes.string,
+    duration: PropTypes.string,
+    wordCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    category: PropTypes.string,
   }).isRequired,
   onClose: PropTypes.func.isRequired,
+  onNextStory: PropTypes.func,
+  onToggleBookmark: PropTypes.func,
+  isBookmarked: PropTypes.bool,
   lineBookmarks: PropTypes.arrayOf(
     PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   ).isRequired,

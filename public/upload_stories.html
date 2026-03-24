@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpeechOK - Story Uploader</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 16px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #1e293b;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+
+      .subtitle {
+        color: #64748b;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      button {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        margin-top: 20px;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .status {
+        margin-top: 30px;
+        padding: 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        display: none;
+      }
+
+      .status.show {
+        display: block;
+      }
+
+      .status.success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+      }
+
+      .status.error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+      }
+
+      .status.loading {
+        background: #e0e7ff;
+        color: #3730a3;
+        border: 1px solid #a5b4fc;
+      }
+
+      .story-info {
+        background: #f8fafc;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        color: #475569;
+        line-height: 1.6;
+      }
+
+      .story-count {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 10px;
+      }
+
+      .loader {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        border-radius: 50%;
+        border-top-color: currentColor;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📚 SpeechOK Story Uploader</h1>
+      <p class="subtitle">Upload Hindi stories to Firebase</p>
+
+      <div class="story-info">
+        <div class="story-count">📊 5 Stories Ready</div>
+        <ul style="margin-left: 20px">
+          <li>The Monkey and the Crocodile (Easy)</li>
+          <li>The Lion and the Mouse (Easy)</li>
+          <li>The Journey of Rama (Medium)</li>
+          <li>The Bhagavad Gita (Hard)</li>
+          <li>The Buddha and the Elephant (Medium)</li>
+        </ul>
+      </div>
+
+      <button id="uploadBtn" onclick="uploadStories()">
+        🚀 Upload Stories to Firebase
+      </button>
+
+      <div id="status" class="status">
+        <span id="statusText"></span>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        doc,
+        setDoc,
+        writeBatch,
+      } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+      // Firebase config
+      const firebaseConfig = {
+        apiKey: "AIzaSyB3HTbgd__Yq9DmLY60r47Uv0qlIRj-ha4",
+        authDomain: "speech-good.firebaseapp.com",
+        projectId: "speech-good",
+        storageBucket: "speech-good.appspot.com",
+        messagingSenderId: "42546792293",
+        appId: "1:42546792293:web:7796b7b9c0f4fb8f64838c",
+        measurementId: "G-QPX27Z5Q36",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      // Stories to upload
+      const stories = [
+        {
+          id: "panchatantra_monkey_crocodile",
+          title: "The Monkey and the Crocodile",
+          content:
+            "Once upon a time, a monkey lived on a tree by the banks of a river. A crocodile rose from the water and befriended the monkey. Every day, the monkey would give the crocodile sweet fruits. One day, the crocodile's wife asked him to bring her the monkey's heart, as she had heard of the monkey's kindness. The crocodile invited the monkey to his home. The monkey, suspecting foul play, told the crocodile that he had left his heart on the tree. The crocodile felt foolish as the monkey escaped. This teaches us about wisdom and the importance of trusting our instincts. The monkey's quick thinking saved his life, showing that cleverness can be more valuable than physical strength. The crocodile learned that deceit always leads to failure. From this tale, we learn that true friendship cannot be built on betrayal, and that wit is the greatest weapon against treachery.",
+          language: "hi",
+          category: "cultural",
+          difficulty: "easy",
+          duration: "30-40 mins",
+          wordCount: 250,
+          author: "Panchatantra",
+          source: "sample",
+          rating: 5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "panchatantra_lion_mouse",
+          title: "The Lion and the Mouse",
+          content:
+            "A fierce lion once trapped a tiny mouse beneath his paw. The mouse pleaded for mercy, promising to repay the lion's kindness someday. The lion, amused by the mouse's boldness, set him free. Days later, hunters caught the lion in a net. The mouse heard the lion's roars and immediately began gnawing at the ropes. Through patience and persistence, the mouse freed the lion from the trap. The lion realized that even the smallest creature could possess the greatest courage. This tale teaches us that one should never underestimate anyone based on their size or appearance. Kindness shown to others always returns as a blessing, no matter how insignificant the other person may seem. True strength lies not just in physical power but in compassion. The story reminds us that every creature, no matter how small, has value and can make a difference.",
+          language: "hi",
+          category: "cultural",
+          difficulty: "easy",
+          duration: "30-40 mins",
+          wordCount: 240,
+          author: "Panchatantra",
+          source: "sample",
+          rating: 5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "ramayana_rama_journey",
+          title: "The Journey of Rama",
+          content:
+            "In ancient times, there lived a noble prince named Rama in the kingdom of Ayodhya. He was known for his righteousness and courage. When Rama was banished to the forest for fourteen years, he accepted his exile with grace and fortitude. During his time in the forest, Rama's wife Sita was abducted by the demon king Ravana. Without hesitation, Rama set out on a great quest to rescue her. With the help of his loyal brother Lakshman and a devoted friend, the monkey king Hanuman, Rama faced numerous challenges. He crossed vast oceans, fought mighty demons, and never lost faith. After many trials and tribulations, Rama defeated Ravana and rescued Sita. This epic journey teaches us about duty, loyalty, and the triumph of good over evil. Rama's unwavering commitment to dharma, or righteousness, inspires millions to this day. His story reminds us that true strength lies in virtue and moral courage.",
+          language: "hi",
+          category: "cultural",
+          difficulty: "medium",
+          duration: "30-40 mins",
+          wordCount: 280,
+          author: "Valmiki",
+          source: "sample",
+          rating: 5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "mahabharata_bhagavad_gita",
+          title: "The Bhagavad Gita",
+          content:
+            "On the battlefield of Kurukshetra, the mighty warrior Arjuna faced a moral dilemma. He was asked to fight against his own relatives and teachers, and his heart was filled with doubt and sorrow. The charioteer Krishna, who was none other than Lord Vishnu himself in disguise, imparted profound wisdom to Arjuna. Krishna explained the nature of duty, the importance of action without attachment, and the path to enlightenment. He taught that one should perform their duty without worrying about the results, a concept known as Karma Yoga. His words transcended the battlefield and became a guide for living life. The Bhagavad Gita teaches us that we must face our challenges with courage and perform our duties with integrity and honesty. The dialogue between Krishna and Arjuna is one of the most profound philosophical discussions in human history.",
+          language: "hi",
+          category: "inspiring",
+          difficulty: "hard",
+          duration: "30-40 mins",
+          wordCount: 260,
+          author: "Vyasa",
+          source: "sample",
+          rating: 5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: "jataka_buddha_elephant",
+          title: "The Buddha and the Elephant",
+          content:
+            "In the days when Buddha lived, there was a wild elephant that had been driven mad by drinking fermented liquor. The raging animal ran through the city causing destruction and fear. Everyone fled in terror except the Buddha. With his serene presence, the Buddha approached the furious elephant without any weapon. The Buddha's compassion radiated such peace that the elephant, sensing the truthfulness of the Buddha's heart, became calm. The elephant bowed before the Buddha in respect and gratitude. This story teaches us that true courage comes from inner peace and compassion, not from weapons or physical strength. The Buddha demonstrated that kindness and understanding can tame even the wildest of creatures. The tale shows that spiritual power is greater than physical might.",
+          language: "hi",
+          category: "inspiring",
+          difficulty: "medium",
+          duration: "30-40 mins",
+          wordCount: 220,
+          author: "Jataka Tales",
+          source: "sample",
+          rating: 5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      // Make uploadStories global
+      window.uploadStories = async function () {
+        const btn = document.getElementById("uploadBtn");
+        const status = document.getElementById("status");
+        const statusText = document.getElementById("statusText");
+
+        btn.disabled = true;
+        status.className = "status show loading";
+        statusText.innerHTML =
+          '<span class="loader"></span> Uploading stories...';
+
+        try {
+          // Use batch write for better performance
+          let batch = writeBatch(db);
+          let count = 0;
+
+          for (const story of stories) {
+            const docRef = doc(db, "stories", story.id);
+            batch.set(docRef, story);
+            count++;
+
+            // Firestore batches are limited to 500 writes
+            if (count >= 400) {
+              await batch.commit();
+              batch = writeBatch(db);
+              count = 0;
+            }
+          }
+
+          // Commit remaining writes
+          if (count > 0) {
+            await batch.commit();
+          }
+
+          status.className = "status show success";
+          statusText.innerHTML = `✅ <strong>Success!</strong> Uploaded ${stories.length} Hindi stories to Firebase. Refresh your app to see them! 🎉`;
+        } catch (error) {
+          console.error("Upload error:", error);
+          status.className = "status show error";
+          statusText.innerHTML = `❌ <strong>Error:</strong> ${error.message}`;
+          btn.disabled = false;
+        }
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "panchatantra_1",
+    "title": "The Monkey and the Crocodile",
+    "content": "Once upon a time, a monkey lived on a tree by the banks of a river. A crocodile rose from the water and befriended the monkey. Every day, the monkey would give the crocodile sweet fruits. One day, the crocodile's wife asked him to bring her the monkey's heart, as she had heard of the monkey's kindness. The crocodile invited the monkey to his home. The monkey, suspecting foul play, told the crocodile that he had left his heart on the tree. The crocodile felt foolish as the monkey escaped. This teaches us about wisdom and the importance of trusting our instincts. The monkey's quick thinking saved his life, showing that cleverness can be more valuable than physical strength. The crocodile learned that deceit always leads to failure. From this tale, we learn that true friendship cannot be built on betrayal, and that wit is the greatest weapon against treachery.",
+    "language": "en",
+    "category": "cultural",
+    "difficulty": "easy",
+    "duration": "15 mins",
+    "wordCount": 220,
+    "author": "Panchatantra",
+    "source": "cultural_archive",
+    "rating": 5,
+    "createdAt": "2026-03-24T17:53:33.668930",
+    "updatedAt": "2026-03-24T17:53:33.668962",
+    "metadata": {
+      "themes": [
+        "wisdom",
+        "friendship",
+        "betrayal"
+      ],
+      "keywords": [
+        "monkey",
+        "crocodile",
+        "wisdom"
+      ],
+      "region": "India"
+    }
+  },
+  {
+    "id": "ramayana_1",
+    "title": "The Journey of Rama",
+    "content": "In ancient times, there lived a noble prince named Rama in the kingdom of Ayodhya. He was known for his righteousness and courage. When Rama was banished to the forest for fourteen years, he accepted his exile with grace. During his time in the forest, Rama's wife Sita was abducted by the demon king Ravana. Without hesitation, Rama set out on a great quest to rescue her. With the help of his loyal brother Lakshman and a devoted friend, the monkey king Hanuman, Rama faced numerous challenges. He crossed vast oceans, fought mighty demons, and never lost faith. After many trials, Rama defeated Ravana and rescued Sita. This epic journey teaches us about duty, loyalty, and the triumph of good over evil. Rama's unwavering commitment to dharma, or righteousness, inspires millions to this day. His story reminds us that true strength lies in virtue and moral courage.",
+    "language": "en",
+    "category": "cultural",
+    "difficulty": "medium",
+    "duration": "15 mins",
+    "wordCount": 250,
+    "author": "Valmiki",
+    "source": "cultural_archive",
+    "rating": 5,
+    "createdAt": "2026-03-24T17:53:33.668985",
+    "updatedAt": "2026-03-24T17:53:33.668992",
+    "metadata": {
+      "themes": [
+        "righteousness",
+        "loyalty",
+        "good vs evil"
+      ],
+      "keywords": [
+        "rama",
+        "sita",
+        "quest"
+      ],
+      "region": "India"
+    }
+  }
+]

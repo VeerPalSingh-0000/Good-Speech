@@ -2,7 +2,14 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FaSpinner } from "react-icons/fa";
 
-const LANGUAGES = [
+// Primary languages shown initially
+const PRIMARY_LANGUAGES = [
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "hi", label: "हिंदी (Hindi)", flag: "🇮🇳" },
+];
+
+// All available languages (for future expansion)
+const ALL_LANGUAGES = [
   { code: "en", label: "English", flag: "🇺🇸" },
   { code: "hi", label: "हिंदी (Hindi)", flag: "🇮🇳" },
   { code: "es", label: "Español (Spanish)", flag: "🇪🇸" },
@@ -66,7 +73,7 @@ const LanguageSelector = ({ onSelectLanguage, isLoading = false }) => {
           className="flex-1 px-4 py-3 rounded-lg border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <option value="">Select a language...</option>
-          {LANGUAGES.map((lang) => (
+          {PRIMARY_LANGUAGES.map((lang) => (
             <option key={lang.code} value={lang.code}>
               {lang.flag} {lang.label}
             </option>

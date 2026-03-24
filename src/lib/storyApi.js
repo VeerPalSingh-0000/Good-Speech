@@ -1,70 +1,67 @@
-// Fetch a random 15-minute story from Render backend by language
+import { randomStories } from "../data/stories/randomStories.js";
+import {
+  fetchRandomStory as fetchFromFirestore,
+  fetchStoriesByLanguage as fetchStoriesByLanguageFirestore,
+} from "./firestoreStoryApi.js";
+
+// Fetch a random 15-minute story by language
 export const fetchRandomStory = async (languageCode) => {
+  const languageStories = randomStories[languageCode];
+
+  // Prefer local story data so editor changes are reflected immediately.
+  if (languageStories && languageStories.length > 0) {
+    const randomIndex = Math.floor(Math.random() * languageStories.length);
+    return languageStories[randomIndex];
+  }
+
   try {
-    // Replace with your actual Render backend URL
-    const RENDER_API_URL =
-      import.meta.env.VITE_RENDER_API_URL ||
-      "https://your-render-app.onrender.com";
-
-    const response = await fetch(
-      `${RENDER_API_URL}/api/stories/random?language=${languageCode}&duration=900`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    // Try Firebase first
+    try {
+      const story = await fetchFromFirestore(languageCode);
+      return story;
+    } catch (firebaseError) {
+      console.warn(
+        "Firebase fetch failed, falling back to local stories:",
+        firebaseError.message,
+      );
+      // Fall back to local stories if Firebase unavailable
+      throw firebaseError;
     }
-
-    const story = await response.json();
-
-    // Transform API response to match your story structure
-    return {
-      id: story.id || `story_${Date.now()}`,
-      title: story.title,
-      content: story.content,
-      category: story.category || languageCode,
-      language: languageCode,
-      duration: story.duration || "15 mins",
-      author: story.author || "Anonymous",
-      createdAt: story.createdAt || new Date().toISOString(),
-    };
   } catch (error) {
-    console.error("Failed to fetch story:", error);
-    throw new Error(`Could not load story: ${error.message}`);
+    console.error("Error fetching story:", error);
+    throw new Error(
+      `Could not load story for language: ${languageCode}. No local stories available.`,
+    );
   }
 };
 
 // Optional: Fetch multiple stories for a language
 export const fetchStoriesByLanguage = async (languageCode, count = 5) => {
+  const languageStories = randomStories[languageCode];
+
+  // Prefer local stories so source file edits show up immediately.
+  if (languageStories && languageStories.length > 0) {
+    return languageStories.slice(0, count);
+  }
+
   try {
-    const RENDER_API_URL =
-      import.meta.env.VITE_RENDER_API_URL ||
-      "https://your-render-app.onrender.com";
-
-    const response = await fetch(
-      `${RENDER_API_URL}/api/stories?language=${languageCode}&limit=${count}&duration=900`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    // Try Firebase first
+    try {
+      const { stories } = await fetchStoriesByLanguageFirestore(
+        languageCode,
+        count,
+      );
+      return stories;
+    } catch (firebaseError) {
+      console.warn(
+        "Firebase fetch failed, using local stories:",
+        firebaseError,
+      );
+      // Fall back to local stories if Firebase unavailable
+      throw firebaseError;
     }
-
-    const stories = await response.json();
-
-    return Array.isArray(stories) ? stories : stories.data || [];
   } catch (error) {
     console.error("Failed to fetch stories:", error);
-    throw error;
+    return [];
   }
 };

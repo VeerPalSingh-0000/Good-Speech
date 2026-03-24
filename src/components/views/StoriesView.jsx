@@ -10,6 +10,7 @@ import StoryCard from "./stories/StoryCard";
 import StoryDisplayModal from "./stories/StoryDisplayModal";
 import StoryTimer from "./stories/StoryTimer";
 import LanguageSelector from "./stories/LanguageSelector";
+import StoryFilters from "./stories/StoryFilters";
 import Mascot from "../ui/Mascot";
 import { fetchRandomStory } from "../../lib/storyApi";
 
@@ -39,6 +40,8 @@ const StoriesView = ({
   const [currentStory, setCurrentStory] = useState(null);
   const [filter, setFilter] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState(null);
   const [showLanguageSelector, setShowLanguageSelector] = useState(true);
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   const [storyError, setStoryError] = useState(null);
@@ -104,6 +107,7 @@ const StoriesView = ({
       setCurrentStory(story);
       setShowStory(true);
       setShowLanguageSelector(false);
+      setIsLoadingStory(false);
     } catch (error) {
       console.error("Error fetching story:", error);
       setStoryError(error.message);
@@ -122,16 +126,46 @@ const StoriesView = ({
   }, [stories]);
 
   const filteredStories = useMemo(() => {
+    let result = stories;
+
+    // Apply bookmarked filter
     if (filter === "bookmarked") {
-      return stories.filter((story) => storyBookmarks.includes(story.id));
+      result = result.filter((story) => storyBookmarks.includes(story.id));
     }
+
+    // Apply category filter
     if (selectedCategory) {
-      return stories.filter(
+      result = result.filter(
         (story) => (story.category || "Other") === selectedCategory,
       );
     }
-    return stories;
-  }, [filter, stories, storyBookmarks, selectedCategory]);
+
+    // Apply search query filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (story) =>
+          story.title?.toLowerCase().includes(query) ||
+          story.author?.toLowerCase().includes(query),
+      );
+    }
+
+    // Apply difficulty filter
+    if (selectedDifficulty) {
+      result = result.filter(
+        (story) => story.difficulty === selectedDifficulty,
+      );
+    }
+
+    return result;
+  }, [
+    filter,
+    stories,
+    storyBookmarks,
+    selectedCategory,
+    searchQuery,
+    selectedDifficulty,
+  ]);
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
@@ -139,6 +173,16 @@ const StoriesView = ({
 
   const handleBackToCategories = () => {
     setSelectedCategory(null);
+  };
+
+  const handleNextStory = () => {
+    if (filteredStories.length === 0) return;
+
+    const currentIndex = filteredStories.findIndex(
+      (s) => s.id === currentStory?.id,
+    );
+    const nextIndex = (currentIndex + 1) % filteredStories.length;
+    setCurrentStory(filteredStories[nextIndex]);
   };
 
   return (
@@ -166,6 +210,17 @@ const StoriesView = ({
             currentStory={currentStory}
             analyser={analyser}
             audioUrl={audioUrl}
+          />
+
+          {/* Story Filters */}
+          <StoryFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            selectedDifficulty={selectedDifficulty}
+            onDifficultyChange={setSelectedDifficulty}
+            categories={categories}
           />
 
           {/* Story Selection */}
@@ -257,6 +312,9 @@ const StoriesView = ({
               <StoryDisplayModal
                 story={currentStory}
                 onClose={handleCloseModal}
+                onNextStory={handleNextStory}
+                onToggleBookmark={() => onToggleStoryBookmark(currentStory.id)}
+                isBookmarked={storyBookmarks.includes(currentStory.id)}
                 lineBookmarks={lineBookmarks[currentStory.id] || []}
                 onToggleLineBookmark={onToggleLineBookmark}
               />
@@ -304,6 +362,9 @@ const StoriesView = ({
               <StoryDisplayModal
                 story={currentStory}
                 onClose={handleCloseModal}
+                onNextStory={handleNextStory}
+                onToggleBookmark={() => onToggleStoryBookmark(currentStory.id)}
+                isBookmarked={storyBookmarks.includes(currentStory.id)}
                 lineBookmarks={lineBookmarks[currentStory.id] || []}
                 onToggleLineBookmark={onToggleLineBookmark}
               />
