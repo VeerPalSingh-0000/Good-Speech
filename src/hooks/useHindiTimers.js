@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 
 import { formatTime, calculateQuality } from "../utilities/helpers";
 
-import { allStories } from '../data/stories/index';
+import { allStories } from "../data/stories/index";
 
 export const useHindiTimers = (saveToFirebase, showNotification, records) => {
   const [soundTimers, setSoundTimers] = useState({
@@ -34,6 +34,10 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
 
   const [currentStory, setCurrentStory] = useState(null); // Using a ref for intervals is correct, prevents re-creation on renders
 
+  const soundTimersRef = useRef(soundTimers);
+  const varnmalaTimerRef = useRef(varnmalaTimer);
+  const storyTimerRef = useRef(storyTimer);
+
   const intervals = useRef({}); // --- EFFECT for Cleanup --- // This is crucial to prevent memory leaks. It clears all running intervals // when the component using this hook unmounts.
 
   useEffect(() => {
@@ -42,8 +46,20 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
     return () => {
       Object.values(activeIntervals).forEach(clearInterval);
     };
-  }, []); 
-  
+  }, []);
+
+  useEffect(() => {
+    soundTimersRef.current = soundTimers;
+  }, [soundTimers]);
+
+  useEffect(() => {
+    varnmalaTimerRef.current = varnmalaTimer;
+  }, [varnmalaTimer]);
+
+  useEffect(() => {
+    storyTimerRef.current = storyTimer;
+  }, [storyTimer]);
+
   // --- BUG FIX: StrictMode Double Save Prevention ---
   const saveLockRef = useRef(false);
 
@@ -57,16 +73,24 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
         saveLockRef.current = false;
       }, 500);
     },
-    [saveToFirebase]
+    [saveToFirebase],
   );
-  
+
   // --- MEMOIZED VALUES ---
 
   const bestTimes = useMemo(() => {
-    const bests = { 
-        आ: 0 , ई: 0 , ऊ: 0,
-        क: 0 , ख: 0 , ग: 0, घ: 0,
-        त: 0 , थ: 0 , द: 0, ध: 0, 
+    const bests = {
+      आ: 0,
+      ई: 0,
+      ऊ: 0,
+      क: 0,
+      ख: 0,
+      ग: 0,
+      घ: 0,
+      त: 0,
+      थ: 0,
+      द: 0,
+      ध: 0,
     };
 
     if (records?.sounds) {
@@ -105,8 +129,8 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
     (sound, shouldRecord = false) => {
       clearInterval(intervals.current[sound]);
       intervals.current[sound] = null;
-      
-      const finalTime = soundTimers[sound]?.time || 0;
+
+      const finalTime = soundTimersRef.current[sound]?.time || 0;
 
       if (shouldRecord && finalTime > 0) {
         const isNewBest = finalTime > (bestTimes[sound] || Infinity);
@@ -116,10 +140,15 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
           time: finalTime,
           isNewBest,
           timestamp: new Date(),
-          sessionCount: (records?.sounds || []).filter((r) => r.sound === sound).length + 1,
+          sessionCount:
+            (records?.sounds || []).filter((r) => r.sound === sound).length + 1,
         };
 
-        saveSafely("sounds", record, shouldRecord instanceof Blob ? shouldRecord : undefined);
+        saveSafely(
+          "sounds",
+          record,
+          shouldRecord instanceof Blob ? shouldRecord : undefined,
+        );
 
         const message = isNewBest
           ? `नया सर्वश्रेष्ठ समय! ${formatTime(finalTime)}`
@@ -130,10 +159,13 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
 
       setSoundTimers((prev) => ({
         ...prev,
-        [sound]: { time: shouldRecord ? 0 : prev[sound].time, isRunning: false },
+        [sound]: {
+          time: shouldRecord ? 0 : prev[sound].time,
+          isRunning: false,
+        },
       }));
     },
-    [saveSafely, showNotification, bestTimes, records, soundTimers]
+    [saveSafely, showNotification, bestTimes, records],
   ); // --- VARNMALA TIMER FUNCTIONS ---
 
   const startVarnmalaTimer = useCallback(() => {
@@ -166,7 +198,7 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
 
       showNotification(
         `लैप ${prev.laps.length + 1} रिकॉर्ड किया गया: ${newLap.formattedTime}`,
-        "success"
+        "success",
       );
 
       return {
@@ -181,31 +213,40 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
     (shouldRecord = false) => {
       clearInterval(intervals.current.varnmala);
       intervals.current.varnmala = null;
-      
-      const finalTime = varnmalaTimer.time;
+
+      const finalTime = varnmalaTimerRef.current.time;
 
       if (shouldRecord && finalTime > 0) {
         const quality = calculateQuality(finalTime / 10);
         const record = {
           time: finalTime,
           quality,
-          laps: varnmalaTimer.laps,
+          laps: varnmalaTimerRef.current.laps,
           timestamp: new Date(),
         };
 
-        saveSafely("varnmala", record, shouldRecord instanceof Blob ? shouldRecord : undefined);
+        saveSafely("varnmala", record);
 
         showNotification(
           `वर्णमाला अभ्यास (${quality}) रिकॉर्ड किया गया`,
-          "success"
+          "success",
         );
-        
-        setVarnmalaTimer({ time: 0, isRunning: false, isPaused: false, laps: [] });
+
+        setVarnmalaTimer({
+          time: 0,
+          isRunning: false,
+          isPaused: false,
+          laps: [],
+        });
       } else {
-        setVarnmalaTimer(prev => ({ ...prev, isRunning: false, isPaused: true }));
+        setVarnmalaTimer((prev) => ({
+          ...prev,
+          isRunning: false,
+          isPaused: true,
+        }));
       }
     },
-    [saveSafely, showNotification, varnmalaTimer]
+    [saveSafely, showNotification],
   ); // --- STORY TIMER FUNCTIONS ---
 
   const startStoryTimer = useCallback(() => {
@@ -256,7 +297,7 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
       clearInterval(intervals.current.story);
       intervals.current.story = null;
 
-      const finalTime = storyTimer.time;
+      const finalTime = storyTimerRef.current.time;
 
       if (finalTime > 0) {
         const record = {
@@ -265,18 +306,22 @@ export const useHindiTimers = (saveToFirebase, showNotification, records) => {
           timestamp: new Date(),
         };
 
-        saveSafely("stories", record, audioBlob instanceof Blob ? audioBlob : null);
+        saveSafely(
+          "stories",
+          record,
+          audioBlob instanceof Blob ? audioBlob : null,
+        );
 
         showNotification(
           `पठन अभ्यास (${formatTime(finalTime)}) रिकॉर्ड किया गया`,
-          "success"
+          "success",
         );
       }
 
       setStoryTimer({ time: 0, isRunning: false, isPaused: false });
       setCurrentStory(null);
     },
-    [saveSafely, showNotification, storyTimer]
+    [saveSafely, showNotification],
   );
 
   return {

@@ -212,6 +212,11 @@ const StoriesView = ({
             audioUrl={audioUrl}
           />
 
+          <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-200">
+            Your audio will be saved in the Records section after you tap
+            Record.
+          </div>
+
           {/* Story Filters */}
           <StoryFilters
             searchQuery={searchQuery}

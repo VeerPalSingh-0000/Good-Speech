@@ -8,7 +8,7 @@ import {
   deleteResult,
   subscribeToBookmarks,
   saveBookmarks,
-  uploadAudio
+  uploadAudio,
 } from "../lib/firestore";
 
 export const useHindiRecords = (user, showNotification) => {
@@ -24,7 +24,7 @@ export const useHindiRecords = (user, showNotification) => {
     storyBookmarks: [],
     lineBookmarks: {},
     hasCompletedOnboarding: false,
-    languagePreference: 'Hindi',
+    languagePreference: "Hindi",
     speechGoals: [],
     practiceTime: 15,
     notificationsEnabled: false,
@@ -62,7 +62,7 @@ export const useHindiRecords = (user, showNotification) => {
         storyBookmarks: [],
         lineBookmarks: {},
         hasCompletedOnboarding: false,
-        languagePreference: 'Hindi',
+        languagePreference: "Hindi",
         speechGoals: [],
         practiceTime: 15,
         notificationsEnabled: false,
@@ -86,7 +86,7 @@ export const useHindiRecords = (user, showNotification) => {
       }
 
       // 1. Optimistic Update (Immediate UI change)
-      setUserSettings(prev => ({ ...prev, storyBookmarks: newBookmarks }));
+      setUserSettings((prev) => ({ ...prev, storyBookmarks: newBookmarks }));
 
       // 2. Persist to Cloud
       try {
@@ -128,7 +128,7 @@ export const useHindiRecords = (user, showNotification) => {
       };
 
       // 1. Optimistic Update
-      setUserSettings(prev => ({ ...prev, lineBookmarks: newLineBookmarks }));
+      setUserSettings((prev) => ({ ...prev, lineBookmarks: newLineBookmarks }));
 
       // 2. Persist to Cloud
       try {
@@ -141,27 +141,33 @@ export const useHindiRecords = (user, showNotification) => {
   );
 
   // ACTION: Update User Settings
-  const updateUserSettings = useCallback(async (newSettings) => {
-    if (!user?.uid) return;
+  const updateUserSettings = useCallback(
+    async (newSettings) => {
+      if (!user?.uid) return;
 
-    // Optimistic Update
-    setUserSettings(prev => ({ ...prev, ...newSettings }));
+      // Optimistic Update
+      setUserSettings((prev) => ({ ...prev, ...newSettings }));
 
-    // Persist
-    try {
-      await saveBookmarks(user.uid, newSettings);
-    } catch (error) {
-      console.error("Failed to save settings: ", error);
-      showNotification("Failed to update settings.", "error");
-    }
-  }, [user, showNotification]);
+      // Persist
+      try {
+        await saveBookmarks(user.uid, newSettings);
+      } catch (error) {
+        console.error("Failed to save settings: ", error);
+        showNotification("Failed to update settings.", "error");
+      }
+    },
+    [user, showNotification],
+  );
 
   const saveToFirebase = useCallback(
     async (type, data, audioBlob = null) => {
       if (user?.uid) {
         try {
           const updatedData = { ...data };
-          if (audioBlob) {
+          if (type === "varnmala" && "audioUrl" in updatedData) {
+            delete updatedData.audioUrl;
+          }
+          if (audioBlob && type !== "varnmala") {
             const audioUrl = await uploadAudio(user.uid, type, audioBlob);
             if (audioUrl) {
               updatedData.audioUrl = audioUrl;
