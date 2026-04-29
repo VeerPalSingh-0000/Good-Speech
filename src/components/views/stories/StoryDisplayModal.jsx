@@ -42,6 +42,7 @@ const StoryDisplayModal = ({
   const [textError, setTextError] = useState(false);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(600);
+  const [showMobileBookmarks, setShowMobileBookmarks] = useState(false);
 
   const {
     isListening,
@@ -147,192 +148,223 @@ const StoryDisplayModal = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4"
+      className="fixed inset-0 bg-white dark:bg-slate-950 flex flex-col z-[100]"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-700 h-[85vh]"
+        className="w-full h-full flex flex-col relative"
       >
-        {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 shrink-0">
-          <div className="flex justify-between items-start gap-4">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-3">
-                {story.title}
-              </h2>
-
-              {/* Story Metadata */}
-              <div className="space-y-2 text-sm">
-                {/* Author and Difficulty */}
-                <div className="flex flex-wrap items-center gap-3">
-                  {story.author && (
-                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <span>✍️ {story.author}</span>
-                    </div>
-                  )}
-                  {story.difficulty && (
-                    <span
-                      className={`px-3 py-1 rounded-full font-semibold text-xs ${
-                        story.difficulty === "Easy"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                          : story.difficulty === "Medium"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                      }`}
-                    >
-                      {story.difficulty}
-                    </span>
-                  )}
-                </div>
-
-                {/* Story Details */}
-                <div className="flex flex-wrap gap-4 text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
-                  {story.wordCount && <div>📖 {story.wordCount} words</div>}
-                  {story.duration && <div>⏱️ {story.duration}</div>}
-                  {story.category && <div>📂 {story.category}</div>}
-                </div>
-              </div>
+        {/* Header - Sleek and modern */}
+        <div className="px-4 py-3 sm:px-6 sm:py-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 shrink-0 sticky top-0 z-20 shadow-sm flex items-center justify-between">
+          <div className="flex-1 min-w-0 pr-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white truncate">
+              {story.title}
+            </h2>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 sm:hidden">
+              {story.author && <span>✍️ {story.author}</span>}
+              {story.wordCount && <span>📖 {story.wordCount} words</span>}
             </div>
+          </div>
 
-            {/* Close and Next Buttons */}
-            <div className="flex gap-2 shrink-0">
-              {onToggleBookmark && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleBookmark();
-                  }}
-                  className="text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  title={isBookmarked ? "Remove bookmark" : "Add bookmark"}
-                >
-                  {isBookmarked ? (
-                    <FaBookmark
-                      size={20}
-                      className="text-purple-600 dark:text-purple-400"
-                    />
-                  ) : (
-                    <FaRegBookmark size={20} />
-                  )}
-                </button>
-              )}
-              {onNextStory && (
-                <button
-                  onClick={onNextStory}
-                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-sm transition-colors"
-                  title="Load next story"
-                >
-                  ⏭️ Next
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="text-slate-500 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+          {/* Actions */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {story.difficulty && (
+              <span
+                className={`hidden sm:inline-flex px-3 py-1 rounded-full font-semibold text-xs ${
+                  story.difficulty === "Easy"
+                    ? "bg-green-100/50 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    : story.difficulty === "Medium"
+                      ? "bg-yellow-100/50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                      : "bg-red-100/50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                }`}
               >
-                <span className="sr-only">Close</span>
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
+                {story.difficulty}
+              </span>
+            )}
+            {onToggleBookmark && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleBookmark();
+                }}
+                className="text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                title={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+              >
+                {isBookmarked ? (
+                  <FaBookmark
+                    size={18}
+                    className="text-purple-600 dark:text-purple-400"
                   />
-                </svg>
+                ) : (
+                  <FaRegBookmark size={18} />
+                )}
               </button>
-            </div>
+            )}
+            {onNextStory && (
+              <button
+                onClick={onNextStory}
+                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full font-semibold text-xs sm:text-sm shadow-sm transition-all hover:shadow-md"
+              >
+                ⏭️ <span className="hidden sm:inline">Next</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              <svg
+                className="w-5 h-5 sm:w-6 sm:h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-hidden relative bg-slate-50 dark:bg-slate-900 flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden relative bg-slate-50 dark:bg-[#0a0a0a] flex flex-col min-h-0">
           {story.pdfUrl ? (
             <>
-              {/* PDF Toolbar */}
-              <div className="flex items-center gap-2 p-2 sm:p-3 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 overflow-x-auto shrink-0">
-                <span className="text-xs sm:text-sm font-semibold whitespace-nowrap dark:text-slate-300">
-                  Bookmarks:
-                </span>
-                <input
-                  type="number"
-                  min="1"
-                  max={numPages || undefined}
-                  value={pageInput}
-                  onChange={(e) => setPageInput(e.target.value)}
-                  placeholder="pg"
-                  className="w-14 sm:w-20 px-1 py-1 text-sm border rounded bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <button
-                  onClick={handleAddPageBookmark}
-                  className="px-2 sm:px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 whitespace-nowrap font-medium"
-                >
-                  Add
-                </button>
-                <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 mx-1"></div>
-                <div className="flex gap-1 sm:gap-2">
-                  {lineBookmarks.length === 0 && (
-                    <span className="text-xs text-slate-400 italic py-1">
-                      No pages saved
-                    </span>
-                  )}
-                  {lineBookmarks.map((page) => {
-                    if (typeof page !== "number") return null;
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => handleJumpToPage(page)}
-                        className="group flex items-center gap-1 px-2 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-sm hover:border-purple-500 dark:hover:border-purple-400 transition-colors"
-                      >
-                        <FaBookmark className="text-purple-500 text-xs" />
-                        <span className="dark:text-slate-200">{page}</span>
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleLineBookmark(story.id, page);
-                          }}
-                          className="ml-0.5 text-slate-400 hover:text-red-500"
-                        >
-                          ×
+              {/* Floating Modern PDF PDF Toolbar & Page Navigation */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 w-[90%] sm:w-auto max-w-2xl transition-all duration-300 opacity-40 hover:opacity-100 focus-within:opacity-100 hover:translate-y-[-4px]">
+                {/* Bookmarks Menu */}
+                <AnimatePresence>
+                  {(showMobileBookmarks || window.innerWidth >= 640) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="flex sm:flex items-center flex-wrap sm:flex-nowrap justify-center gap-3 p-3 sm:p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl shadow-xl rounded-2xl sm:rounded-full border border-white/20 dark:border-slate-700/50 w-full sm:w-auto overflow-hidden sm:overflow-x-auto scrollbar-hide mb-1"
+                    >
+                      <div className="flex items-center gap-2 flex-1 sm:flex-none justify-center">
+                        <span className="text-xs font-semibold px-2 dark:text-slate-300 whitespace-nowrap">
+                          Bookmarks:
                         </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                        <input
+                          type="number"
+                          min="1"
+                          max={numPages || undefined}
+                          value={pageInput}
+                          onChange={(e) => setPageInput(e.target.value)}
+                          placeholder="pg"
+                          className="w-16 px-3 py-1.5 text-xs text-center border border-slate-200 dark:border-slate-600 rounded-full bg-slate-50 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <button
+                          onClick={handleAddPageBookmark}
+                          className="px-4 py-1.5 text-xs bg-purple-600 text-white rounded-full font-medium hover:bg-purple-700 shadow-sm transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
 
-              {/* Page Navigation Bar */}
-              <div className="flex items-center justify-center gap-3 p-2 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shrink-0">
-                <button
-                  onClick={goToPrevPage}
-                  disabled={currentPage <= 1}
-                  className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <FaChevronLeft size={14} />
-                </button>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 min-w-[80px] text-center">
-                  Page {currentPage} {numPages ? `/ ${numPages}` : ""}
-                </span>
-                <button
-                  onClick={goToNextPage}
-                  disabled={numPages && currentPage >= numPages}
-                  className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <FaChevronRight size={14} />
-                </button>
+                      <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-600 mx-1 shrink-0"></div>
+                      <div className="sm:hidden w-full h-px bg-slate-200 dark:bg-slate-600/50 opacity-50 my-1"></div>
+                      
+                      <div className="flex flex-wrap items-center justify-center gap-2 px-1 w-full sm:w-auto max-h-24 sm:max-h-none overflow-y-auto sm:overflow-visible">
+                        {lineBookmarks.length === 0 && (
+                          <span className="text-xs text-slate-400 italic px-2 py-1">
+                            No saved pages
+                          </span>
+                        )}
+                        {lineBookmarks.map((page) => {
+                          if (typeof page !== "number") return null;
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => handleJumpToPage(page)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-full text-xs hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all shadow-sm"
+                            >
+                              <FaBookmark className="text-purple-500 text-[10px]" />
+                              <span className="dark:text-slate-200 font-medium">{page}</span>
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onToggleLineBookmark(story.id, page);
+                                }}
+                                className="ml-1 text-slate-400 hover:text-red-500 text-sm font-bold"
+                              >
+                                &times;
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Page Navigation */}
+                <div className="flex items-center justify-center gap-2 sm:gap-4 px-3 sm:px-6 py-2.5 bg-black/80 dark:bg-black/90 backdrop-blur-xl shadow-2xl rounded-full border border-white/10 text-white w-fit mx-auto">
+                  {/* Mobile Menu Toggle */}
+                  <button
+                    onClick={() => setShowMobileBookmarks(!showMobileBookmarks)}
+                    className={`sm:hidden p-2 rounded-full transition-all ${
+                      showMobileBookmarks ? "bg-purple-600/40 text-purple-300" : "hover:bg-white/20 text-white/80"
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={showMobileBookmarks ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                    </svg>
+                  </button>
+                  <div className="sm:hidden w-px h-5 bg-white/20 shrink-0 mx-1"></div>
+
+                  <button
+                    onClick={goToPrevPage}
+                    disabled={currentPage <= 1}
+                    className="p-2 rounded-full hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  >
+                    <FaChevronLeft size={14} />
+                  </button>
+                  <span className="text-sm font-medium tracking-wide flex items-center justify-center gap-2 min-w-[100px] text-center">
+                    <span className="hidden sm:inline text-white/80">Page</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max={numPages || undefined}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (
+                          !isNaN(val) &&
+                          val >= 1 &&
+                          (!numPages || val <= numPages)
+                        ) {
+                          handleJumpToPage(val);
+                        }
+                      }}
+                      className="w-12 text-center bg-white/10 border border-white/10 rounded px-1 py-1 focus:outline-none focus:bg-white/20 focus:border-white/30 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    {numPages && (
+                      <span className="text-white/60">/ {numPages}</span>
+                    )}
+                  </span>
+                  <button
+                    onClick={goToNextPage}
+                    disabled={numPages && currentPage >= numPages}
+                    className="p-2 rounded-full hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  >
+                    <FaChevronRight size={14} />
+                  </button>
+                </div>
               </div>
 
               {/* PDF Renderer */}
               <div
                 ref={containerRef}
-                className="flex-1 overflow-y-auto flex justify-center p-2 bg-slate-200 dark:bg-slate-950"
+                className="flex-1 h-full w-full overflow-y-auto flex justify-center bg-slate-50 dark:bg-[#0a0a0a] pb-32"
               >
                 {pdfLoading && (
                   <div className="flex flex-col items-center justify-center gap-3 py-16">
@@ -362,7 +394,7 @@ const StoryDisplayModal = ({
                 >
                   <Page
                     pageNumber={currentPage}
-                    width={Math.min(containerWidth, 800)}
+                    width={Math.min(containerWidth, 1400)}
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
                   />
@@ -370,62 +402,69 @@ const StoryDisplayModal = ({
               </div>
             </>
           ) : (
-            <div className="overflow-y-auto h-full p-8 space-y-4">
-              {textLoading && (
-                <div className="flex flex-col items-center justify-center gap-3 py-16">
-                  <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">
-                    Loading story content...
-                  </p>
-                </div>
-              )}
-              {textError && (
-                <div className="flex flex-col items-center justify-center gap-3 py-16">
-                  <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
-                  <p className="text-red-400 text-sm">
-                    Failed to load story content.
-                  </p>
-                </div>
-              )}
-              {!textLoading &&
-                !textError &&
-                storyLines.map((line, index) => {
-                  const isLineBookmarked = lineBookmarks.includes(index);
-                  const lineResults = showPronunciation
-                    ? compareToTarget(line)
-                    : [];
+            <div className="overflow-y-auto h-full p-4 sm:p-6 md:p-8 lg:p-10">
+              <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
+                {textLoading && (
+                  <div className="flex flex-col items-center justify-center gap-3 py-16">
+                    <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                      Loading story content...
+                    </p>
+                  </div>
+                )}
+                {textError && (
+                  <div className="flex flex-col items-center justify-center gap-3 py-16">
+                    <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
+                    <p className="text-red-400 text-sm">
+                      Failed to load story content.
+                    </p>
+                  </div>
+                )}
+                {!textLoading &&
+                  !textError &&
+                  storyLines.map((line, index) => {
+                    const isLineBookmarked = lineBookmarks.includes(index);
+                    const lineResults = showPronunciation
+                      ? compareToTarget(line)
+                      : [];
 
-                  return (
-                    <div key={index} className="flex items-stretch gap-4 group">
+                    return (
                       <div
-                        role="button"
-                        onClick={() => onToggleLineBookmark(story.id, index)}
-                        className={`w-2 rounded-full flex-shrink-0 cursor-pointer transition-all duration-300 ${
-                          isLineBookmarked
-                            ? "bg-purple-600"
-                            : "bg-slate-300 dark:bg-slate-600 hover:bg-purple-300"
-                        }`}
-                        title={
-                          isLineBookmarked ? "Remove bookmark" : "Add bookmark"
-                        }
-                      />
-                      <div className="flex-1 text-lg leading-relaxed text-slate-700 dark:text-slate-300 py-1 flex flex-wrap gap-[0.25rem]">
-                        {!showPronunciation ? (
-                          <span>{line}</span>
-                        ) : (
-                          lineResults.map((result, i) => (
-                            <span
-                              key={i}
-                              className={`transition-colors duration-300 ${result.isCorrect ? "text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-900/40 rounded px-1" : ""}`}
-                            >
-                              {result.word}
-                            </span>
-                          ))
-                        )}
+                        key={index}
+                        className="flex items-stretch gap-3 sm:gap-5 group relative"
+                      >
+                        <div
+                          role="button"
+                          onClick={() => onToggleLineBookmark(story.id, index)}
+                          className={`w-1.5 sm:w-2 rounded-full flex-shrink-0 cursor-pointer transition-all duration-300 ${
+                            isLineBookmarked
+                              ? "bg-purple-600"
+                              : "bg-slate-300 dark:bg-slate-600 hover:bg-purple-300"
+                          }`}
+                          title={
+                            isLineBookmarked
+                              ? "Remove bookmark"
+                              : "Add bookmark"
+                          }
+                        />
+                        <div className="flex-1 text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed sm:leading-loose text-slate-800 dark:text-slate-200 py-1 flex flex-wrap gap-x-1.5 gap-y-1 sm:gap-x-2 sm:gap-y-1.5">
+                          {!showPronunciation ? (
+                            <span>{line}</span>
+                          ) : (
+                            lineResults.map((result, i) => (
+                              <span
+                                key={i}
+                                className={`transition-colors duration-300 ${result.isCorrect ? "text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-900/40 rounded px-1" : ""}`}
+                              >
+                                {result.word}
+                              </span>
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+              </div>
             </div>
           )}
         </div>
