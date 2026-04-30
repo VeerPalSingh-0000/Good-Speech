@@ -121,6 +121,7 @@ export const subscribeToUserSettings = (userId, cb) => {
           speechGoals: data.speechGoals || [],
           practiceTime: data.practiceTime || 15,
           notificationsEnabled: data.notificationsEnabled || false,
+          programProgress: data.programProgress || { currentDay: 1, startDate: null, completedDays: {} },
         });
       } else {
         // If user doc doesn't exist yet, return empty defaults
@@ -132,6 +133,7 @@ export const subscribeToUserSettings = (userId, cb) => {
           speechGoals: [],
           practiceTime: 15,
           notificationsEnabled: false,
+          programProgress: { currentDay: 1, startDate: null, completedDays: {} },
         });
       }
     },

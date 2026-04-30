@@ -4,14 +4,14 @@ import { motion } from 'framer-motion';
 const BottomNav = ({ currentView, setCurrentView }) => {
   const tabs = [
     { key: "home", label: "Home", icon: "fas fa-home" },
+    { key: "program", label: "Program", icon: "fas fa-calendar-check" },
     { key: "exercises", label: "Practice", icon: "fas fa-microphone" },
-    { key: "varnmala", label: "Varnmala", icon: "fas fa-list" },
     { key: "stories", label: "Stories", icon: "fas fa-book" },
     { key: "breathing", label: "Breathing", icon: "fas fa-wind" }
   ];
 
   return (
-    <div className="xl:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 pb-safe">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 pb-safe">
       <div className="flex justify-around items-center h-16 px-2">
         {tabs.map((tab) => {
           const isActive = currentView === tab.key;

@@ -60,26 +60,18 @@ const Header = ({ user, onLogout, currentView, setCurrentView, navItems = [] }) 
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             
-            {/* Logo */}
-            <button onClick={() => handleNavClick('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0 mr-2">
+            {/* Logo - Hidden on lg+ because Sidebar has it */}
+            <button onClick={() => handleNavClick('home')} className="lg:hidden flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0 mr-2">
               <div className="w-10 h-10 bg-gradient-to-br from-purple-600 via-pink-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shrink-0">
                 <i className="fas fa-comment-dots text-lg text-white" />
               </div>
-              <div className="hidden lg:block text-left">
-                <h1 className="text-lg xl:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 dark:from-white dark:to-purple-200 bg-clip-text text-transparent leading-tight">SpeechGood</h1>
-                <span className="text-[9px] text-slate-500 dark:text-slate-400 font-medium tracking-wider uppercase block -mt-0.5">Therapy</span>
-              </div>
             </button>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden xl:flex items-center gap-1 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl">
-              {navItems.slice(0, 5).map(item => (
-                <NavButton key={item.key} item={item} currentView={currentView} handleNavClick={handleNavClick} />
-              ))}
-            </nav>
+            {/* Desktop Navigation - Hidden because Sidebar has it */}
+            <div className="hidden lg:block flex-1" />
 
             {/* Right Side */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 ml-auto">
               {/* Theme Toggle */}
               <div className="flex items-center">
                 <DarkModeToggle 
@@ -126,10 +118,10 @@ const Header = ({ user, onLogout, currentView, setCurrentView, navItems = [] }) 
                 </AnimatePresence>
               </div>
 
-              {/* Menu Button - Show on all screens to house the REST of the navigation */}
+              {/* Menu Button - Hidden on lg+ */}
               <button 
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-                className={`p-2 rounded-xl transition-colors ${mobileMenuOpen ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
+                className={`lg:hidden p-2 rounded-xl transition-colors ${mobileMenuOpen ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
                 aria-label="Toggle Navigation Menu"
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}

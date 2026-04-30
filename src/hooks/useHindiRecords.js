@@ -28,6 +28,7 @@ export const useHindiRecords = (user, showNotification) => {
     speechGoals: [],
     practiceTime: 15,
     notificationsEnabled: false,
+    programProgress: { currentDay: 1, startDate: null, completedDays: {} },
   });
 
   const storyBookmarks = userSettings.storyBookmarks;
@@ -66,6 +67,7 @@ export const useHindiRecords = (user, showNotification) => {
         speechGoals: [],
         practiceTime: 15,
         notificationsEnabled: false,
+        programProgress: { currentDay: 1, startDate: null, completedDays: {} },
       });
     }
   }, [user]);
