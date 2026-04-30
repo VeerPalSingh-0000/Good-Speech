@@ -1,75 +1,134 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FaPlay, 
-  FaStop, 
-  FaTachometerAlt, 
-  FaWaveSquare, 
-  FaInfoCircle, 
-  FaMicrophone, 
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaPlay,
+  FaStop,
+  FaTachometerAlt,
+  FaWaveSquare,
+  FaMicrophone,
   FaCheckCircle,
-  FaLungs
-} from 'react-icons/fa';
-import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
+  FaLungs,
+} from "react-icons/fa";
+import { useSpeechRecognition } from "../../hooks/useSpeechRecognition";
 
-// Highly advanced therapeutic twisters focusing on specific phonetic blocks
+/* =========================
+   THERAPEUTIC TWISTERS
+========================= */
 const TONGUE_TWISTERS = [
   {
     id: 1,
-    text: "पके पेड़ पर पका पपीता, पका पेड़ या पका पपीता। पके पेड़ को पकड़े पिंकू, पिंकू पकड़े पका पपीता।",
-    difficulty: "Advanced",
-    focus: "Bilabial Plosives (प, ब) - Lip control",
-    syllables: ["प-के", "पे-ड़", "पर", "प-का", "प-पी-ता", "।", "प-का", "पे-ड़", "या", "प-का", "प-पी-ता", "।", "प-के", "पे-ड़", "को", "पक-ड़े", "पिं-कू", "।", "पिं-कू", "पक-ड़े", "प-का", "प-पी-ता", "।"]
+    text: "हमने नया नमक नमकीन में नम्रता से मिलाया।",
+    difficulty: "Beginner",
+    focus: "Breath Flow (ह, म, न)",
+    syllables: [
+      "Inhale",
+      "हम-ने",
+      "न-या",
+      "न-मक",
+      "न-म-कीन",
+      "में",
+      "न-म्र-ता",
+      "से",
+      "मि-ला-या",
+      "Pause",
+    ],
   },
   {
     id: 2,
-    text: "चार कचरी कच्चे चाचा, चार कचरी पक्के। पक्की कचरी कच्चे चाचा, कच्ची कचरी पक्के।",
-    difficulty: "Advanced",
-    focus: "Palatal Affricates (च, छ, ज) - Tongue placement",
-    syllables: ["चार", "कच-री", "कच्-चे", "चा-चा", "।", "चार", "कच-री", "पक्-के", "।", "पक्-की", "कच-री", "कच्-चे", "चा-चा", "।", "कच्-ची", "कच-री", "पक्-के", "।"]
+    text: "बबलू ने बड़े बर्तन में पानी भरकर बाहर रखा।",
+    difficulty: "Intermediate",
+    focus: "Lip Control (प, ब)",
+    syllables: [
+      "Inhale",
+      "ब-ब-लू",
+      "ने",
+      "ब-ड़े",
+      "बर-तन",
+      "में",
+      "पा-नी",
+      "भर-कर",
+      "बा-हर",
+      "र-खा",
+      "Pause",
+    ],
   },
   {
     id: 3,
-    text: "खड़क सिंह के खड़कने से खड़कती हैं खिड़कियां, खिड़कियों के खड़कने से खड़कता है खड़क सिंह।",
-    difficulty: "Expert",
-    focus: "Velar Aspirates & Flaps (ख, ड़) - Throat and breath flow",
-    syllables: ["ख-ड़क", "सिंह", "के", "ख-ड़क-ने", "से", "ख-ड़क-ती", "हैं", "खिड़-कि-यां", "।", "खिड़-कि-यों", "के", "ख-ड़क-ने", "से", "ख-ड़क-ता", "है", "ख-ड़क", "सिंह", "।"]
+    text: "टूटे ताले के पीछे ठंडी टोकरी टिकी थी।",
+    difficulty: "Advanced",
+    focus: "Tongue Curl (ट, ठ)",
+    syllables: [
+      "Inhale",
+      "टू-टे",
+      "ता-ले",
+      "के",
+      "पी-छे",
+      "ठं-डी",
+      "टो-क-री",
+      "टि-की",
+      "थी",
+      "Pause",
+    ],
   },
   {
     id: 4,
-    text: "मरहम की मरहम-पट्टी पर मरहम लगा है, पर मरहम की पट्टी पर मरहम नहीं।",
+    text: "सात सुथरी सीपियाँ समुद्र से सुरक्षित संग लाई गईं।",
     difficulty: "Expert",
-    focus: "Bilabial Nasals & Trills (म, र) - Continuous vocalization",
-    syllables: ["मर-हम", "की", "मर-हम-पट्-टी", "पर", "मर-हम", "ल-गा", "है", "।", "पर", "मर-हम", "की", "पट्-टी", "पर", "मर-हम", "न-हीं", "।"]
+    focus: "Airflow Control (स, श)",
+    syllables: [
+      "Inhale",
+      "सात",
+      "सु-थ-री",
+      "सी-पि-याँ",
+      "स-मु-द्र",
+      "से",
+      "सु-र-क्षि-त",
+      "संग",
+      "ला-ई",
+      "ग-ईं",
+      "Pause",
+    ],
   },
   {
     id: 5,
-    text: "ऊँट ऊँचा, ऊँट की पीठ ऊँची, ऊँची पूँछ ऊँट की।",
+    text: "कच्चे केले के कटोरे में कड़क काजू करारे रखे हैं।",
     difficulty: "Master",
-    focus: "Nasalized Vowels (ँ) - Velopharyngeal control",
-    syllables: ["ऊँट", "ऊँ-चा", "।", "ऊँट", "की", "पीठ", "ऊँ-ची", "।", "ऊँ-ची", "पूँछ", "ऊँट", "की", "।"]
-  }
+    focus: "Full Coordination",
+    syllables: [
+      "Inhale",
+      "कच्-चे",
+      "के-ले",
+      "के",
+      "क-टो-रे",
+      "में",
+      "क-ड़क",
+      "का-जू",
+      "क-रा-रे",
+      "र-खे",
+      "हैं",
+      "Pause",
+    ],
+  },
 ];
-
-const DIFFICULTY_COLORS = {
-  Advanced: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700',
-  Expert: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-700',
-  Master: 'bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-700'
-};
 
 const TongueTwistersView = () => {
   const [selectedTwister, setSelectedTwister] = useState(TONGUE_TWISTERS[0]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
-  
-  // Stammering therapy relies on prolonged, slow speech. Defaulting to 60 WPM.
-  const [speedWPM, setSpeedWPM] = useState(60); 
-  const [showSyllables, setShowSyllables] = useState(true); // Default to true for therapy
+  const [speedWPM, setSpeedWPM] = useState(60);
+  const [showSyllables, setShowSyllables] = useState(true);
 
-  const words = selectedTwister.text.split(' ');
+  const words = selectedTwister.text.split(" ");
   const timerRef = useRef(null);
 
-  const { isListening, stopListening, startListening, compareToTarget, supported } = useSpeechRecognition('hi-IN');
+  const {
+    isListening,
+    stopListening,
+    startListening,
+    compareToTarget,
+    supported,
+  } = useSpeechRecognition("hi-IN");
+
   const pronunciationResults = compareToTarget(selectedTwister.text);
 
   useEffect(() => {
@@ -80,8 +139,7 @@ const TongueTwistersView = () => {
   const startPlayback = () => {
     setIsPlaying(true);
     setCurrentWordIndex(0);
-    
-    // Calculate ms per word based on WPM
+
     const msPerWord = Math.floor(60000 / speedWPM);
 
     timerRef.current = setInterval(() => {
@@ -99,227 +157,146 @@ const TongueTwistersView = () => {
   const stopPlayback = () => {
     setIsPlaying(false);
     setCurrentWordIndex(-1);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-  };
-
-  const handleSpeedChange = (e) => {
-    setSpeedWPM(Number(e.target.value));
-    if (isPlaying) {
-      stopPlayback();
-      startPlayback();
-    }
+    if (timerRef.current) clearInterval(timerRef.current);
   };
 
   return (
-    <div className="space-y-8 pb-10 max-w-7xl mx-auto px-4 font-sans">
-      {/* Header Section */}
-      <div className="text-center space-y-4">
-        <h2 className="p-4 text-4xl font-extrabold bg-gradient-to-r from-teal-600 to-cyan-700 bg-clip-text text-transparent flex justify-center items-center gap-3">
-          <FaWaveSquare className="text-teal-600" />
-          Speech Fluency & Articulation Therapy
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 text-gray-100">
+      {/* HEADER */}
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl md:text-4xl font-extrabold text-teal-400 flex justify-center items-center gap-2">
+          <FaWaveSquare /> Speech Therapy
         </h2>
-        <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto text-lg">
-          Practice deliberate, syllable-timed reading to improve motor control, reduce vocal tension, and build fluency confidence.
-        </p>
+        <p className="text-sm text-gray-400">Slow. Controlled. Confident.</p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        
-        {/* Left Column: Clinical Selection */}
-        <div className="xl:col-span-1 space-y-4">
-          <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200 flex items-center gap-2">
-            <FaLungs className="text-teal-600" /> Select Articulation Target
-          </h3>
-          <div className="flex flex-col gap-3">
-            {TONGUE_TWISTERS.map((twister) => (
-              <button
-                key={twister.id}
-                onClick={() => setSelectedTwister(twister)}
-                className={`p-5 rounded-2xl border text-left transition-all duration-300 ${
-                  selectedTwister.id === twister.id
-                    ? 'bg-teal-50/50 border-teal-500 shadow-lg dark:bg-teal-900/20 dark:border-teal-500'
-                    : 'bg-white border-slate-200 hover:border-teal-300 hover:shadow-md dark:bg-slate-800 dark:border-slate-700'
+      {/* SELECTOR */}
+      <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+        {TONGUE_TWISTERS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setSelectedTwister(t)}
+            className={`min-w-[220px] p-4 rounded-xl border text-left transition-colors ${
+              selectedTwister.id === t.id
+                ? "bg-teal-900/40 border-teal-500 text-teal-300"
+                : "bg-gray-800/60 border-gray-700 hover:bg-gray-700/80"
+            }`}
+          >
+            <p className="font-bold text-sm text-gray-100">{t.difficulty}</p>
+            <p className="text-xs text-teal-400 mt-1">{t.focus}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* MAIN PLAYER */}
+      <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl shadow-xl p-6 space-y-6">
+        {/* WORD DISPLAY */}
+        <div className="text-center leading-[3.5rem] tracking-wide">
+          <div className="flex flex-wrap justify-center gap-3 text-3xl md:text-5xl font-bold">
+            {words.map((word, index) => (
+              <motion.span
+                key={index}
+                className={`px-3 py-1 rounded-lg transition-all duration-200 ${
+                  currentWordIndex === index
+                    ? "bg-teal-500 text-white scale-110 shadow-[0_0_15px_rgba(20,184,166,0.4)]"
+                    : currentWordIndex > index
+                      ? "text-gray-100"
+                      : "text-gray-600"
                 }`}
               >
-                <div className="flex flex-col mb-3 space-y-2">
-                  <span className={`self-start text-xs px-3 py-1 rounded-full border font-bold uppercase tracking-wider ${DIFFICULTY_COLORS[twister.difficulty]}`}>
-                    {twister.difficulty}
-                  </span>
-                  <span className="text-sm font-semibold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-2 py-1 rounded-md inline-block">
-                    Focus: {twister.focus}
-                  </span>
-                </div>
-                <p className={`line-clamp-2 leading-relaxed ${selectedTwister.id === twister.id ? 'text-slate-900 font-bold dark:text-white' : 'text-slate-600 dark:text-slate-400 font-medium'}`}>
-                  {twister.text}
-                </p>
-              </button>
+                {word}
+              </motion.span>
             ))}
           </div>
         </div>
 
-        {/* Right Column: Active Therapy Player */}
-        <div className="xl:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 lg:p-10 shadow-2xl border border-slate-200 dark:border-slate-700 relative overflow-hidden min-h-[500px] flex flex-col justify-between">
-            
-            <div className="absolute -top-10 -right-10 opacity-[0.03] text-teal-900">
-              <FaWaveSquare size={300} />
-            </div>
-
-            <div className="relative z-10 flex-grow flex flex-col items-center justify-center py-10">
-              {/* Display Words with Clinical Highlight */}
-              <div className="flex flex-wrap justify-center gap-x-4 gap-y-8 text-4xl lg:text-5xl font-extrabold leading-loose text-center">
-                {pronunciationResults.length > 0 ? (
-                   pronunciationResults.map((result, index) => (
-                    <motion.span
-                      key={`${index}-${result.word}`}
-                      className={`transition-all duration-300 px-3 py-2 rounded-xl ${
-                        currentWordIndex === index 
-                          ? 'text-white bg-teal-600 shadow-xl transform scale-105' 
-                          : result.isCorrect 
-                            ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/40 relative'
-                            : isListening 
-                              ? 'text-slate-300 dark:text-slate-600' 
-                              : 'text-slate-800 dark:text-slate-200'
-                       }`}
-                    >
-                      {result.word}
-                      {result.isCorrect && !isPlaying && (
-                         <div className="absolute -top-3 -right-3">
-                           <FaCheckCircle className="text-emerald-500 text-xl bg-white rounded-full shadow-sm" />
-                         </div>
-                      )}
-                    </motion.span>
-                  ))
-                ) : (
-                  words.map((word, index) => (
-                    <motion.span
-                      key={`${index}-${word}`}
-                      className={`transition-all duration-300 px-3 py-2 rounded-xl ${
-                        currentWordIndex === index 
-                          ? 'text-white bg-teal-600 shadow-xl transform scale-105' 
-                          : currentWordIndex > index 
-                            ? 'text-slate-800 dark:text-slate-200' 
-                            : 'text-slate-300 dark:text-slate-600'
-                      }`}
-                    >
-                      {word}
-                    </motion.span>
-                  ))
-                )}
-              </div>
-
-              {/* Therapeutic Syllable Breakdown */}
-              <AnimatePresence>
-                {showSyllables && !isPlaying && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="mt-16 bg-slate-50 dark:bg-slate-900/50 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 w-full shadow-inner"
+        {/* SYLLABLES */}
+        <AnimatePresence>
+          {showSyllables && !isPlaying && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-gray-900/50 border border-gray-700/50 p-4 rounded-xl overflow-hidden"
+            >
+              <div className="flex flex-wrap gap-2 justify-center text-sm font-mono">
+                {selectedTwister.syllables.map((s, i) => (
+                  <span
+                    key={i}
+                    className={`px-3 py-1 rounded-lg border ${
+                      s === "Inhale"
+                        ? "bg-blue-900/30 border-blue-800/50 text-blue-300 focus:outline-none"
+                        : s === "Pause"
+                          ? "bg-red-900/30 border-red-800/50 text-red-300"
+                          : "bg-gray-800 border-gray-700 text-gray-300"
+                    }`}
                   >
-                    <h4 className="text-slate-700 dark:text-slate-300 font-bold mb-6 flex items-center gap-2 text-lg">
-                       <FaInfoCircle className="text-teal-500" /> Syllable-Timed Breakdown (मात्राएँ)
-                       <span className="text-sm font-normal text-slate-500 ml-2">- Read one block per breath cycle</span>
-                    </h4>
-                    <div className="flex flex-wrap gap-4 text-xl font-mono">
-                      {selectedTwister.syllables.map((syl, i) => (
-                        <span key={i} className={`px-4 py-2 rounded-lg shadow-sm border font-semibold ${
-                          syl === '।' || syl === ',' 
-                          ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-900/30 dark:border-rose-800' 
-                          : 'bg-white text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600'
-                        }`}>
-                          {syl === '।' ? 'Pause / Breath' : syl}
-                        </span>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Clinical Controls */}
-            <div className="relative z-10 mt-8 pt-8 border-t border-slate-200 dark:border-slate-700">
-              
-              <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-                
-                {/* Actions */}
-                <div className="flex flex-wrap justify-center gap-4">
-                  {!isPlaying ? (
-                    <button
-                      onClick={startPlayback}
-                      className="px-8 py-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-3"
-                    >
-                      <FaPlay /> Guided Reading
-                    </button>
-                  ) : (
-                    <button
-                      onClick={stopPlayback}
-                      className="px-8 py-4 rounded-xl bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-white font-bold shadow transition-all flex items-center gap-3"
-                    >
-                      <FaStop /> Stop Guide
-                    </button>
-                  )}
-
-                  {!isListening ? (
-                     <button
-                       onClick={() => {
-                         if (isPlaying) stopPlayback();
-                         startListening();
-                       }}
-                       disabled={!supported}
-                       className="px-8 py-4 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                     >
-                       <FaMicrophone /> Speech Check
-                     </button>
-                   ) : (
-                     <button
-                       onClick={stopListening}
-                       className="px-8 py-4 rounded-xl bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300 font-bold shadow transition-all flex items-center gap-3"
-                     >
-                       <FaStop /> Stop Recording
-                     </button>
-                   )}
-
-                  <button
-                    onClick={() => setShowSyllables(!showSyllables)}
-                    disabled={isPlaying || isListening}
-                    className={`px-6 py-4 rounded-xl font-bold shadow-sm transition-all text-sm border ${
-                      showSyllables 
-                        ? 'bg-slate-800 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900' 
-                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300'
-                    } ${(isPlaying || isListening) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {showSyllables ? 'Hide Structure' : 'View Structure'}
-                  </button>
-                </div>
-
-                {/* Therapeutic Pace Control */}
-                <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm w-full lg:w-72">
-                  <FaTachometerAlt className="text-teal-500 text-xl" />
-                  <div className="flex flex-col w-full">
-                    <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400 font-bold mb-2">
-                      <span>Pace: {speedWPM} WPM</span>
-                      <span className="text-teal-600 dark:text-teal-400">
-                        {speedWPM <= 80 ? 'Therapeutic' : speedWPM > 120 ? 'Fluency' : 'Standard'}
-                      </span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="40" 
-                      max="160" 
-                      step="10"
-                      value={speedWPM} 
-                      onChange={handleSpeedChange}
-                      className="w-full accent-teal-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                      title="Keep pace low (40-80 WPM) for stammering therapy"
-                    />
-                  </div>
-                </div>
-
+                    {s}
+                  </span>
+                ))}
               </div>
-            </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* CONTROLS */}
+        <div className="flex flex-col gap-5 pt-2">
+          <div className="flex justify-center gap-3 flex-wrap">
+            {!isPlaying ? (
+              <button
+                onClick={startPlayback}
+                className="px-6 py-3 bg-teal-600 hover:bg-teal-500 transition-colors text-white rounded-xl flex items-center gap-2 font-medium shadow-lg shadow-teal-900/20"
+              >
+                <FaPlay /> Start
+              </button>
+            ) : (
+              <button
+                onClick={stopPlayback}
+                className="px-6 py-3 bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors rounded-xl flex items-center gap-2 font-medium"
+              >
+                <FaStop /> Stop
+              </button>
+            )}
+
+            {!isListening ? (
+              <button
+                onClick={startListening}
+                disabled={!supported}
+                className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 transition-colors text-white rounded-xl flex items-center gap-2 font-medium shadow-lg shadow-cyan-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaMicrophone /> Speak
+              </button>
+            ) : (
+              <button
+                onClick={stopListening}
+                className="px-6 py-3 bg-red-900/40 border border-red-800/50 text-red-400 hover:bg-red-900/60 transition-colors rounded-xl font-medium flex items-center gap-2"
+              >
+                <FaStop /> Stop
+              </button>
+            )}
+
+            <button
+              onClick={() => setShowSyllables(!showSyllables)}
+              className="px-6 py-3 border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors rounded-xl font-medium"
+            >
+              Structure
+            </button>
+          </div>
+
+          {/* SPEED */}
+          <div className="flex items-center justify-center gap-4 bg-gray-900/30 p-4 rounded-xl border border-gray-700/30">
+            <FaTachometerAlt className="text-teal-400 text-lg" />
+            <input
+              type="range"
+              min="40"
+              max="140"
+              value={speedWPM}
+              onChange={(e) => setSpeedWPM(e.target.value)}
+              className="w-full max-w-xs accent-teal-500"
+            />
+            <span className="text-sm font-medium text-gray-300 w-16 text-right">
+              {speedWPM} WPM
+            </span>
           </div>
         </div>
       </div>
