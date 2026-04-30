@@ -121,9 +121,8 @@ const HabitCard = memo(({ habit }) => (
     <div className="flex items-start gap-3">
       <span className="text-2xl">{habit.icon}</span>
       <div>
-        <h4 className="font-bold text-slate-800 dark:text-white text-sm">{habit.titleHi}</h4>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{habit.descriptionHi}</p>
-        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 italic">{habit.description}</p>
+        <h4 className="font-bold text-slate-800 dark:text-white text-sm">{habit.title}</h4>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{habit.description}</p>
       </div>
     </div>
   </motion.div>
@@ -151,7 +150,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
   const [activeWeek, setActiveWeek] = useState(currentWeek);
 
   // Overall progress
-  const totalCompleted = Object.keys(completedDays).length;
+  const totalCompleted = Object.values(completedDays).filter(d => !!d.completedAt).length;
   const overallProgress = Math.round((totalCompleted / phase.totalDays) * 100);
 
   // Get days for active week
@@ -193,14 +192,14 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
           <div className="text-center md:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-slate-300 text-sm font-medium mb-4">
               <FaCalendarCheck className="text-indigo-400" />
-              <span>Phase {phase.id}: {phase.titleHi}</span>
+              <span>Phase {phase.id}: {phase.title}</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
               Speech Improvement
               <span className="block text-indigo-400">Program</span>
             </h1>
             <p className="text-slate-400 text-sm md:text-base max-w-md">
-              {phase.descriptionHi}
+              {phase.description}
             </p>
 
             {/* Current status */}
@@ -245,10 +244,10 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
             <div className="flex items-center justify-between">
               <div className="text-left">
                 <p className="text-indigo-200 text-xs font-medium mb-1">
-                  {getWeekForDay(currentDay)?.emoji} {getWeekForDay(currentDay)?.titleHi}
+                  {getWeekForDay(currentDay)?.emoji} {getWeekForDay(currentDay)?.title}
                 </p>
                 <h3 className="text-xl font-bold">
-                  Day {currentDay} का अभ्यास शुरू करें
+                  Start Day {currentDay} Practice
                 </h3>
                 <p className="text-indigo-200 text-sm mt-1">
                   {getDayTotalDuration(currentDay)} minutes • {PROGRAM_DATA.phases[0].days.find(d => d.day === currentDay)?.activities.length || 4} activities
@@ -294,10 +293,10 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
           <div className="flex items-start gap-4">
             <span className="text-3xl">{weekData.emoji}</span>
             <div className="flex-1">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-white">{weekData.titleHi}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{weekData.goalHi}</p>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">{weekData.title}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{weekData.goal}</p>
               <div className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${weekColors[weekData.color].light} text-xs font-semibold`}>
-                🎯 Rule: {weekData.ruleHi}
+                🎯 Rule: {weekData.rule}
               </div>
             </div>
           </div>
@@ -307,7 +306,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
       {/* Day Grid */}
       <motion.div variants={containerVariants} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
         {weekDays.map(day => {
-          const isCompleted = !!completedDays[day.day];
+          const isCompleted = !!completedDays[day.day]?.completedAt;
           const isCurrent = day.day === currentDay;
           const isLocked = day.day > currentDay;
 
@@ -334,8 +333,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
             </div>
             <div>
               <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider">Next Milestone — Day {nextMilestone.day}</p>
-              <h4 className="text-lg font-bold text-slate-800 dark:text-white mt-0.5">{nextMilestone.resultHi}</h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{nextMilestone.result}</p>
+              <h4 className="text-lg font-bold text-slate-800 dark:text-white mt-0.5">{nextMilestone.result}</h4>
             </div>
           </div>
         </motion.div>
@@ -356,8 +354,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
       {/* Final Principle */}
       <motion.div variants={itemVariants} className="p-8 rounded-[2rem] bg-slate-900 text-white text-center">
         <FaQuoteLeft className="mx-auto text-indigo-500 text-2xl mb-4" />
-        <p className="text-xl md:text-2xl font-bold mb-2">{FINAL_PRINCIPLE.textHi}</p>
-        <p className="text-sm text-slate-400 italic">"{FINAL_PRINCIPLE.text}"</p>
+        <p className="text-xl md:text-2xl font-bold mb-2">{FINAL_PRINCIPLE.text}</p>
       </motion.div>
 
       {/* Expected Results */}
@@ -377,7 +374,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
               <span className="text-xl">{r.icon}</span>
               <div>
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Day {r.day}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{r.resultHi}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{r.result}</p>
               </div>
               {totalCompleted >= r.day && <FaCheckCircle className="text-emerald-500 text-sm ml-1" />}
             </div>

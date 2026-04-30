@@ -18,6 +18,7 @@ const RecordsView = lazy(() => import('./components/views/RecordsView'));
 const HistoryView = lazy(() => import('./components/views/HistoryView'));
 const BreathingView = lazy(() => import('./components/views/BreathingView'));
 const TongueTwistersView = lazy(() => import('./components/views/TongueTwistersView'));
+const MirrorView = lazy(() => import('./components/views/MirrorView'));
 const ProfileView = lazy(() => import('./components/views/ProfileView'));
 const EducationView = lazy(() => import('./components/views/EducationView'));
 const OnboardingView = lazy(() => import('./components/views/OnboardingView'));
@@ -139,6 +140,7 @@ const Hindi = ({ user, onLogout }) => {
                   <Route path="/stories" element={<PageTransition><StoriesView {...commonProps} stories={allStories} storyBookmarks={storyBookmarks} lineBookmarks={lineBookmarks} onToggleStoryBookmark={toggleStoryBookmark} onToggleLineBookmark={toggleLineBookmark} /></PageTransition>} />
                   <Route path="/breathing" element={<PageTransition><BreathingView /></PageTransition>} />
                   <Route path="/twisters" element={<PageTransition><TongueTwistersView /></PageTransition>} />
+                  <Route path="/mirror" element={<PageTransition><MirrorView /></PageTransition>} />
                   <Route path="/records" element={<PageTransition><RecordsView records={records} deleteRecord={deleteRecord} /></PageTransition>} />
                   <Route path="/history" element={<PageTransition><HistoryView records={records} lineBookmarks={lineBookmarks} stories={allStories} /></PageTransition>} />
                   <Route path="/learn" element={<PageTransition><EducationView /></PageTransition>} />

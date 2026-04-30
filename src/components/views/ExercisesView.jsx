@@ -123,7 +123,7 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
           <div className="flex justify-center gap-3">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700/50 text-xs font-medium">
               <FaFire className="text-orange-500" />
-              <span>{stats.sessions} सत्र</span>
+              <span>{stats.sessions} sessions</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700/50 text-xs font-medium">
               <FaTrophy className="text-yellow-500" />
@@ -246,7 +246,7 @@ const ExercisesView = ({ user, records = {}, soundTimers = {}, startSoundTimer, 
         <motion.div variants={itemVariants} className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm font-medium">
             <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-            ध्वनि अभ्यास
+            Sound Practice
           </div>
           <h2 className="text-4xl font-bold text-slate-800 dark:text-white">
             Sound Practice
@@ -264,7 +264,7 @@ const ExercisesView = ({ user, records = {}, soundTimers = {}, startSoundTimer, 
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
           >
-            Vowels (स्वर)
+            Vowels
           </button>
           <button
             onClick={() => setActiveTab('consonants')}
@@ -273,7 +273,7 @@ const ExercisesView = ({ user, records = {}, soundTimers = {}, startSoundTimer, 
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
           >
-            Consonants (व्यंजन)
+            Consonants
           </button>
         </div>
 

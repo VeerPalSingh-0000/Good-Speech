@@ -7,10 +7,10 @@ import { FaFire, FaCalendarCheck, FaArrowRight, FaCheckCircle, FaClock } from 'r
 // Get time-based greeting
 const getGreeting = () => {
   const hour = new Date().getHours();
-  if (hour < 12) return { text: "Good Morning", emoji: "☀️", hindi: "सुप्रभात" };
-  if (hour < 17) return { text: "Good Afternoon", emoji: "🌤️", hindi: "नमस्ते" };
-  if (hour < 21) return { text: "Good Evening", emoji: "🌆", hindi: "शुभ संध्या" };
-  return { text: "Good Night", emoji: "🌙", hindi: "शुभ रात्रि" };
+  if (hour < 12) return { text: "Good Morning", emoji: "☀️" };
+  if (hour < 17) return { text: "Good Afternoon", emoji: "🌤️" };
+  if (hour < 21) return { text: "Good Evening", emoji: "🌆" };
+  return { text: "Good Night", emoji: "🌙" };
 };
 
 const containerVariants = {
@@ -63,10 +63,10 @@ const HomeView = ({ user, records, setCurrentView, userSettings }) => {
     const todayRecords = [...(records?.sounds || []), ...(records?.varnmala || []), ...(records?.stories || [])]
       .filter(r => new Date(r.timestamp?.seconds ? r.timestamp.seconds * 1000 : r.timestamp).toDateString() === todayString);
     
-    const timeSecs = todayRecords.reduce((acc, r) => acc + (r.time || 0), 0);
+    const timeDeciseconds = todayRecords.reduce((acc, r) => acc + (r.time || 0), 0);
     
     return { 
-      timeMins: Math.floor(timeSecs / 60)
+      timeMins: Math.floor(timeDeciseconds / 600)
     };
   }, [records]);
 
@@ -77,7 +77,7 @@ const HomeView = ({ user, records, setCurrentView, userSettings }) => {
       <motion.div variants={itemVariants} className="flex justify-between items-end mb-4 pt-4">
         <div>
           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium flex items-center gap-1.5 mb-1">
-            <span>{greeting.emoji}</span> {greeting.hindi}
+            <span>{greeting.emoji}</span> Welcome back
           </p>
           <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
             {greeting.text}, <span className="text-indigo-600 dark:text-indigo-400">{firstName}</span>.

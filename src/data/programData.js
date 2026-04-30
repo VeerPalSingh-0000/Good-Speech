@@ -131,7 +131,6 @@ const buildDay = (dayNum, weekNum, config) => {
           ? `Inhale (4 sec) → Speak slowly while exhaling. Say the sentences below:`
           : 'Deep breath and speak naturally:',
         sentences: breathingSentences,
-        linkedView: '/breathing',
       },
       {
         id: `day${dayNum}-reading`,
@@ -179,9 +178,10 @@ const buildDay = (dayNum, weekNum, config) => {
           ? 'आईने के सामने खड़े हों। अपनी आँखों में देखें। 5-6 सरल वाक्य बोलें।'
           : `आज का अभ्यास: ${speakingPrompt.hindi}`,
         instructionsEn: speakingType === 'mirror'
-          ? 'Stand in front of a mirror. Look into your eyes. Speak 5-6 simple sentences.'
+          ? 'Use your device camera to look into your eyes. Speak 5-6 simple sentences.'
           : `Today's task: ${speakingPrompt.english}`,
         prompt: speakingPrompt,
+        linkedView: speakingType === 'mirror' ? '/mirror' : undefined,
       },
     ],
   };

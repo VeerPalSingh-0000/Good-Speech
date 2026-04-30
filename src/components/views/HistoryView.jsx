@@ -197,7 +197,7 @@ const HistoryView = ({ records }) => {
               {title}
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {recordCount} कुल रिकॉर्ड
+              {recordCount} total records
             </p>
           </div>
         </div>
@@ -215,10 +215,10 @@ const HistoryView = ({ records }) => {
       <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
         <div className="text-center md:text-left mb-6 md:mb-0">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            अभ्यास इतिहास
+            Practice History
           </h2>
           <p className="text-slate-500 mt-2">
-            यहाँ आपके सभी सत्रों का विस्तृत विश्लेषण है।
+            Here is a detailed breakdown of all your sessions.
           </p>
         </div>
         <div>
@@ -228,19 +228,19 @@ const HistoryView = ({ records }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-          <h4 className="font-bold text-lg">कुल सत्र</h4>
+          <h4 className="font-bold text-lg">Total Sessions</h4>
           <p className="text-3xl font-bold text-blue-500">
             {stats.totalSessions}
           </p>
         </div>
         <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-          <h4 className="font-bold text-lg">कुल समय</h4>
+          <h4 className="font-bold text-lg">Total Time</h4>
           <p className="text-3xl font-bold font-mono text-green-500">
             {stats.totalTime}
           </p>
         </div>
         <div className="p-6 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-          <h4 className="font-bold text-lg">सर्वश्रेष्ठ स्वर समय</h4>
+          <h4 className="font-bold text-lg">Best Sound Time</h4>
           <p className="text-3xl font-bold font-mono text-purple-500">
             {stats.bestSound}
           </p>
@@ -323,7 +323,7 @@ const HistoryView = ({ records }) => {
       {/* Sound Records Section */}
       <div className="space-y-4">
         <SectionHeader
-          title="स्वर अभ्यास रिकॉर्ड"
+          title="Sound Practice Records"
           recordCount={records.sounds?.length || 0}
           sectionKey="sounds"
           icon="fas fa-microphone"
@@ -408,7 +408,7 @@ const HistoryView = ({ records }) => {
       {/* Varnmala  section */}
       <div className="space-y-4">
         <SectionHeader
-          title="वर्णमाला अभ्यास रिकॉर्ड"
+          title="Varnmala Practice Records"
           recordCount={records.varnmala?.length || 0}
           sectionKey="varnmala"
           icon="fas fa-list"
@@ -426,10 +426,10 @@ const HistoryView = ({ records }) => {
                 <table className="w-full min-w-[500px] text-left">
                   <thead className="bg-slate-100 dark:bg-slate-700">
                     <tr>
-                      <th className="p-4 rounded-tl-lg w-16">क्र.सं.</th>
-                      <th className="p-4">समय</th>
-                      <th className="p-4">गुणवत्ता</th>
-                      <th className="p-4 rounded-tr-lg">दिनांक</th>
+                      <th className="p-4 rounded-tl-lg w-16">S.No.</th>
+                      <th className="p-4">Time</th>
+                      <th className="p-4">Quality</th>
+                      <th className="p-4 rounded-tr-lg">Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -466,7 +466,7 @@ const HistoryView = ({ records }) => {
       {/* Stories section */}
       <div className="space-y-4">
         <SectionHeader
-          title="पठन अभ्यास रिकॉर्ड"
+          title="Reading Practice Records"
           recordCount={records.stories?.length || 0}
           sectionKey="stories"
           icon="fas fa-book"
@@ -485,10 +485,10 @@ const HistoryView = ({ records }) => {
                   <table className="w-full min-w-[600px] text-left">
                     <thead className="bg-slate-100 dark:bg-slate-700">
                       <tr>
-                        <th className="p-4 rounded-tl-lg w-16">क्र.सं.</th>
-                        <th className="p-4">कहानी</th>
-                        <th className="p-4">समय</th>
-                        <th className="p-4 rounded-tr-lg">दिनांक</th>
+                        <th className="p-4 rounded-tl-lg w-16">S.No.</th>
+                        <th className="p-4">Story</th>
+                        <th className="p-4">Time</th>
+                        <th className="p-4 rounded-tr-lg">Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">

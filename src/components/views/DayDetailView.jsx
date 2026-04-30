@@ -104,9 +104,9 @@ const ActivityCard = memo(({ activity, index, isCompleted, onComplete, weekColor
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className={`font-bold text-sm ${isCompleted ? 'text-emerald-700 dark:text-emerald-400 line-through' : 'text-slate-800 dark:text-white'}`}>
-              {activity.title}
+              {activity.titleEn || activity.title}
             </h4>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">{activity.titleEn}</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">{activity.title}</span>
           </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -143,11 +143,11 @@ const ActivityCard = memo(({ activity, index, isCompleted, onComplete, weekColor
               {/* Instructions */}
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/30">
                 <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  📝 {activity.instructions}
+                  📝 {activity.instructionsEn || activity.instructions}
                 </p>
                 {activity.instructionsEn && (
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">
-                    {activity.instructionsEn}
+                    {activity.instructions}
                   </p>
                 )}
               </div>
@@ -169,10 +169,10 @@ const ActivityCard = memo(({ activity, index, isCompleted, onComplete, weekColor
                 <div className={`p-4 rounded-xl ${colors.light}`}>
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Today's Task</p>
                   <p className={`text-base font-bold ${colors.text}`}>
-                    {activity.prompt.hindi}
+                    {activity.prompt.english || activity.prompt.hindi}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    {activity.prompt.english}
+                    {activity.prompt.hindi}
                   </p>
                 </div>
               )}
@@ -236,7 +236,7 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
   const [completedActivities, setCompletedActivities] = useState(
     dayProgress?.activities || {}
   );
-  const [dayCompleted, setDayCompleted] = useState(!!dayProgress);
+  const [dayCompleted, setDayCompleted] = useState(!!dayProgress?.completedAt);
 
   const colors = colorMap[weekData?.color] || colorMap.emerald;
 
@@ -257,50 +257,65 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
         colors: ['#8b5cf6', '#ec4899', '#06b6d4', '#10b981', '#f59e0b'],
       });
 
-      // Save to Firestore
-      const newCompletedDays = {
-        ...programProgress.completedDays,
-        [dayNum]: {
-          completedAt: new Date().toISOString(),
-          activities: completedActivities,
-        }
-      };
+      // Self-healing for past race conditions
+      if (!programProgress.completedDays?.[dayNum]?.completedAt) {
+        const newCompletedDays = {
+          ...programProgress.completedDays,
+          [dayNum]: {
+            ...(programProgress.completedDays?.[dayNum] || {}),
+            completedAt: new Date().toISOString(),
+            activities: completedActivities,
+          }
+        };
 
-      const newCurrentDay = Math.max(programProgress.currentDay, dayNum + 1);
+        const newCurrentDay = Math.max(programProgress.currentDay, dayNum + 1);
 
-      updateUserSettings({
-        programProgress: {
-          ...programProgress,
-          completedDays: newCompletedDays,
-          currentDay: newCurrentDay,
-        }
-      });
+        updateUserSettings({
+          programProgress: {
+            ...programProgress,
+            completedDays: newCompletedDays,
+            currentDay: newCurrentDay,
+          }
+        });
+      }
     }
-  }, [allDone, dayCompleted]);
+  }, [allDone, dayCompleted, programProgress, dayNum, completedActivities, updateUserSettings]);
 
   const handleActivityComplete = useCallback((activityId) => {
-    setCompletedActivities(prev => {
-      const updated = { ...prev, [activityId]: true };
+    const updated = { ...completedActivities, [activityId]: true };
+    setCompletedActivities(updated);
 
-      // Persist partial progress
-      const newCompletedDays = {
-        ...programProgress.completedDays,
-        [dayNum]: {
-          ...(programProgress.completedDays?.[dayNum] || {}),
-          activities: updated,
-        }
-      };
+    // check if all done
+    const total = dayData?.activities?.length || 0;
+    const completedCount = Object.keys(updated).filter(k => updated[k]).length;
+    const isNowAllDone = completedCount === total && total > 0;
 
-      updateUserSettings({
-        programProgress: {
-          ...programProgress,
-          completedDays: newCompletedDays,
-        }
-      });
+    let newCurrentDay = programProgress.currentDay;
+    let completedAt = programProgress.completedDays?.[dayNum]?.completedAt;
 
-      return updated;
+    if (isNowAllDone && !completedAt) {
+      newCurrentDay = Math.max(programProgress.currentDay, dayNum + 1);
+      completedAt = new Date().toISOString();
+    }
+
+    // Persist progress
+    const newCompletedDays = {
+      ...programProgress.completedDays,
+      [dayNum]: {
+        ...(programProgress.completedDays?.[dayNum] || {}),
+        activities: updated,
+        ...(completedAt ? { completedAt } : {})
+      }
+    };
+
+    updateUserSettings({
+      programProgress: {
+        ...programProgress,
+        completedDays: newCompletedDays,
+        currentDay: newCurrentDay,
+      }
     });
-  }, [dayNum, programProgress, updateUserSettings]);
+  }, [dayNum, programProgress, updateUserSettings, dayData, completedActivities]);
 
   const handleNavigateToView = useCallback((viewPath) => {
     navigate(viewPath);
@@ -318,6 +333,8 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
       navigate('/program');
     }
   }, [dayNum, navigate]);
+
+
 
   if (!dayData || !weekData) {
     return (
@@ -343,7 +360,7 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
         </button>
         <div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            {weekData.emoji} Week {weekData.id}: {weekData.titleHi}
+            {weekData.emoji} Week {weekData.id}: {weekData.title}
           </p>
           <h2 className="text-xl font-bold text-slate-800 dark:text-white">
             Day {dayNum}
@@ -380,7 +397,7 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
 
           {/* Week rule */}
           <p className="mt-3 text-sm text-white/80">
-            🎯 {weekData.ruleHi}
+            🎯 {weekData.rule}
           </p>
         </div>
       </motion.div>
@@ -395,14 +412,14 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
           >
             <div className="text-4xl mb-2">🎉</div>
             <h3 className="text-xl font-bold">Day {dayNum} Complete!</h3>
-            <p className="text-emerald-100 text-sm mt-1">शानदार! आपने आज का अभ्यास पूरा किया!</p>
+            <p className="text-emerald-100 text-sm mt-1">Excellent! You've completed today's practice.</p>
 
             {dayNum < 30 && (
               <button
-                onClick={handleNextDay}
+                onClick={handleGoBack}
                 className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-600 text-sm font-bold shadow-md hover:shadow-lg transition-all"
               >
-                Day {dayNum + 1} शुरू करें <FaArrowRight />
+                Return to Program <FaArrowRight />
               </button>
             )}
           </motion.div>
@@ -437,7 +454,7 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
         <div className="space-y-2">
           {GOLDEN_HABITS.map(h => (
             <p key={h.id} className="text-sm text-slate-700 dark:text-slate-300">
-              {h.icon} <strong>{h.titleHi}</strong> — {h.descriptionHi}
+              {h.icon} <strong>{h.title}</strong> — {h.description}
             </p>
           ))}
         </div>

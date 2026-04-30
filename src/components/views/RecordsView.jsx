@@ -46,7 +46,7 @@ const SectionHeader = ({ title, recordCount, icon, isOpen, onClick }) => (
             {title}
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {recordCount} कुल रिकॉर्ड
+            {recordCount} total records
           </p>
         </div>
       </div>
@@ -83,8 +83,8 @@ const RecordsView = ({
   );
 
   const allRecordsWithAudio = [
-    ...soundRecords.map((r) => ({ ...r, exerciseType: "स्वर" })),
-    ...storyRecords.map((r) => ({ ...r, exerciseType: "कहानी" })),
+    ...soundRecords.map((r) => ({ ...r, exerciseType: "Sound" })),
+    ...storyRecords.map((r) => ({ ...r, exerciseType: "Story" })),
   ]
     .filter((r) => r.audioUrl)
     .sort(
@@ -96,10 +96,10 @@ const RecordsView = ({
   const sections = [
     {
       key: "sounds",
-      title: "स्वर अभ्यास रिकॉर्ड",
+      title: "Sound Practice Records",
       icon: <FaMicrophone size={20} />,
       records: soundRecords,
-      headers: ["स्वर", "समय", "दिनांक", "Action"],
+      headers: ["Sound", "Time", "Date", "Action"],
       renderRow: (rec) => (
         <tr key={rec.id}>
           <td className="p-4 font-bold text-purple-600 text-2xl">
@@ -123,10 +123,10 @@ const RecordsView = ({
     },
     {
       key: "varnmala",
-      title: "वर्णमाला अभ्यास रिकॉर्ड",
+      title: "Varnmala Practice Records",
       icon: <FaList size={20} />,
       records: varnmalaRecords,
-      headers: ["समय", "गुणवत्ता", "दिनांक", "Action"],
+      headers: ["Time", "Quality", "Date", "Action"],
       renderRow: (rec) => (
         <tr key={rec.id}>
           <td className="p-4 font-mono text-lg">{formatTime(rec.time)}</td>
@@ -150,10 +150,10 @@ const RecordsView = ({
     },
     {
       key: "stories",
-      title: "पठन अभ्यास रिकॉर्ड",
+      title: "Reading Practice Records",
       icon: <FaBook size={20} />,
       records: storyRecords,
-      headers: ["कहानी", "समय", "प्रतिशत", "दिनांक", "Action"],
+      headers: ["Story", "Time", "Percentage", "Date", "Action"],
       renderRow: (rec) => (
         <tr key={rec.id}>
           <td className="p-4 font-bold max-w-xs truncate">
@@ -178,21 +178,21 @@ const RecordsView = ({
     },
     {
       key: "audio",
-      title: "ऑडियो रिकॉर्डिंग (Audio Recordings)",
+      title: "Audio Recordings",
       icon: <FaHeadphones size={20} />,
       records: allRecordsWithAudio,
       headers: [
-        "अभ्यास (Type)",
-        "रिकॉर्डिंग (Listen)",
-        "दिनांक (Date)",
+        "Type",
+        "Listen",
+        "Date",
         "Action",
       ],
       renderRow: (rec) => (
         <tr key={`${rec.id}-audio`}>
           <td className="p-4 font-bold text-slate-700 dark:text-slate-300">
             {rec.exerciseType}
-            {rec.exerciseType === "स्वर" ? ` (${rec.sound})` : ""}
-            {rec.exerciseType === "कहानी"
+            {rec.exerciseType === "Sound" ? ` (${rec.sound})` : ""}
+            {rec.exerciseType === "Story"
               ? ` (${rec.storyTitle || "N/A"})`
               : ""}
           </td>
@@ -225,7 +225,7 @@ const RecordsView = ({
     >
       <motion.div variants={itemVariants} className="text-center">
         <h2 className="p-4 text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          प्रगति रिकॉर्ड
+          Progress Records
         </h2>
         <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg max-w-2xl mx-auto">
           Track your improvement over time with detailed session records and

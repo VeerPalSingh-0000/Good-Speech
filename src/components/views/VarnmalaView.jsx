@@ -176,18 +176,18 @@ const VarnmalaDisplay = memo(({ transcript }) => {
         <div className="text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm font-medium mb-3">
             <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-            हिंदी वर्णमाला
+            Hindi Alphabet
           </div>
           <h3 className="text-3xl font-bold text-slate-800 dark:text-white">
-            देवनागरी लिपि
+            Devanagari Script
           </h3>
         </div>
 
         {/* Swar Section */}
         <div>
           <SectionHeader
-            title="स्वर"
-            subtitle="Vowels (13)"
+            title="Vowels"
+            subtitle="Swar (13)"
             color="from-violet-500 to-purple-600"
           />
           <motion.div
@@ -211,8 +211,8 @@ const VarnmalaDisplay = memo(({ transcript }) => {
         {/* Vyanjan Section */}
         <div>
           <SectionHeader
-            title="व्यंजन"
-            subtitle="Consonants (33)"
+            title="Consonants"
+            subtitle="Vyanjan (33)"
             color="from-cyan-500 to-blue-600"
           />
           <motion.div
@@ -236,8 +236,8 @@ const VarnmalaDisplay = memo(({ transcript }) => {
         {/* Sanyukt Akshar Section */}
         <div>
           <SectionHeader
-            title="संयुक्त अक्षर"
-            subtitle="Conjuncts (3)"
+            title="Conjuncts"
+            subtitle="Sanyukt Akshar (3)"
             color="from-pink-500 to-rose-600"
           />
           <motion.div
@@ -371,7 +371,7 @@ const VarnmalaView = ({
       <motion.div variants={itemVariants} className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm font-medium">
           <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-          वर्णमाला अभ्यास
+          Alphabet Practice
         </div>
         <h2 className="text-4xl font-bold text-slate-800 dark:text-white">
           Alphabet Practice

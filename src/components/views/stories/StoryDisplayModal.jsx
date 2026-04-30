@@ -14,14 +14,22 @@ import {
   FaChevronRight,
   FaMicrophone,
   FaStop,
+  FaPlay,
 } from "react-icons/fa";
 import { Document, Page, pdfjs } from "react-pdf";
+import kru2uni from "@anthro-ai/krutidev-unicode";
 import { useSpeechRecognition } from "../../../hooks/useSpeechRecognition";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-// Set up the PDF.js worker from CDN - must match exactly with the pdfjs-dist version in the API
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
+// Set up the PDF.js worker from CDN - must match exactly with the installed pdfjs-dist version
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+const pdfOptions = {
+  cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+  cMapPacked: true,
+  standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+};
 
 const StoryDisplayModal = ({
   story,
@@ -43,6 +51,12 @@ const StoryDisplayModal = ({
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(600);
   const [showMobileBookmarks, setShowMobileBookmarks] = useState(false);
+
+  // Guided Reading State
+  const [isGuidedReading, setIsGuidedReading] = useState(false);
+  const [targetWPM, setTargetWPM] = useState(60);
+  const [activeWordIndex, setActiveWordIndex] = useState(-1);
+  const [pdfPageText, setPdfPageText] = useState("");
 
   const {
     isListening,
@@ -108,13 +122,42 @@ const StoryDisplayModal = ({
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-  const storyLines = useMemo(
-    () =>
-      textContent
-        ? textContent.split("\n").filter((line) => line.trim() !== "")
-        : [],
-    [textContent],
-  );
+  const parsedText = useMemo(() => {
+    const textToParse = story.pdfUrl ? pdfPageText : textContent;
+    if (!textToParse) return [];
+    let globalWordIdx = 0;
+    return textToParse.split("\n").filter((line) => line.trim() !== "").map((line, lineIdx) => {
+      const words = line.split(" ");
+      const wordObjects = words.map((word) => ({
+        word,
+        globalWordIdx: globalWordIdx++
+      }));
+      return { line, wordObjects, lineIdx };
+    });
+  }, [textContent]);
+
+  const totalWords = useMemo(() => {
+    return parsedText.reduce((acc, line) => acc + line.wordObjects.length, 0);
+  }, [parsedText]);
+
+  // Guided Reading Timer Logic
+  useEffect(() => {
+    let intervalId;
+    if (isGuidedReading && activeWordIndex < totalWords) {
+      const msPerWord = 60000 / targetWPM;
+      intervalId = setInterval(() => {
+        setActiveWordIndex((prev) => {
+          // If we reach the end, stop
+          if (prev + 1 >= totalWords) {
+            setIsGuidedReading(false);
+            return prev + 1;
+          }
+          return prev + 1;
+        });
+      }, msPerWord);
+    }
+    return () => clearInterval(intervalId);
+  }, [isGuidedReading, activeWordIndex, targetWPM, totalWords]);
 
   const handleAddPageBookmark = () => {
     const page = parseInt(pageInput);
@@ -137,6 +180,58 @@ const StoryDisplayModal = ({
   const onDocumentLoadError = useCallback(() => {
     setPdfLoading(false);
     setPdfError(true);
+  }, []);
+
+  const onPageLoadSuccess = useCallback(async (page) => {
+    try {
+      const textContentObj = await page.getTextContent();
+      const textItems = textContentObj.items;
+      let text = '';
+      let lastY = null;
+      let lastX = null;
+      let lastWidth = null;
+
+      for (const item of textItems) {
+        if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+          text += '\n'; // New line if Y coordinate changes significantly
+        } else if (lastX !== null && lastWidth !== null) {
+          // Check for horizontal gap (space)
+          const expectedNextX = lastX + lastWidth;
+          const actualNextX = item.transform[4];
+          if (actualNextX - expectedNextX > 2) {
+            text += ' ';
+          }
+        }
+        text += item.str;
+        lastY = item.transform[5];
+        lastX = item.transform[4];
+        lastWidth = item.width;
+      }
+      
+      // Auto-detect and convert Kruti Dev to Unicode
+      // Common Kruti Dev strings: gS (है), vjs (अरे), ikWVj (पॉटर)
+      if (text.includes('gS') || text.includes('vjs') || text.includes('ikWVj') || text.includes('ghjks')) {
+        try {
+          // Kruti Dev PDFs often lack spaces after punctuation or between words.
+          // Let's add artificial spaces after common Kruti Dev punctuation to ensure Guided Reading works.
+          let paddedText = text
+            .replace(/]/g, '] ') // comma
+            .replace(/A/g, 'A ') // purnaviram (full stop)
+            .replace(/\^/g, '^ ') // right quote
+            .replace(/\*/g, ' *') // left quote
+            .replace(/-/g, ' - ') // hyphen
+            .replace(/\s+/g, ' '); // remove double spaces
+            
+          text = kru2uni(paddedText);
+        } catch (e) {
+          console.error("KrutiDev conversion failed", e);
+        }
+      }
+      
+      setPdfPageText(text);
+    } catch (err) {
+      console.error("Failed to extract text from PDF page", err);
+    }
   }, []);
 
   const goToPrevPage = () => setCurrentPage((p) => Math.max(1, p - 1));
@@ -236,7 +331,7 @@ const StoryDisplayModal = ({
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative bg-slate-50 dark:bg-[#0a0a0a] flex flex-col min-h-0">
-          {story.pdfUrl ? (
+          {story.pdfUrl && !isGuidedReading ? (
             <>
               {/* Floating Modern PDF PDF Toolbar & Page Navigation */}
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 w-[90%] sm:w-auto max-w-2xl transition-all duration-300 opacity-40 hover:opacity-100 focus-within:opacity-100 hover:translate-y-[-4px]">
@@ -397,12 +492,13 @@ const StoryDisplayModal = ({
                     width={Math.min(containerWidth, 1400)}
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
+                    onLoadSuccess={onPageLoadSuccess}
                   />
                 </Document>
               </div>
             </>
           ) : (
-            <div className="overflow-y-auto h-full p-4 sm:p-6 md:p-8 lg:p-10">
+            <div className="overflow-y-auto h-full p-4 sm:p-6 md:p-8 lg:p-10 w-full">
               <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
                 {textLoading && (
                   <div className="flex flex-col items-center justify-center gap-3 py-16">
@@ -422,20 +518,21 @@ const StoryDisplayModal = ({
                 )}
                 {!textLoading &&
                   !textError &&
-                  storyLines.map((line, index) => {
-                    const isLineBookmarked = lineBookmarks.includes(index);
+                  parsedText.map((lineObj) => {
+                    const { line, wordObjects, lineIdx } = lineObj;
+                    const isLineBookmarked = lineBookmarks.includes(lineIdx);
                     const lineResults = showPronunciation
                       ? compareToTarget(line)
                       : [];
 
                     return (
                       <div
-                        key={index}
+                        key={lineIdx}
                         className="flex items-stretch gap-3 sm:gap-5 group relative"
                       >
                         <div
                           role="button"
-                          onClick={() => onToggleLineBookmark(story.id, index)}
+                          onClick={() => onToggleLineBookmark(story.id, lineIdx)}
                           className={`w-1.5 sm:w-2 rounded-full flex-shrink-0 cursor-pointer transition-all duration-300 ${
                             isLineBookmarked
                               ? "bg-purple-600"
@@ -449,7 +546,24 @@ const StoryDisplayModal = ({
                         />
                         <div className="flex-1 text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed sm:leading-loose text-slate-800 dark:text-slate-200 py-1 flex flex-wrap gap-x-1.5 gap-y-1 sm:gap-x-2 sm:gap-y-1.5">
                           {!showPronunciation ? (
-                            <span>{line}</span>
+                            wordObjects.map((w, i) => {
+                              const isActive = activeWordIndex === w.globalWordIdx;
+                              const isPast = activeWordIndex > w.globalWordIdx;
+                              return (
+                                <span
+                                  key={i}
+                                  className={`transition-all duration-200 rounded ${
+                                    isActive 
+                                      ? "bg-indigo-200 dark:bg-indigo-600 text-indigo-900 dark:text-white px-1 -mx-1 scale-105 shadow-sm z-10 font-bold" 
+                                      : isPast && isGuidedReading 
+                                        ? "text-slate-400 dark:text-slate-600" 
+                                        : ""
+                                  }`}
+                                >
+                                  {w.word}
+                                </span>
+                              );
+                            })
                           ) : (
                             lineResults.map((result, i) => (
                               <span
@@ -469,9 +583,53 @@ const StoryDisplayModal = ({
           )}
         </div>
 
-        {!story.pdfUrl && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700 shrink-0 flex gap-4">
-            {supported && (
+        <div className="flex flex-col border-t border-slate-200 dark:border-slate-700 shrink-0">
+          {/* Guided Reading Controls */}
+          <div className="px-4 py-3 bg-slate-100 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Speed (WPM):</label>
+                <input 
+                  type="number" 
+                  value={targetWPM} 
+                  onChange={(e) => setTargetWPM(Math.max(10, parseInt(e.target.value) || 60))}
+                  className="w-16 px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-indigo-700 dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              
+              <button
+                onClick={() => {
+                  if (!isGuidedReading) {
+                    if (activeWordIndex >= totalWords) setActiveWordIndex(-1);
+                    setIsGuidedReading(true);
+                    setShowPronunciation(false); // Turn off mic if using guided reading
+                  } else {
+                    setIsGuidedReading(false);
+                  }
+                }}
+                className={`px-4 py-1.5 font-bold rounded-lg transition-all flex items-center gap-2 text-sm shadow-sm ${isGuidedReading ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-400' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+              >
+                {isGuidedReading ? <FaStop size={12} /> : <FaPlay size={12} />} 
+                {isGuidedReading ? "Stop Guide" : "Start Guided Reading"}
+              </button>
+
+              {(activeWordIndex > -1) && (
+                <button 
+                  onClick={() => {
+                    setIsGuidedReading(false);
+                    setActiveWordIndex(-1);
+                  }}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Standard Actions */}
+          <div className="p-4 flex gap-4">
+            {supported && !story.pdfUrl && (
               <button
                 onClick={() => {
                   if (isListening) {
@@ -503,7 +661,7 @@ const StoryDisplayModal = ({
               Close
             </button>
           </div>
-        )}
+        </div>
       </motion.div>
     </motion.div>
   );
