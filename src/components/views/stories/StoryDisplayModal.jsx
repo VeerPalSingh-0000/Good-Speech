@@ -65,6 +65,7 @@ const StoryDisplayModal = ({
   const [textError, setTextError] = useState(false);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(600);
+  const [containerHeight, setContainerHeight] = useState(800);
   const [showMobileBookmarks, setShowMobileBookmarks] = useState(false);
 
   // Guided Reading State
@@ -72,6 +73,7 @@ const StoryDisplayModal = ({
   const [targetWPM, setTargetWPM] = useState(recommendedWPM);
   const [activeWordIndex, setActiveWordIndex] = useState(-1);
   const [pdfPageText, setPdfPageText] = useState("");
+  const [pdfAspectRatio, setPdfAspectRatio] = useState(1.414); // Default to A4 portrait
 
   const {
     isListening,
@@ -125,16 +127,22 @@ const StoryDisplayModal = ({
     }
   }, [story]);
 
-  // Measure container width for responsive PDF rendering
+  // Measure container width and height for responsive PDF rendering
   useEffect(() => {
-    const updateWidth = () => {
+    const updateSize = () => {
       if (containerRef.current) {
         setContainerWidth(containerRef.current.clientWidth - 16); // 8px padding each side
+        setContainerHeight(containerRef.current.clientHeight - 80); // generous padding for top/bottom UI elements
       }
     };
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    // Add a slight delay to recalculate after modal animation finishes
+    const timeout = setTimeout(updateSize, 300);
+    return () => {
+      window.removeEventListener("resize", updateSize);
+      clearTimeout(timeout);
+    };
   }, []);
 
   const parsedText = useMemo(() => {
@@ -202,6 +210,11 @@ const StoryDisplayModal = ({
 
   const onPageLoadSuccess = useCallback(async (page) => {
     try {
+      // Capture the original aspect ratio so we can fit perfectly in the viewport
+      if (page.originalWidth && page.originalHeight) {
+        setPdfAspectRatio(page.originalHeight / page.originalWidth);
+      }
+
       const textContentObj = await page.getTextContent();
       const textItems = textContentObj.items;
       let text = "";
@@ -530,7 +543,7 @@ const StoryDisplayModal = ({
                 >
                   <Page
                     pageNumber={currentPage}
-                    width={Math.min(containerWidth, 1400)}
+                    width={Math.min(containerWidth, containerHeight / pdfAspectRatio)}
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
                     onLoadSuccess={onPageLoadSuccess}
