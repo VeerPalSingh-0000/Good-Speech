@@ -6,7 +6,9 @@
 // Activity types that map to app features
 export const ACTIVITY_TYPES = {
   BREATHING: 'breathing',
+  VARNMALA: 'varnmala',
   READING: 'reading',
+  LOUD_READING: 'loudReading',
   TONGUE_TWISTERS: 'tongueTwisters',
   SPEAKING: 'speaking',
 };
@@ -17,6 +19,19 @@ export const WEEK_THEMES = {
   2: { color: 'blue', emoji: '🔵', gradient: 'from-blue-500 to-indigo-600' },
   3: { color: 'purple', emoji: '🟣', gradient: 'from-purple-500 to-violet-600' },
   4: { color: 'rose', emoji: '🔴', gradient: 'from-rose-500 to-red-600' },
+};
+
+const getRecommendedWPM = (day) => {
+  if (day >= 1 && day <= 3) return 40;
+  if (day >= 4 && day <= 6) return 45;
+  if (day >= 7 && day <= 9) return 50;
+  if (day >= 10 && day <= 12) return 55;
+  if (day >= 13 && day <= 15) return 60;
+  if (day >= 16 && day <= 20) return 65 + (day - 16);
+  if (day >= 21 && day <= 25) return 75 + (day - 21);
+  if (day >= 26 && day <= 30) return 85 + (day - 26) * 3;
+  if (day > 30) return 100;
+  return 40;
 };
 
 // Curated Hindi sentences for breathing exercises — progressive difficulty
@@ -109,7 +124,8 @@ const SPEAKING_PROMPTS = {
 
 // Helper to build a day's activities
 const buildDay = (dayNum, weekNum, config) => {
-  const { breathingDuration, readingDuration, twisterDuration, speakingDuration, targetWPM, breathingSentences, speakingPrompt, speakingType } = config;
+  const { breathingSentences, speakingPrompt } = config;
+  const targetWPM = getRecommendedWPM(dayNum);
 
   return {
     day: dayNum,
@@ -119,29 +135,46 @@ const buildDay = (dayNum, weekNum, config) => {
         id: `day${dayNum}-breathing`,
         type: ACTIVITY_TYPES.BREATHING,
         title: 'श्वास अभ्यास',
-        titleEn: 'Breathing Exercise',
+        titleEn: 'Deep Breathing',
         icon: 'fas fa-wind',
-        duration: breathingDuration,
-        instructions: weekNum === 1
-          ? 'श्वास लें (4 सेकंड) → धीरे-धीरे बोलते हुए श्वास छोड़ें। नीचे दिए गए वाक्य बोलें:'
-          : weekNum === 2
-            ? 'Easy Onset: शब्दों को नरम शुरुआत दें। जैसे: म्म्मेरा, ह्ह्हम। श्वास लें और बोलें:'
-            : 'गहरी श्वास लें और स्वाभाविक रूप से बोलें:',
-        instructionsEn: weekNum <= 2
-          ? `Inhale (4 sec) → Speak slowly while exhaling. Say the sentences below:`
-          : 'Deep breath and speak naturally:',
+        duration: 3, // 2-3 min
+        instructions: 'बोलने से पहले गहरी श्वास लें। 4 सेकंड रोकें और धीरे-धीरे छोड़ें।',
+        instructionsEn: 'Deep breath before speaking. Hold for 4 sec, exhale slowly.',
         sentences: breathingSentences,
+        linkedView: '/breathing',
+      },
+      {
+        id: `day${dayNum}-varnmala`,
+        type: ACTIVITY_TYPES.VARNMALA,
+        title: 'वर्णमाला और स्वर अभ्यास',
+        titleEn: 'Varnmala & Swar Abhyas',
+        icon: 'fas fa-language',
+        duration: 5, // 5 min
+        instructions: 'स्वरों और व्यंजनों का ज़ोर से और स्पष्ट उच्चारण करें।',
+        instructionsEn: 'Practice clear pronunciation of vowels and consonants.',
+        linkedView: '/varnmala',
       },
       {
         id: `day${dayNum}-reading`,
         type: ACTIVITY_TYPES.READING,
-        title: 'पढ़ने का अभ्यास',
-        titleEn: 'Reading Practice',
-        icon: 'fas fa-book-open',
-        duration: readingDuration,
-        instructions: `${targetWPM} WPM की गति से पढ़ें। ${weekNum <= 2 ? '2-3 शब्द → रुकें → फिर आगे।' : 'प्राकृतिक लय बनाए रखें।'} अपनी पसंद की कहानी चुनें।`,
-        instructionsEn: `Read at ${targetWPM} WPM. ${weekNum <= 2 ? 'Speak 2-3 words → pause → continue.' : 'Maintain natural rhythm.'} Pick a story of your choice.`,
+        title: 'धीमा पढ़ने का अभ्यास',
+        titleEn: 'Slow Reading Practice',
+        icon: 'fas fa-book-reader',
+        duration: 15, // 10-15 min
+        instructions: `${targetWPM} WPM की गति से पढ़ें। ${weekNum <= 2 ? '2-3 शब्द → रुकें → फिर आगे।' : 'प्राकृतिक लय बनाए रखें।'}`,
+        instructionsEn: `Read slowly at ${targetWPM} WPM. ${weekNum <= 2 ? 'Speak 2-3 words → pause → continue.' : 'Maintain natural rhythm.'}`,
         targetWPM,
+        linkedView: '/stories',
+      },
+      {
+        id: `day${dayNum}-loudReading`,
+        type: ACTIVITY_TYPES.LOUD_READING,
+        title: 'भाव के साथ तेज़ पढ़ना',
+        titleEn: 'Loud Reading (With Expression)',
+        icon: 'fas fa-bullhorn',
+        duration: 5, // 5 min
+        instructions: 'कहानियों को पूरे भाव और आवाज़ के उतार-चढ़ाव के साथ ज़ोर से पढ़ें।',
+        instructionsEn: 'Read stories loudly with full emotion and voice modulation.',
         linkedView: '/stories',
       },
       {
@@ -150,38 +183,22 @@ const buildDay = (dayNum, weekNum, config) => {
         title: 'जीभ के व्यायाम',
         titleEn: 'Tongue Twisters',
         icon: 'fas fa-layer-group',
-        duration: twisterDuration,
-        instructions: weekNum === 1
-          ? 'केवल शुरुआती (Beginner) स्तर। शब्दांशों में तोड़कर बोलें।'
-          : weekNum === 2
-            ? 'मध्यम (Intermediate) स्तर। धीरे → फिर थोड़ा तेज़।'
-            : weekNum === 3
-              ? 'उन्नत (Advanced) स्तर। स्पष्टता बनाए रखें।'
-              : 'सभी स्तर। तेज़ गति पर भी स्पष्टता बनाएँ।',
-        instructionsEn: weekNum === 1
-          ? 'Beginner level only. Break into syllables.'
-          : weekNum === 2
-            ? 'Intermediate level. Slow → then slightly faster.'
-            : weekNum === 3
-              ? 'Advanced level. Maintain clarity.'
-              : 'All levels. Maintain clarity at higher speed.',
+        duration: 5, // 5 min
+        instructions: 'शब्दांशों को स्पष्ट बोलें। तेज़ी से ज़्यादा स्पष्टता पर ध्यान दें।',
+        instructionsEn: 'Speak syllables clearly. Focus on clarity over speed.',
         linkedView: '/twisters',
       },
       {
         id: `day${dayNum}-speaking`,
         type: ACTIVITY_TYPES.SPEAKING,
-        title: speakingType === 'mirror' ? 'आईना अभ्यास' : 'बोलने का अभ्यास',
-        titleEn: speakingType === 'mirror' ? 'Mirror Practice' : 'Speaking Practice',
-        icon: speakingType === 'mirror' ? 'fas fa-user' : 'fas fa-comments',
-        duration: speakingDuration,
-        instructions: speakingType === 'mirror'
-          ? 'आईने के सामने खड़े हों। अपनी आँखों में देखें। 5-6 सरल वाक्य बोलें।'
-          : `आज का अभ्यास: ${speakingPrompt.hindi}`,
-        instructionsEn: speakingType === 'mirror'
-          ? 'Use your device camera to look into your eyes. Speak 5-6 simple sentences.'
-          : `Today's task: ${speakingPrompt.english}`,
+        title: 'आईना अभ्यास',
+        titleEn: 'Mirror Practice (Real-life)',
+        icon: 'fas fa-user',
+        duration: 5, // 5 min
+        instructions: `आईने के सामने खड़े हों और अभ्यास करें: ${speakingPrompt.hindi}`,
+        instructionsEn: `Practice in front of a mirror: ${speakingPrompt.english}`,
         prompt: speakingPrompt,
-        linkedView: speakingType === 'mirror' ? '/mirror' : undefined,
+        linkedView: '/mirror',
       },
     ],
   };
@@ -194,42 +211,24 @@ const buildPhase1Days = () => {
   // WEEK 1 (Days 1-7): Control & Awareness
   for (let d = 0; d < 7; d++) {
     days.push(buildDay(d + 1, 1, {
-      breathingDuration: 5,
-      readingDuration: 10,
-      twisterDuration: 5,
-      speakingDuration: 5,
-      targetWPM: 40 + (d * 2), // 40-52 WPM progressive
       breathingSentences: BREATHING_SENTENCES.week1[d],
       speakingPrompt: SPEAKING_PROMPTS.week1[d],
-      speakingType: 'mirror',
     }));
   }
 
   // WEEK 2 (Days 8-14): Stability & Confidence
   for (let d = 0; d < 7; d++) {
     days.push(buildDay(d + 8, 2, {
-      breathingDuration: 5,
-      readingDuration: 10,
-      twisterDuration: 6,
-      speakingDuration: 5,
-      targetWPM: 50 + (d * 3), // 50-71 WPM
       breathingSentences: BREATHING_SENTENCES.week2[d],
       speakingPrompt: SPEAKING_PROMPTS.week2[d],
-      speakingType: 'real',
     }));
   }
 
   // WEEK 3 (Days 15-21): Real Speaking Control
   for (let d = 0; d < 7; d++) {
     days.push(buildDay(d + 15, 3, {
-      breathingDuration: 3,
-      readingDuration: 9,
-      twisterDuration: 6,
-      speakingDuration: 10,
-      targetWPM: 70 + (d * 3), // 70-91 WPM
       breathingSentences: BREATHING_SENTENCES.week3[d],
       speakingPrompt: SPEAKING_PROMPTS.week3[d],
-      speakingType: 'real',
     }));
   }
 
@@ -238,14 +237,8 @@ const buildPhase1Days = () => {
     const weekSentences = BREATHING_SENTENCES.week4;
     const weekPrompts = SPEAKING_PROMPTS.week4;
     days.push(buildDay(d + 22, 4, {
-      breathingDuration: 3,
-      readingDuration: 6,
-      twisterDuration: 5,
-      speakingDuration: 15,
-      targetWPM: 90 + (d * 3), // 90-114 WPM
       breathingSentences: weekSentences[d % weekSentences.length],
       speakingPrompt: weekPrompts[d % weekPrompts.length],
-      speakingType: 'real',
     }));
   }
 

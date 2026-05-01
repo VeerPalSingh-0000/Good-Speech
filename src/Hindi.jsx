@@ -137,7 +137,7 @@ const Hindi = ({ user, onLogout }) => {
                   <Route path="/program/day/:dayNumber" element={<PageTransition><DayDetailView userSettings={userSettings} updateUserSettings={updateUserSettings} setCurrentView={handleNavigation} /></PageTransition>} />
                   <Route path="/exercises" element={<PageTransition><ExercisesView {...commonProps} /></PageTransition>} />
                   <Route path="/varnmala" element={<PageTransition><VarnmalaView {...commonProps} showVarnmala={showVarnmala} startVarnmalaTimer={handleStartVarnmala} stopVarnmalaTimer={handleStopVarnmala} /></PageTransition>} />
-                  <Route path="/stories" element={<PageTransition><StoriesView {...commonProps} stories={allStories} storyBookmarks={storyBookmarks} lineBookmarks={lineBookmarks} onToggleStoryBookmark={toggleStoryBookmark} onToggleLineBookmark={toggleLineBookmark} /></PageTransition>} />
+                  <Route path="/stories" element={<PageTransition><StoriesView {...commonProps} userSettings={userSettings} stories={allStories} storyBookmarks={storyBookmarks} lineBookmarks={lineBookmarks} onToggleStoryBookmark={toggleStoryBookmark} onToggleLineBookmark={toggleLineBookmark} /></PageTransition>} />
                   <Route path="/breathing" element={<PageTransition><BreathingView /></PageTransition>} />
                   <Route path="/twisters" element={<PageTransition><TongueTwistersView /></PageTransition>} />
                   <Route path="/mirror" element={<PageTransition><MirrorView /></PageTransition>} />

@@ -22,6 +22,7 @@ const StoriesView = ({
   stories = [],
   storyBookmarks = [],
   lineBookmarks = {},
+  userSettings,
   onSelectStory = () => {},
   onToggleStoryBookmark = () =>
     console.error(
@@ -322,6 +323,7 @@ const StoriesView = ({
                 isBookmarked={storyBookmarks.includes(currentStory.id)}
                 lineBookmarks={lineBookmarks[currentStory.id] || []}
                 onToggleLineBookmark={onToggleLineBookmark}
+                userSettings={userSettings}
               />
             )}
           </AnimatePresence>
@@ -372,6 +374,7 @@ const StoriesView = ({
                 isBookmarked={storyBookmarks.includes(currentStory.id)}
                 lineBookmarks={lineBookmarks[currentStory.id] || []}
                 onToggleLineBookmark={onToggleLineBookmark}
+                userSettings={userSettings}
               />
             )}
           </AnimatePresence>
