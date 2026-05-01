@@ -6,6 +6,17 @@ import ErrorBoundary from './components/ui/ErrorBoundary'
 import './index.css'
 import App from './App.jsx'
 
+// Force unregister any existing service workers during development
+// This prevents mobile browsers from caching the app when developing locally
+if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (let registration of registrations) {
+      registration.unregister();
+      console.log('Unregistered stale service worker during development.');
+    }
+  });
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>

@@ -5,6 +5,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+  },
   plugins: [
     react(), 
     tailwindcss(),
