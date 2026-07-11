@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import Landing from './Landing';
-import Login from './Login';
-import Signup from './Signup';
+import AuthScreen from './AuthScreen';
 
 const AuthPage = () => {
   const [view, setView] = useState('landing'); // 'landing', 'login', 'signup'
@@ -15,10 +14,13 @@ const AuthPage = () => {
 
   if (view === 'landing') {
     return <Landing onLogin={switchToLogin} onGetStarted={switchToSignup} />;
-  } else if (view === 'login') {
-    return <Login switchToSignup={switchToSignup} onBack={switchToLanding} />;
   } else {
-    return <Signup switchToLogin={switchToLogin} onBack={switchToLanding} />;
+    return (
+      <AuthScreen 
+        initialMode={view === 'login' ? 'login' : 'signup'} 
+        onBack={switchToLanding} 
+      />
+    );
   }
 };
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaWind } from "react-icons/fa";
+import { FaWind, FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const TECHNIQUES = {
   "4-7-8": {
@@ -34,6 +35,7 @@ export default function BreathingView() {
   const [isActive, setIsActive] = useState(false);
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
+  const navigate = useNavigate();
 
   const timerRef = useRef(null);
   const phaseTimeoutRef = useRef(null);
@@ -85,7 +87,14 @@ export default function BreathingView() {
         : 1.3;
 
   return (
-    <div className="flex-1 h-full w-full bg-black text-white flex flex-col items-center justify-center px-4 overflow-hidden pt-4 pb-24 sm:pb-4">
+    <div className="flex-1 h-full w-full bg-black text-white flex flex-col items-center justify-center px-4 overflow-hidden pt-4 pb-24 sm:pb-4 relative">
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute top-4 left-4 z-50 w-10 h-10 bg-gray-800 text-gray-400 rounded-xl flex items-center justify-center hover:bg-gray-700 transition-colors btn-gamified"
+      >
+        <FaArrowLeft />
+      </button>
+
       {/* Technique Selector */}
       <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-8 lg:mb-12 text-[10px] sm:text-xs uppercase tracking-widest text-center">
         {Object.entries(TECHNIQUES).map(([key, tech]) => (

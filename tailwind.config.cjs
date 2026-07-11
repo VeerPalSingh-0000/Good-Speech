@@ -24,6 +24,8 @@ module.exports = {
       },
       fontFamily: {
         hindi: ['"Noto Sans Devanagari"', 'sans-serif'],
+        display: ['Nunito', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
       }
     },
   },

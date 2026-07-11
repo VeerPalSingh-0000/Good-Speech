@@ -67,7 +67,7 @@ const Hindi = ({ user, onLogout }) => {
   const navItems = useMemo(() => [
     { key: "home", label: "Home", icon: "fas fa-home" },
     { key: "program", label: "Program", icon: "fas fa-calendar-check" },
-    { key: "exercises", label: "Practice", icon: "fas fa-microphone" },
+    { key: "exercises", label: "Swar", icon: "fas fa-microphone" },
     { key: "varnmala", label: "Varnmala", icon: "fas fa-list" },
     { key: "stories", label: "Stories", icon: "fas fa-book" },
     { key: "breathing", label: "Breathing", icon: "fas fa-wind" },
@@ -115,7 +115,7 @@ const Hindi = ({ user, onLogout }) => {
         }} 
       />
       
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans flex overflow-x-hidden">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 font-body flex overflow-x-hidden selection:bg-sky-200 selection:text-sky-900">
         {/* Sidebar for Desktop */}
         <Sidebar currentView={getCurrentView()} setCurrentView={handleNavigation} navItems={navItems} />
 

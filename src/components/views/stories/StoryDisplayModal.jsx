@@ -643,18 +643,22 @@ const StoryDisplayModal = ({
           {/* Guided Reading Controls */}
           <div className="px-4 py-3 bg-slate-100 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                  Speed (WPM):
+              <div className="flex items-center gap-3 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <label className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Speed:
                 </label>
                 <input
-                  type="number"
+                  type="range"
+                  min="20"
+                  max="150"
+                  step="5"
                   value={targetWPM}
-                  onChange={(e) =>
-                    setTargetWPM(Math.max(10, parseInt(e.target.value) || recommendedWPM))
-                  }
-                  className="w-16 px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-indigo-700 dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  onChange={(e) => setTargetWPM(parseInt(e.target.value) || recommendedWPM)}
+                  className="w-20 sm:w-28 accent-indigo-500 cursor-pointer"
                 />
+                <span className="text-[10px] sm:text-xs font-bold text-indigo-600 dark:text-indigo-400 w-12 text-right">
+                  {targetWPM} WPM
+                </span>
               </div>
 
               <button

@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaBookmark, FaBookOpen, FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder";
 import CategoryCard from "./stories/CategoryCard";
 import StoryCard from "./stories/StoryCard";
@@ -46,6 +47,7 @@ const StoriesView = ({
   const [showLanguageSelector, setShowLanguageSelector] = useState(true);
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   const [storyError, setStoryError] = useState(null);
+  const navigate = useNavigate();
 
   const {
     isRecording,
@@ -189,11 +191,19 @@ const StoriesView = ({
   return (
     <div className="space-y-12">
       {/* Header - Your Story Library */}
-      <div className="text-center">
-        <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <div className="w-full flex justify-start px-4 sm:px-0">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors btn-gamified"
+        >
+          <FaArrowLeft />
+        </button>
+      </div>
+      <div className="text-center -mt-8">
+        <h2 className="text-4xl md:text-5xl font-display font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           📚 Your Story Library
         </h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-display">
           Browse and read from your collection of stories
         </p>
       </div>

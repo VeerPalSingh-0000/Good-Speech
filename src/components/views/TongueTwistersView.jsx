@@ -3,182 +3,86 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FaPlay,
   FaStop,
-  FaTachometerAlt,
-  FaWaveSquare,
+  FaArrowLeft,
   FaMicrophone,
   FaCheckCircle,
-  FaLungs,
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import { useSpeechRecognition } from "../../hooks/useSpeechRecognition";
 
-/* =========================
-   THERAPEUTIC TWISTERS
-========================= */
-const TONGUE_TWISTERS = [
-  {
-    id: 1,
-    text: "टोला राम ताला तोल के तेल में तुल गया, तुला हुआ टोला ताले के तले हुए तेल में तला गया।",
-    difficulty: "Insane",
-    focus: "T/L Alternation (त, ल)",
-    syllables: [
-      "Inhale",
-      "टो-ला",
-      "राम",
-      "ता-ला",
-      "तोल",
-      "के",
-      "तेल",
-      "में",
-      "तुल",
-      "ग-या,",
-      "तु-ला",
-      "हु-आ",
-      "टो-ला",
-      "ता-ले",
-      "के",
-      "त-ले",
-      "हु-ए",
-      "तेल",
-      "में",
-      "त-ला",
-      "ग-या",
-      "Pause",
-    ],
-  },
-  {
-    id: 2,
-    text: "डाली डाली पे नज़र डाली, किसी ने अच्छी डाली, किसी ने बुरी डाली, जिस डाली पे मैंने नज़र डाली वो डाली किसी ने तोड़ डाली।",
-    difficulty: "Master",
-    focus: "D/L/Z Flow (ड, ल, ज़)",
-    syllables: [
-      "Inhale",
-      "डा-ली",
-      "डा-ली",
-      "पे",
-      "न-ज़र",
-      "डा-ली,",
-      "कि-सी",
-      "ने",
-      "अच्छ-छी",
-      "डा-ली,",
-      "कि-सी",
-      "ने",
-      "बु-री",
-      "डा-ली,",
-      "जिस",
-      "डा-ली",
-      "पे",
-      "मैं-ने",
-      "न-ज़र",
-      "डा-ली",
-      "वो",
-      "डा-ली",
-      "कि-सी",
-      "ने",
-      "तोड़",
-      "डा-ली",
-      "Pause",
-    ],
-  },
-  {
-    id: 3,
-    text: "चार कचरी कच्चे चाचा, चार कचरी पक्के, पक्की कचरी कच्चे चाचा, कच्ची कचरी पक्के।",
-    difficulty: "Expert",
-    focus: "Ch/K Friction (च, क)",
-    syllables: [
-      "Inhale",
-      "चार",
-      "क-च-री",
-      "कच्-चे",
-      "चा-चा,",
-      "चार",
-      "क-च-री",
-      "पक्-के,",
-      "पक्-की",
-      "क-च-री",
-      "कच्-चे",
-      "चा-चा,",
-      "कच्-ची",
-      "क-च-री",
-      "पक्-के",
-      "Pause",
-    ],
-  },
-  {
-    id: 4,
-    text: "नज़र नज़र में हर एक नाराज़ में हमें उस नज़र की तलाश थी, वो नाराज़ मिली तो सही, पर उस नज़र में अब वो नज़र कहाँ थी।",
-    difficulty: "Poetic",
-    focus: "N/Z Rhythm (न, ज़, र)",
-    syllables: [
-      "Inhale",
-      "न-ज़र",
-      "न-ज़र",
-      "में",
-      "हर",
-      "एक",
-      "ना-राज़",
-      "में",
-      "ह-में",
-      "उस",
-      "न-ज़र",
-      "की",
-      "त-लाश",
-      "थी,",
-      "वो",
-      "ना-राज़",
-      "मि-ली",
-      "तो",
-      "स-ही,",
-      "पर",
-      "उस",
-      "न-ज़र",
-      "में",
-      "अब",
-      "वो",
-      "न-ज़र",
-      "क-हाँ",
-      "थी",
-      "Pause",
-    ],
-  },
-  {
-    id: 5,
-    text: "मार हम भी गए मरहम के लिए, मरहम न मिला, हम दम से गए हमदम के लिए, हमदम न मिला।",
-    difficulty: "Advanced",
-    focus: "M/H/R Speed (म, ह, र)",
-    syllables: [
-      "Inhale",
-      "मार",
-      "हम",
-      "भी",
-      "ग-ए",
-      "मर-हम",
-      "के",
-      "लि-ए,",
-      "मर-हम",
-      "न",
-      "मि-ला,",
-      "हम",
-      "दम",
-      "से",
-      "ग-ए",
-      "हम-दम",
-      "के",
-      "लि-ए,",
-      "हम-दम",
-      "न",
-      "मि-ला",
-      "Pause",
-    ],
-  },
-];
+const TONGUE_TWISTERS = {
+  hi: [
+    {
+      id: "h1",
+      text: "कच्चा पापड़ पक्का पापड़",
+      difficulty: "Easy",
+      focus: "P/K Sounds",
+    },
+    {
+      id: "h2",
+      text: "चंदू के चाचा ने चंदू की चाची को चांदनी रात में चांदी की चम्मच से चटनी चटाई",
+      difficulty: "Medium",
+      focus: "Ch Sound",
+    },
+    {
+      id: "h3",
+      text: "चार कचरी कच्चे चाचा, चार कचरी पक्के",
+      difficulty: "Medium",
+      focus: "Ch/K Sounds",
+    },
+    {
+      id: "h4",
+      text: "टोला राम ताला तोल के तेल में तुल गया, तुला हुआ टोला ताले के तले हुए तेल में तला गया",
+      difficulty: "Hard",
+      focus: "T/L Alternation",
+    },
+    {
+      id: "h5",
+      text: "डाली डाली पे नज़र डाली, किसी ने अच्छी डाली, किसी ने बुरी डाली",
+      difficulty: "Hard",
+      focus: "D/L/Z Flow",
+    },
+  ],
+  en: [
+    {
+      id: "e1",
+      text: "I scream, you scream, we all scream for ice cream",
+      difficulty: "Easy",
+      focus: "S/Cr Sounds",
+    },
+    {
+      id: "e2",
+      text: "She sells seashells by the seashore",
+      difficulty: "Medium",
+      focus: "S/Sh Sounds",
+    },
+    {
+      id: "e3",
+      text: "Fuzzy Wuzzy was a bear, Fuzzy Wuzzy had no hair",
+      difficulty: "Medium",
+      focus: "F/Z/W Sounds",
+    },
+    {
+      id: "e4",
+      text: "How much wood would a woodchuck chuck if a woodchuck could chuck wood?",
+      difficulty: "Hard",
+      focus: "W/Ch Sounds",
+    },
+    {
+      id: "e5",
+      text: "Peter Piper picked a peck of pickled peppers",
+      difficulty: "Hard",
+      focus: "P Sounds",
+    },
+  ],
+};
 
 const TongueTwistersView = () => {
-  const [selectedTwister, setSelectedTwister] = useState(TONGUE_TWISTERS[0]);
+  const [language, setLanguage] = useState("en"); // 'en' or 'hi'
+  const [selectedTwister, setSelectedTwister] = useState(TONGUE_TWISTERS.en[0]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
-  const [speedWPM, setSpeedWPM] = useState(60);
-  const [showSyllables, setShowSyllables] = useState(true);
+  const navigate = useNavigate();
 
   const words = selectedTwister.text.split(" ");
   const timerRef = useRef(null);
@@ -187,22 +91,24 @@ const TongueTwistersView = () => {
     isListening,
     stopListening,
     startListening,
-    compareToTarget,
     supported,
-  } = useSpeechRecognition("hi-IN");
-
-  const pronunciationResults = compareToTarget(selectedTwister.text);
+  } = useSpeechRecognition(language === "en" ? "en-US" : "hi-IN");
 
   useEffect(() => {
     stopPlayback();
     if (isListening) stopListening();
-  }, [selectedTwister]);
+  }, [selectedTwister, language]);
+
+  const handleLanguageSwitch = (lang) => {
+    setLanguage(lang);
+    setSelectedTwister(TONGUE_TWISTERS[lang][0]);
+  };
 
   const startPlayback = () => {
     setIsPlaying(true);
     setCurrentWordIndex(0);
-
-    const msPerWord = Math.floor(60000 / speedWPM);
+    // Standard reading speed (e.g. 150 WPM -> ~400ms per word)
+    const msPerWord = 500;
 
     timerRef.current = setInterval(() => {
       setCurrentWordIndex((prev) => {
@@ -222,147 +128,152 @@ const TongueTwistersView = () => {
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+  };
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 text-gray-100">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8 pb-10 max-w-4xl mx-auto px-4 pt-6"
+    >
       {/* HEADER */}
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl md:text-4xl font-extrabold text-teal-400 flex justify-center items-center gap-2">
-          <FaWaveSquare /> Speech Therapy
-        </h2>
-        <p className="text-sm text-gray-400">Slow. Controlled. Confident.</p>
+      <div className="w-full flex justify-start">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors btn-gamified"
+        >
+          <FaArrowLeft />
+        </button>
       </div>
 
+      <motion.div variants={itemVariants} className="text-center space-y-3 -mt-4">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-sm font-medium">
+          <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+          Speech Therapy
+        </div>
+        <h2 className="text-4xl font-display font-extrabold text-slate-800 dark:text-white">
+          Tongue Twisters
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-display">
+          Improve your articulation, speed, and clarity.
+        </p>
+      </motion.div>
+
+      {/* LANGUAGE SELECTOR */}
+      <motion.div variants={itemVariants} className="flex justify-center gap-4">
+        <button
+          onClick={() => handleLanguageSwitch("en")}
+          className={`px-6 py-2 rounded-full font-bold transition-all btn-gamified ${
+            language === "en"
+              ? "bg-blue-500 text-white"
+              : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+          }`}
+        >
+          English
+        </button>
+        <button
+          onClick={() => handleLanguageSwitch("hi")}
+          className={`px-6 py-2 rounded-full font-bold transition-all btn-gamified ${
+            language === "hi"
+              ? "bg-purple-500 text-white"
+              : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+          }`}
+        >
+          हिंदी (Hindi)
+        </button>
+      </motion.div>
+
       {/* SELECTOR */}
-      <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-        {TONGUE_TWISTERS.map((t) => (
+      <motion.div variants={itemVariants} className="flex overflow-x-auto gap-4 pb-4 px-1 snap-x scrollbar-hide">
+        {TONGUE_TWISTERS[language].map((t) => (
           <button
             key={t.id}
             onClick={() => setSelectedTwister(t)}
-            className={`min-w-[220px] p-4 rounded-xl border text-left transition-colors ${
+            className={`min-w-[160px] snap-center p-4 rounded-2xl border-b-4 text-left transition-all flex-shrink-0 ${
               selectedTwister.id === t.id
-                ? "bg-teal-900/40 border-teal-500 text-teal-300"
-                : "bg-gray-800/60 border-gray-700 hover:bg-gray-700/80"
+                ? "bg-white dark:bg-slate-800 border-blue-500 shadow-md"
+                : "bg-slate-100 dark:bg-slate-800/60 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
-            <p className="font-bold text-sm text-gray-100">{t.difficulty}</p>
-            <p className="text-xs text-teal-400 mt-1">{t.focus}</p>
+            <p className={`font-bold text-sm ${
+              selectedTwister.id === t.id ? "text-blue-500" : "text-slate-500 dark:text-slate-400"
+            }`}>
+              {t.difficulty}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">{t.focus}</p>
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* MAIN PLAYER */}
-      <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 rounded-2xl shadow-xl p-6 space-y-6">
+      <motion.div variants={itemVariants} className="bg-white dark:bg-slate-800 rounded-3xl border-b-4 border-slate-200 dark:border-slate-700 shadow-xl p-6 md:p-10 space-y-10">
+        
         {/* WORD DISPLAY */}
-        <div className="text-center leading-[3.5rem] tracking-wide">
-          <div className="flex flex-wrap justify-center gap-3 text-3xl md:text-5xl font-bold">
+        <div className="text-center min-h-[160px] flex items-center justify-center">
+          <div className="flex flex-wrap justify-center gap-x-3 gap-y-4 text-3xl md:text-5xl font-extrabold font-display leading-tight">
             {words.map((word, index) => (
-              <motion.span
+              <span
                 key={index}
-                className={`px-3 py-1 rounded-lg transition-all duration-200 ${
+                className={`transition-all duration-200 rounded-lg px-2 ${
                   currentWordIndex === index
-                    ? "bg-teal-500 text-white scale-110 shadow-[0_0_15px_rgba(20,184,166,0.4)]"
-                    : currentWordIndex > index
-                      ? "text-gray-100"
-                      : "text-gray-600"
+                    ? "text-blue-500 scale-110 bg-blue-50 dark:bg-blue-900/20"
+                    : currentWordIndex > index || (!isPlaying && currentWordIndex === -1)
+                      ? "text-slate-800 dark:text-white"
+                      : "text-slate-300 dark:text-slate-600"
                 }`}
               >
                 {word}
-              </motion.span>
+              </span>
             ))}
           </div>
         </div>
 
-        {/* SYLLABLES */}
-        <AnimatePresence>
-          {showSyllables && !isPlaying && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="bg-gray-900/50 border border-gray-700/50 p-4 rounded-xl overflow-hidden"
-            >
-              <div className="flex flex-wrap gap-2 justify-center text-sm font-mono">
-                {selectedTwister.syllables.map((s, i) => (
-                  <span
-                    key={i}
-                    className={`px-3 py-1 rounded-lg border ${
-                      s === "Inhale"
-                        ? "bg-blue-900/30 border-blue-800/50 text-blue-300 focus:outline-none"
-                        : s === "Pause"
-                          ? "bg-red-900/30 border-red-800/50 text-red-300"
-                          : "bg-gray-800 border-gray-700 text-gray-300"
-                    }`}
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* CONTROLS */}
-        <div className="flex flex-col gap-5 pt-2">
-          <div className="flex justify-center gap-3 flex-wrap">
-            {!isPlaying ? (
-              <button
-                onClick={startPlayback}
-                className="px-6 py-3 bg-teal-600 hover:bg-teal-500 transition-colors text-white rounded-xl flex items-center gap-2 font-medium shadow-lg shadow-teal-900/20"
-              >
-                <FaPlay /> Start
-              </button>
-            ) : (
-              <button
-                onClick={stopPlayback}
-                className="px-6 py-3 bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors rounded-xl flex items-center gap-2 font-medium"
-              >
-                <FaStop /> Stop
-              </button>
-            )}
-
-            {!isListening ? (
-              <button
-                onClick={startListening}
-                disabled={!supported}
-                className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 transition-colors text-white rounded-xl flex items-center gap-2 font-medium shadow-lg shadow-cyan-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaMicrophone /> Speak
-              </button>
-            ) : (
-              <button
-                onClick={stopListening}
-                className="px-6 py-3 bg-red-900/40 border border-red-800/50 text-red-400 hover:bg-red-900/60 transition-colors rounded-xl font-medium flex items-center gap-2"
-              >
-                <FaStop /> Stop
-              </button>
-            )}
-
+        <div className="flex justify-center gap-4 flex-wrap">
+          {!isPlaying ? (
             <button
-              onClick={() => setShowSyllables(!showSyllables)}
-              className="px-6 py-3 border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors rounded-xl font-medium"
+              onClick={startPlayback}
+              className="px-8 py-4 bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white rounded-2xl flex items-center gap-3 font-bold text-lg btn-gamified"
             >
-              Structure
+              <FaPlay /> Read
             </button>
-          </div>
+          ) : (
+            <button
+              onClick={stopPlayback}
+              className="px-8 py-4 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-white rounded-2xl flex items-center gap-3 font-bold text-lg btn-gamified"
+            >
+              <FaStop /> Stop
+            </button>
+          )}
 
-          {/* SPEED */}
-          <div className="flex items-center justify-center gap-4 bg-gray-900/30 p-4 rounded-xl border border-gray-700/30">
-            <FaTachometerAlt className="text-teal-400 text-lg" />
-            <input
-              type="range"
-              min="40"
-              max="140"
-              value={speedWPM}
-              onChange={(e) => setSpeedWPM(e.target.value)}
-              className="w-full max-w-xs accent-teal-500"
-            />
-            <span className="text-sm font-medium text-gray-300 w-16 text-right">
-              {speedWPM} WPM
-            </span>
-          </div>
+          {!isListening ? (
+            <button
+              onClick={startListening}
+              disabled={!supported}
+              className="px-8 py-4 bg-purple-500 hover:bg-purple-400 active:bg-purple-600 text-white rounded-2xl flex items-center gap-3 font-bold text-lg btn-gamified disabled:opacity-50"
+            >
+              <FaMicrophone /> Speak
+            </button>
+          ) : (
+            <button
+              onClick={stopListening}
+              className="px-8 py-4 bg-rose-500 hover:bg-rose-400 active:bg-rose-600 text-white rounded-2xl flex items-center gap-3 font-bold text-lg btn-gamified"
+            >
+              <FaStop /> Stop
+            </button>
+          )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

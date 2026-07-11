@@ -1,54 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaGraduationCap, FaQuestionCircle, FaLightbulb, FaPlayCircle, FaBookOpen, FaPlay } from 'react-icons/fa';
-
-const YouTubeVideo = ({ videoId, title }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  return (
-    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 group shadow-lg">
-      {!isLoaded ? (
-        <button 
-          className="absolute inset-0 w-full h-full"
-          onClick={() => setIsLoaded(true)}
-          aria-label={`Play ${title}`}
-        >
-          <img 
-            src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`} 
-            alt={title}
-            loading="lazy"
-            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white shadow-xl transform group-hover:scale-110 transition-transform">
-              <FaPlay className="text-2xl ml-1" />
-            </div>
-          </div>
-        </button>
-      ) : (
-        <iframe
-          width="100%"
-          height="100%"
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-          title={title}
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="absolute inset-0"
-        />
-      )}
-    </div>
-  );
-};
+import { FaGraduationCap, FaQuestionCircle, FaLightbulb, FaBookOpen } from 'react-icons/fa';
 
 const EducationView = () => {
   const [activeTab, setActiveTab] = useState('articles');
   const [openFaq, setOpenFaq] = useState(null);
+  const [expandedArticle, setExpandedArticle] = useState(null);
 
   const tabs = [
     { id: 'articles', label: 'Knowledge Base', icon: <FaBookOpen /> },
-    { id: 'tips', label: 'Techniques & Tips', icon: <FaLightbulb /> },
-    { id: 'videos', label: 'Video Guides', icon: <FaPlayCircle /> },
     { id: 'faq', label: 'FAQs', icon: <FaQuestionCircle /> }
   ];
 
@@ -71,151 +31,199 @@ const EducationView = () => {
     }
   ];
 
+  const ARTICLES = [
+    {
+      id: 1,
+      tag: "Science",
+      tagColor: "indigo",
+      icon: "fas fa-brain",
+      title: "The Neurobiology of Stammering",
+      preview: "Research shows differences in the white matter tracts of the brain. Understanding this helps remove the stigma and shift the focus to practice.",
+      content: "Stammering is a neurodevelopmental condition. Modern neuroimaging (like fMRI) has shown that people who stammer often have subtle differences in the brain's white matter tracts, specifically the arcuate fasciculus, which connects the language planning areas to the motor execution areas.\n\nBecause of these structural differences, the brain sometimes struggles to perfectly time the rapid sequence of muscle movements required for fluent speech. This means stammering is physical and neurological, not just 'in your head' or caused by anxiety.\n\nHowever, neuroplasticity—the brain's ability to rewire itself—means that with consistent practice of fluency shaping techniques, you can actually strengthen new neural pathways, leading to easier and smoother speech over time."
+    },
+    {
+      id: 2,
+      tag: "Psychology",
+      tagColor: "fuchsia",
+      icon: "fas fa-heart",
+      title: "The Iceberg of Stuttering",
+      preview: "The visible stutter is just the tip. The massive block of ice beneath the water represents shame, fear, and guilt that we must melt away.",
+      content: "Psychologist Joseph Sheehan famously compared stuttering to an iceberg. The visible part above the water represents the physical blocks, prolongations, and repetitions that other people hear.\n\nHowever, the much larger portion of the iceberg lies hidden beneath the surface. This represents the negative emotions: shame, fear, guilt, anxiety, isolation, and denial. For many adults, the hidden emotional burden is far more debilitating than the physical speech disruptions.\n\nTrue fluency therapy isn't just about smoothing out your speech (chipping away at the top of the iceberg). It's also about 'melting' the bottom by accepting yourself, reducing avoidance behaviors, and communicating confidently regardless of whether you stutter or not."
+    }
+  ];
+
   return (
-    <div className="space-y-8 pb-10 max-w-5xl mx-auto">
-      <div className="text-center">
-        <h2 className="p-4 text-4xl font-bold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent flex justify-center items-center gap-3">
-          <FaGraduationCap className="text-emerald-500" />
+    <div className="space-y-8 pb-24 max-w-5xl mx-auto px-4 sm:px-6">
+      {/* HEADER */}
+      <div className="text-center space-y-4 mb-10 pt-6">
+        <div className="mx-auto w-24 h-24 bg-gradient-to-br from-sky-400 to-indigo-500 rounded-[2rem] shadow-xl shadow-indigo-500/20 mb-4 border-b-[8px] border-indigo-600 flex items-center justify-center transform -rotate-3 hover:rotate-0 transition-transform cursor-pointer">
+          <FaGraduationCap className="text-white text-5xl drop-shadow-md" />
+        </div>
+        <h2 className="text-4xl md:text-5xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight">
           Education Center
         </h2>
-        <p className="text-slate-500 mt-2 max-w-2xl mx-auto">
-          Understand your speech. Discover techniques, watch tutorials, and learn the science behind fluency.
+        <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto font-medium text-base sm:text-lg">
+          Master your speech. Discover techniques, watch tutorials, and learn the science behind fluency.
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex overflow-x-auto hide-scrollbar gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-full max-w-2xl mx-auto shadow-inner">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-              activeTab === tab.id
-                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50'
-            }`}
-          >
-            {tab.icon} {tab.label}
-          </button>
-        ))}
+      <div className="w-full mx-auto max-w-4xl mb-10">
+        <div className="flex flex-row gap-2 p-2 bg-slate-100 dark:bg-slate-800/80 rounded-3xl shadow-inner border-2 border-slate-200/50 dark:border-slate-700">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-3 sm:py-4 px-2 sm:px-4 rounded-2xl font-extrabold transition-all border-2 ${activeTab === tab.id
+                  ? 'bg-sky-500 dark:bg-sky-500 text-white border-sky-400 dark:border-sky-400 border-b-[6px] shadow-lg transform sm:-translate-y-1'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-700 border-transparent hover:border-slate-300 dark:hover:border-slate-600 hover:border-b-[4px] hover:-translate-y-0.5'
+                }`}
+            >
+              <span className="text-xl sm:text-xl">{tab.icon}</span>
+              <span className="text-[11px] sm:text-base uppercase sm:normal-case tracking-wider sm:tracking-normal">{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content Area */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700 min-h-[500px]">
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        key={activeTab}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-4xl mx-auto mt-8"
+      >
         {activeTab === 'articles' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:shadow-md transition">
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 px-3 py-1 rounded-full mb-4 inline-block">Science</span>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">The Neurobiology of Stammering</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3">
-                Research shows differences in the white matter tracts of the brain that connect speech planning and motor execution areas...
-              </p>
-              <button className="text-emerald-500 font-bold text-sm hover:underline">Read Article &rarr;</button>
-            </div>
-            <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:shadow-md transition">
-              <span className="text-xs font-bold text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full mb-4 inline-block">Psychology</span>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">The Iceberg of Stuttering</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3">
-                Coined by Joseph Sheehan, the visible stutter is just the tip. The massive block of ice beneath the water represents shame, fear, and guilt...
-              </p>
-              <button className="text-emerald-500 font-bold text-sm hover:underline">Read Article &rarr;</button>
-            </div>
-          </div>
-        )}
+          <div className="flex flex-col gap-6">
+            {ARTICLES.map((article) => {
+              const isExpanded = expandedArticle === article.id;
+              // Generate dynamic tailwind classes based on tagColor (assuming 'indigo' and 'fuchsia' as used above)
+              const colorClasses = {
+                indigo: {
+                  bg: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-500',
+                  border: 'border-indigo-200 dark:border-indigo-500/40',
+                  text: 'text-indigo-600 dark:text-indigo-400',
+                  hoverText: 'group-hover:text-sky-500 dark:group-hover:text-sky-400',
+                  hoverBorder: 'hover:border-sky-300 dark:hover:border-sky-500',
+                  hoverShadow: 'hover:shadow-sky-500/20',
+                  btnBg: 'bg-sky-500 hover:bg-sky-400 border-sky-600',
+                },
+                fuchsia: {
+                  bg: 'bg-fuchsia-100 dark:bg-fuchsia-500/20 text-fuchsia-500',
+                  border: 'border-fuchsia-200 dark:border-fuchsia-500/40',
+                  text: 'text-fuchsia-600 dark:text-fuchsia-400',
+                  hoverText: 'group-hover:text-fuchsia-500 dark:group-hover:text-fuchsia-400',
+                  hoverBorder: 'hover:border-fuchsia-300 dark:hover:border-fuchsia-500',
+                  hoverShadow: 'hover:shadow-fuchsia-500/20',
+                  btnBg: 'bg-fuchsia-500 hover:bg-fuchsia-400 border-fuchsia-600',
+                }
+              }[article.tagColor];
 
-        {activeTab === 'tips' && (
-          <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-4">Essential Fluency Strategies</h3>
-            <div className="grid gap-4">
-              <div className="flex gap-4 items-start p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-xl transition">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 flex items-center justify-center font-bold text-lg shrink-0">1</div>
-                <div>
-                  <h4 className="font-bold text-lg text-slate-800 dark:text-slate-200">Prolonged Speech</h4>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Stretching out the first sound or syllable of a word (e.g., "m-m-m-mother") to reduce vocal cord tension before full vocalization.</p>
-                </div>
-              </div>
-              <div className="flex gap-4 items-start p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-xl transition">
-                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/50 flex items-center justify-center font-bold text-lg shrink-0">2</div>
-                <div>
-                  <h4 className="font-bold text-lg text-slate-800 dark:text-slate-200">Light Articulatory Contacts</h4>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Touching your lips, tongue, or palate very softly when making consonant sounds (like p, b, t, k) to avoid getting 'stuck' or blocked on hard plosives.</p>
-                </div>
-              </div>
-              <div className="flex gap-4 items-start p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-xl transition">
-                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/50 flex items-center justify-center font-bold text-lg shrink-0">3</div>
-                <div>
-                  <h4 className="font-bold text-lg text-slate-800 dark:text-slate-200">Cancellation/Pull-outs (Stuttering Modification)</h4>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">When you feel a block, pause completely, release tension, and say the word again smoothly. Instead of fighting the block, modify it mid-way.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+              return (
+                <div
+                  key={article.id}
+                  className={`p-8 rounded-[2rem] bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 border-b-[8px] transition-all group cursor-pointer flex flex-col h-full ${!isExpanded ? `${colorClasses.hoverBorder} hover:-translate-y-2 hover:shadow-2xl ${colorClasses.hoverShadow}` : ''
+                    }`}
+                  onClick={() => !isExpanded && setExpandedArticle(article.id)}
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`w-12 h-12 rounded-[1rem] flex items-center justify-center text-xl font-bold border-b-4 ${colorClasses.bg} ${colorClasses.border}`}>
+                      <i className={article.icon}></i>
+                    </div>
+                    <span className={`text-xs font-extrabold uppercase tracking-widest ${colorClasses.text}`}>{article.tag}</span>
 
-        {activeTab === 'videos' && (
-          <div className="space-y-10">
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Video Masterclass</h3>
-              <p className="text-slate-500 mt-2">Curated Youtube guides for speech therapy</p>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 border-b border-slate-200 dark:border-slate-700 pb-2">Stuttering Tips & Modification</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <YouTubeVideo videoId="r-C0a7sFfP0" title="How To Stop Stuttering" />
-                <YouTubeVideo videoId="t-oA2eB_x5s" title="Stuttering Modification Techniques" />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-xl font-bold text-blue-600 dark:text-blue-400 border-b border-slate-200 dark:border-slate-700 pb-2">Breathing Exercises</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <YouTubeVideo videoId="1_BxsNnuKrc" title="Diaphragmatic Breathing for Speech" />
-                <YouTubeVideo videoId="1_BxsNnuKrc" title="Breath Control Techniques" />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="text-xl font-bold text-purple-600 dark:text-purple-400 border-b border-slate-200 dark:border-slate-700 pb-2">Vocal Warmups</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <YouTubeVideo videoId="Q5hS7e4zMcI" title="Daily Vocal Warmup Routine" />
-                <YouTubeVideo videoId="-S_pIqOEqL4" title="Tongue and Lip Trills" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'faq' && (
-          <div className="space-y-4 max-w-3xl mx-auto">
-             {FAQS.map((faq, index) => (
-                <div key={index} className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-900/30">
-                  <button 
-                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                    className="w-full px-6 py-4 text-left font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex justify-between items-center"
-                  >
-                    <span>{faq.q}</span>
-                    <i className={`fas fa-chevron-down shrink-0 transition-transform ${openFaq === index ? 'rotate-180 text-emerald-500' : 'text-slate-400'}`}></i>
-                  </button>
-                  <AnimatePresence>
-                    {openFaq === index && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
+                    {isExpanded && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setExpandedArticle(null); }}
+                        className="ml-auto w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                       >
-                         <div className="px-6 py-4 pt-0 text-slate-600 dark:text-slate-400 text-sm leading-relaxed border-t border-slate-100 dark:border-slate-800 mt-2">
-                           {faq.a}
-                         </div>
+                        <i className="fas fa-times"></i>
+                      </button>
+                    )}
+                  </div>
+
+                  <h3 className={`text-2xl font-display font-extrabold text-slate-800 dark:text-white mb-4 transition-colors leading-tight ${!isExpanded ? colorClasses.hoverText : ''}`}>
+                    {article.title}
+                  </h3>
+
+                  <AnimatePresence mode="wait">
+                    {!isExpanded ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col flex-1"
+                      >
+                        <p className="text-slate-600 dark:text-slate-400 text-base mb-8 leading-relaxed flex-1 font-medium">
+                          {article.preview}
+                        </p>
+                        <button className={`flex items-center justify-center gap-2 text-white font-extrabold text-base border-b-[4px] active:border-b-0 active:translate-y-[4px] px-6 py-4 rounded-2xl transition-all w-full mt-auto ${colorClasses.btnBg}`}>
+                          Read Article <i className="fas fa-arrow-right"></i>
+                        </button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <div className="text-slate-600 dark:text-slate-300 text-base leading-relaxed font-medium space-y-4">
+                          {article.content.split('\n\n').map((paragraph, i) => (
+                            <p key={i}>{paragraph}</p>
+                          ))}
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setExpandedArticle(null); }}
+                          className={`mt-8 flex items-center justify-center gap-2 text-white font-extrabold text-base border-b-[4px] active:border-b-0 active:translate-y-[4px] px-6 py-4 rounded-2xl transition-all w-full md:w-auto md:px-12 ${colorClasses.btnBg}`}
+                        >
+                          Close Article
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-             ))}
+              );
+            })}
           </div>
         )}
 
-      </div>
+
+
+        {activeTab === 'faq' && (
+          <div className="max-w-3xl mx-auto bg-white dark:bg-slate-800/80 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            {FAQS.map((faq, index) => (
+              <div key={index} className="border-b border-slate-100 dark:border-slate-700/50 last:border-b-0">
+                <button
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  className="w-full px-6 py-6 sm:px-8 text-left font-display font-semibold text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors flex justify-between items-center gap-4 focus:outline-none"
+                >
+                  <span className="text-lg leading-tight">{faq.q}</span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-300 ${openFaq === index ? 'bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                    <i className={`fas fa-chevron-down transition-transform duration-300 ${openFaq === index ? 'rotate-180' : ''}`}></i>
+                  </div>
+                </button>
+                <AnimatePresence>
+                  {openFaq === index && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 sm:px-8 sm:pb-8 text-slate-600 dark:text-slate-300 text-base leading-relaxed">
+                        {faq.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        )}
+
+      </motion.div>
     </div>
   );
 };

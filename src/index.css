@@ -47,7 +47,7 @@
   --shadow-elevation-3: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
   
   /* Typography */
-  --font-display: 'Outfit', sans-serif;
+  --font-display: 'Nunito', sans-serif;
   --font-body: 'Inter', sans-serif;
   
   /* Animation Timings */
@@ -297,6 +297,20 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ================================== */
+/* 🎮 GAMIFIED BUTTONS                */
+/* ================================== */
+
+.btn-gamified {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-gamified:active {
+  transform: translateY(4px);
+  border-bottom-width: 0px !important;
+  margin-top: 4px;
+}
+
+/* ================================== */
 /* 📜 CUSTOM SCROLLBAR                */
 /* ================================== */
 
@@ -403,7 +417,7 @@ h1, h2, h3, h4, h5, h6 {
 /* ================================== */
 
 .dark body {
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  background-color: #0f172a;
 }
 
 .dark .orb {
