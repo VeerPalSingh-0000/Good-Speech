@@ -1,36 +1,46 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaWind, FaArrowLeft } from "react-icons/fa";
+import { FaWind, FaArrowLeft, FaPlay, FaStop } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const TECHNIQUES = {
   "4-7-8": {
     name: "4-7-8 Relax",
     phases: [
-      { name: "Inhale", duration: 4000, instruction: "Inhale through nose" },
-      { name: "Hold", duration: 7000, instruction: "Hold gently" },
-      { name: "Exhale", duration: 8000, instruction: "Exhale slowly" },
+      { name: "Inhale", duration: 4000, instruction: "Inhale through nose", scale: 1.25 },
+      { name: "Hold", duration: 7000, instruction: "Hold gently", scale: 1.25 },
+      { name: "Exhale", duration: 8000, instruction: "Exhale slowly", scale: 1 },
     ],
   },
   box: {
     name: "Box Breathing",
     phases: [
-      { name: "Inhale", duration: 4000, instruction: "Breathe in" },
-      { name: "Hold", duration: 4000, instruction: "Hold" },
-      { name: "Exhale", duration: 4000, instruction: "Breathe out" },
-      { name: "Hold", duration: 4000, instruction: "Pause" },
+      { name: "Inhale", duration: 4000, instruction: "Breathe in", scale: 1.25 },
+      { name: "Hold", duration: 4000, instruction: "Hold", scale: 1.25 },
+      { name: "Exhale", duration: 4000, instruction: "Breathe out", scale: 1 },
+      { name: "Hold", duration: 4000, instruction: "Pause", scale: 1 },
     ],
   },
   diaphragmatic: {
     name: "Belly Breathing",
     phases: [
-      { name: "Inhale", duration: 4000, instruction: "Expand belly" },
-      { name: "Exhale", duration: 6000, instruction: "Relax belly" },
+      { name: "Inhale", duration: 4000, instruction: "Expand belly", scale: 1.25 },
+      { name: "Exhale", duration: 6000, instruction: "Relax belly", scale: 1 },
     ],
   },
 };
 
-export default function BreathingView() {
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
+export default function BreathingView({ embedded = false }) {
   const [selectedTech, setSelectedTech] = useState("4-7-8");
   const [isActive, setIsActive] = useState(false);
   const [phaseIndex, setPhaseIndex] = useState(0);
@@ -79,24 +89,50 @@ export default function BreathingView() {
     };
   }, [isActive, phaseIndex, technique]);
 
-  const scale =
-    currentPhase?.name === "Inhale"
-      ? 1.3
-      : currentPhase?.name === "Exhale"
-        ? 1
-        : 1.3;
+  const scale = currentPhase?.scale || 1;
+
+  const progress = useMemo(() => {
+    if (!isActive) return 0;
+    const phase = technique.phases[phaseIndex];
+    const durationSec = phase.duration / 1000;
+    return Math.max(0, Math.min(1, 1 - (timeLeft / durationSec)));
+  }, [isActive, phaseIndex, technique, timeLeft]);
 
   return (
-    <div className="flex-1 h-full w-full bg-black text-white flex flex-col items-center justify-center px-4 overflow-hidden pt-4 pb-24 sm:pb-4 relative">
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 z-50 w-10 h-10 bg-gray-800 text-gray-400 rounded-xl flex items-center justify-center hover:bg-gray-700 transition-colors btn-gamified"
-      >
-        <FaArrowLeft />
-      </button>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className={embedded ? "space-y-6 pb-4" : "space-y-10"}
+    >
+      {!embedded && (
+        <motion.div variants={itemVariants} className="w-full flex justify-start">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors btn-gamified"
+          >
+            <FaArrowLeft />
+          </button>
+        </motion.div>
+      )}
+
+      {!embedded && (
+        <motion.div variants={itemVariants} className="text-center space-y-3 -mt-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 text-sm font-medium">
+            <span className="w-2 h-2 bg-teal-500 rounded-full animate-pulse" />
+            Relaxation
+          </div>
+          <h2 className="text-4xl font-display font-extrabold text-slate-800 dark:text-white">
+            Breathing Exercises
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-display">
+            Control your breath to calm your mind and improve fluency.
+          </p>
+        </motion.div>
+      )}
 
       {/* Technique Selector */}
-      <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-8 lg:mb-12 text-[10px] sm:text-xs uppercase tracking-widest text-center">
+      <motion.div variants={itemVariants} className="flex overflow-x-auto hide-scrollbar gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-full max-w-lg mx-auto shadow-inner">
         {Object.entries(TECHNIQUES).map(([key, tech]) => (
           <button
             key={key}
@@ -104,77 +140,93 @@ export default function BreathingView() {
               if (isActive) stop();
               setSelectedTech(key);
             }}
-            className={`pb-1 border-b ${
-              selectedTech === key
-                ? "text-teal-400 border-teal-400"
-                : "text-gray-500 border-transparent"
-            }`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${selectedTech === key
+                ? "bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              }`}
           >
             {tech.name}
           </button>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Breathing Circle */}
-      <div className="relative flex items-center justify-center h-[220px] w-[220px] sm:h-[280px] sm:w-[280px] my-4">
-        <motion.div
-          className="absolute rounded-full border border-teal-400/30"
-          style={{ width: "100%", height: "100%" }}
-          animate={{
-            scale: isActive ? scale : 1,
-            opacity: isActive ? 1 : 0.3,
-          }}
-          transition={{
-            duration: currentPhase?.duration / 1000 || 1,
-            ease: "easeInOut",
-          }}
-        />
+      {/* Main Breathing Area */}
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 shadow-xl max-w-md mx-auto p-8 md:p-12">
+        <div className="h-2 absolute top-0 left-0 right-0 bg-gradient-to-r from-teal-400 to-emerald-500" />
+        
+        {/* Breathing Circle */}
+        <div className="relative flex items-center justify-center h-[200px] w-[200px] sm:h-[240px] sm:w-[240px] mx-auto my-10 sm:my-12">
+          <div
+            className={`absolute rounded-full border-[6px] ${isActive ? 'border-teal-400/80 bg-teal-50 dark:bg-teal-900/20' : 'border-slate-200 dark:border-slate-700'}`}
+            style={{ 
+              width: "100%", 
+              height: "100%",
+              transform: `scale(${isActive ? scale : 1})`,
+              opacity: isActive ? 1 : 0.6,
+              transition: isActive 
+                ? `transform ${currentPhase?.duration}ms linear, opacity 400ms ease` 
+                : `transform 1s ease, opacity 1s ease`
+            }}
+          />
 
-        {/* Content */}
-        <div className="text-center z-10 mx-auto max-w-[200px]">
-          {isActive ? (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentPhase.name}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <p className="text-xs sm:text-sm text-teal-300 mb-2 tracking-widest">
-                  {currentPhase.name}
+          {/* Content inside circle */}
+          <div className="text-center z-10 mx-auto w-full px-4">
+            {isActive ? (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentPhase.name}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <p className="text-sm font-bold text-teal-600 dark:text-teal-400 mb-2 tracking-widest uppercase">
+                    {currentPhase.name}
+                  </p>
+
+                  <p className="text-6xl font-light font-mono text-slate-800 dark:text-white">
+                    {Math.ceil(timeLeft)}
+                  </p>
+
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-4 truncate px-2">
+                    {currentPhase.instruction}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            ) : (
+              <div className="text-slate-400 dark:text-slate-500 flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-4">
+                  <FaWind className="text-2xl text-slate-400 dark:text-slate-500" />
+                </div>
+                <p className="text-sm font-bold tracking-widest uppercase">
+                  Ready to start
                 </p>
-
-                <p className="text-5xl sm:text-6xl font-light font-mono">
-                  {Math.ceil(timeLeft)}
-                </p>
-
-                <p className="text-[10px] sm:text-xs text-gray-400 mt-3 truncate px-2">
-                  {currentPhase.instruction}
-                </p>
-              </motion.div>
-            </AnimatePresence>
-          ) : (
-            <div className="text-gray-500">
-              <FaWind className="text-3xl mx-auto mb-3 opacity-30" />
-              <p className="text-[10px] sm:text-xs tracking-widest px-2">
-                Tap Start to Begin
-              </p>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Controls */}
-      <button
-        onClick={isActive ? stop : start}
-        className="mt-10 lg:mt-12 w-full max-w-[240px] sm:max-w-xs py-3.5 rounded-xl border border-gray-800 text-xs sm:text-sm tracking-widest uppercase transition-all active:scale-95"
-      >
-        {isActive ? (
-          <span className="text-gray-400">Stop</span>
-        ) : (
-          <span className="text-teal-400">Start {technique.name}</span>
-        )}
-      </button>
-    </div>
+        {/* Controls */}
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={isActive ? stop : start}
+            className={`px-8 py-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-lg transition-all w-full sm:w-auto btn-gamified ${isActive
+                ? "bg-rose-500 hover:bg-rose-400 text-white"
+                : "bg-teal-500 hover:bg-teal-400 text-white"
+              }`}
+          >
+            {isActive ? (
+              <>
+                <FaStop /> Stop
+              </>
+            ) : (
+              <>
+                <FaPlay /> Start
+              </>
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }

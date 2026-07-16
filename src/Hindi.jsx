@@ -56,8 +56,8 @@ const Hindi = ({ user, onLogout }) => {
     }
   }, []);
 
-  const { 
-    records, isLoading, saveToFirebase, deleteRecord, 
+  const {
+    records, isLoading, saveToFirebase, deleteRecord,
     storyBookmarks, lineBookmarks, toggleStoryBookmark, toggleLineBookmark,
     userSettings, updateUserSettings
   } = useHindiRecords(user, showNotification);
@@ -67,8 +67,7 @@ const Hindi = ({ user, onLogout }) => {
   const navItems = useMemo(() => [
     { key: "home", label: "Home", icon: "fas fa-home" },
     { key: "program", label: "Program", icon: "fas fa-calendar-check" },
-    { key: "exercises", label: "Swar", icon: "fas fa-microphone" },
-    { key: "varnmala", label: "Varnmala", icon: "fas fa-list" },
+    { key: "varnmala", label: "Varnmala & Swar", icon: "fas fa-list" },
     { key: "stories", label: "Stories", icon: "fas fa-book" },
     { key: "breathing", label: "Breathing", icon: "fas fa-wind" },
     { key: "twisters", label: "Twisters", icon: "fas fa-layer-group" },
@@ -107,14 +106,14 @@ const Hindi = ({ user, onLogout }) => {
 
   return (
     <>
-      <Toaster 
-        position="bottom-center" 
-        toastOptions={{ 
+      <Toaster
+        position="bottom-center"
+        toastOptions={{
           style: { background: '#1e293b', color: '#f1f5f9', border: '1px solid #334155', borderRadius: '12px' },
           duration: 2000,
-        }} 
+        }}
       />
-      
+
       <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 font-body flex overflow-x-hidden selection:bg-sky-200 selection:text-sky-900">
         {/* Sidebar for Desktop */}
         <Sidebar currentView={getCurrentView()} setCurrentView={handleNavigation} navItems={navItems} />
@@ -135,7 +134,6 @@ const Hindi = ({ user, onLogout }) => {
                   <Route path="/" element={<PageTransition><HomeView user={user} records={records} setCurrentView={handleNavigation} userSettings={userSettings} /></PageTransition>} />
                   <Route path="/program" element={<PageTransition><ProgramView userSettings={userSettings} updateUserSettings={updateUserSettings} /></PageTransition>} />
                   <Route path="/program/day/:dayNumber" element={<PageTransition><DayDetailView userSettings={userSettings} updateUserSettings={updateUserSettings} setCurrentView={handleNavigation} /></PageTransition>} />
-                  <Route path="/exercises" element={<PageTransition><ExercisesView {...commonProps} /></PageTransition>} />
                   <Route path="/varnmala" element={<PageTransition><VarnmalaView {...commonProps} showVarnmala={showVarnmala} startVarnmalaTimer={handleStartVarnmala} stopVarnmalaTimer={handleStopVarnmala} /></PageTransition>} />
                   <Route path="/stories" element={<PageTransition><StoriesView {...commonProps} userSettings={userSettings} stories={allStories} storyBookmarks={storyBookmarks} lineBookmarks={lineBookmarks} onToggleStoryBookmark={toggleStoryBookmark} onToggleLineBookmark={toggleLineBookmark} /></PageTransition>} />
                   <Route path="/breathing" element={<PageTransition><BreathingView /></PageTransition>} />

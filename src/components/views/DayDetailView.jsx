@@ -68,31 +68,28 @@ const colorMap = {
 };
 
 // Single Activity Card component
-const ActivityCard = memo(({ activity, index, isCompleted, onComplete, weekColor, onNavigate }) => {
-  const [expanded, setExpanded] = useState(false);
+const ActivityCard = memo(({ activity, index, isCompleted, onComplete, onUndo, weekColor, onNavigate, isExpanded, onToggleExpand }) => {
   const colors = colorMap[weekColor] || colorMap.emerald;
   const Icon = activityIcons[activity.type] || FaPlay;
 
   return (
     <motion.div
       variants={itemVariants}
-      className={`rounded-2xl border overflow-hidden transition-all duration-300 ${
-        isCompleted
+      className={`rounded-2xl border overflow-hidden transition-all duration-300 ${isCompleted
           ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
           : `bg-white dark:bg-slate-800 ${colors.border}`
-      } shadow-sm`}
+        } shadow-sm`}
     >
       {/* Card Header — always visible */}
       <button
-        onClick={() => setExpanded(!expanded)}
+        onClick={onToggleExpand}
         className="w-full p-5 flex items-center gap-4 text-left"
       >
         {/* Step number */}
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-          isCompleted
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isCompleted
             ? 'bg-emerald-100 dark:bg-emerald-900/30'
             : colors.light
-        }`}>
+          }`}>
           {isCompleted ? (
             <FaCheckCircle className="text-emerald-500 text-lg" />
           ) : (
@@ -122,13 +119,13 @@ const ActivityCard = memo(({ activity, index, isCompleted, onComplete, weekColor
 
         {/* Expand indicator */}
         <div className="text-slate-400 shrink-0">
-          {expanded ? <FaChevronUp className="text-xs" /> : <FaChevronDown className="text-xs" />}
+          {isExpanded ? <FaChevronUp className="text-xs" /> : <FaChevronDown className="text-xs" />}
         </div>
       </button>
 
       {/* Expanded Content */}
       <AnimatePresence>
-        {expanded && (
+        {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -185,10 +182,12 @@ const ActivityCard = memo(({ activity, index, isCompleted, onComplete, weekColor
               )}
 
               {/* Timer + Actions */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
+              <div className="flex flex-col items-center justify-center gap-4 pt-4 pb-2 border-t border-slate-200 dark:border-slate-700/50 mt-4">
                 <ActivityTimer
+                  id={activity.id}
                   durationMinutes={activity.duration}
                   onComplete={() => onComplete(activity.id)}
+                  onUndo={() => onUndo?.(activity.id)}
                   isCompleted={isCompleted}
                   accentColor={weekColor}
                   size="md"
@@ -237,6 +236,13 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
     dayProgress?.activities || {}
   );
   const [dayCompleted, setDayCompleted] = useState(!!dayProgress?.completedAt);
+
+  const [expandedId, setExpandedId] = useState(() => {
+    // Find the first uncompleted activity on mount
+    const acts = dayData?.activities || [];
+    const firstUncompleted = acts.find(a => !(dayProgress?.activities || {})[a.id]);
+    return firstUncompleted ? firstUncompleted.id : (acts[0]?.id || null);
+  });
 
   const colors = colorMap[weekData?.color] || colorMap.emerald;
 
@@ -315,7 +321,39 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
         currentDay: newCurrentDay,
       }
     });
+
+    // Auto-expand next uncompleted activity
+    const acts = dayData?.activities || [];
+    const currentIndex = acts.findIndex(a => a.id === activityId);
+    const nextUncompleted = acts.slice(currentIndex + 1).find(a => !updated[a.id])
+      || acts.find(a => !updated[a.id]);
+
+    if (nextUncompleted) {
+      setExpandedId(nextUncompleted.id);
+    } else {
+      setExpandedId(null);
+    }
   }, [dayNum, programProgress, updateUserSettings, dayData, completedActivities]);
+
+  const handleActivityUndo = useCallback((activityId) => {
+    const updated = { ...completedActivities, [activityId]: false };
+    setCompletedActivities(updated);
+
+    const newCompletedDays = {
+      ...programProgress.completedDays,
+      [dayNum]: {
+        ...(programProgress.completedDays?.[dayNum] || {}),
+        activities: updated,
+      }
+    };
+
+    updateUserSettings({
+      programProgress: {
+        ...programProgress,
+        completedDays: newCompletedDays
+      }
+    });
+  }, [dayNum, programProgress, updateUserSettings, completedActivities]);
 
   const handleNavigateToView = useCallback((viewPath) => {
     navigate(viewPath);
@@ -438,10 +476,13 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
             key={activity.id}
             activity={activity}
             index={index}
+            weekColor={weekData.color}
             isCompleted={!!completedActivities[activity.id]}
             onComplete={handleActivityComplete}
-            weekColor={weekData.color}
+            onUndo={handleActivityUndo}
             onNavigate={handleNavigateToView}
+            isExpanded={expandedId === activity.id}
+            onToggleExpand={() => setExpandedId(expandedId === activity.id ? null : activity.id)}
           />
         ))}
       </motion.div>
@@ -482,11 +523,10 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
           <button
             onClick={handleNextDay}
             disabled={dayNum >= programProgress.currentDay && !dayCompleted}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-              dayNum >= programProgress.currentDay && !dayCompleted
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${dayNum >= programProgress.currentDay && !dayCompleted
                 ? 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 cursor-not-allowed'
                 : 'bg-indigo-600 text-white hover:bg-indigo-500'
-            }`}
+              }`}
           >
             Day {dayNum + 1} <FaArrowRight className="text-xs" />
           </button>

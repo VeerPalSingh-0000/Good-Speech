@@ -5,8 +5,7 @@ const BottomNav = ({ currentView, setCurrentView }) => {
   const tabs = [
     { key: "home", label: "Home", icon: "fas fa-home" },
     { key: "program", label: "Program", icon: "fas fa-calendar-check" },
-    { key: "exercises", label: "Swar", icon: "fas fa-microphone" },
-    { key: "varnmala", label: "Varnmala", icon: "fas fa-list" },
+    { key: "varnmala", label: "Varnmala & Swar", icon: "fas fa-list" },
     { key: "stories", label: "Stories", icon: "fas fa-book" }
   ];
 

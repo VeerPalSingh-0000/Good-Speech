@@ -18,7 +18,7 @@ export default function MirrorView() {
           video: { facingMode: "user" },
           audio: false,
         });
-        
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -86,12 +86,11 @@ export default function MirrorView() {
           autoPlay
           playsInline
           muted
-          className={`w-full h-full object-cover transition-opacity duration-1000 ${
-            hasPermission ? "opacity-100" : "opacity-0"
-          }`}
+          className={`w-full h-full object-cover transition-opacity duration-1000 ${hasPermission ? "opacity-100" : "opacity-0"
+            }`}
           style={{ transform: "scaleX(-1)" }} // Mirrors the video
         />
-        
+
         {/* Mirror Overlay / Frame */}
         {hasPermission && (
           <div className="absolute inset-0 pointer-events-none border-[8px] border-white/10 rounded-3xl">
@@ -103,7 +102,7 @@ export default function MirrorView() {
           </div>
         )}
       </motion.div>
-      
+
       {/* Prompts Section */}
       <div className="bg-teal-50 dark:bg-teal-900/20 rounded-2xl p-6 border border-teal-100 dark:border-teal-800/50">
         <h3 className="text-teal-800 dark:text-teal-300 font-bold mb-4 uppercase tracking-wider text-sm flex items-center gap-2">

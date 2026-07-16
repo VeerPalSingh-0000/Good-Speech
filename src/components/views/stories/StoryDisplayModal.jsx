@@ -19,6 +19,7 @@ import {
 import { Document, Page, pdfjs } from "react-pdf";
 import kru2uni from "@anthro-ai/krutidev-unicode";
 import { useSpeechRecognition } from "../../../hooks/useSpeechRecognition";
+import { SmoothWord } from "../../ui/SmoothReader";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -167,23 +168,41 @@ const StoryDisplayModal = ({
   }, [parsedText]);
 
   // Guided Reading Timer Logic
+  const getWordDuration = useCallback((wordStr) => {
+    const baseDuration = 60000 / (targetWPM || 60); 
+    if (!wordStr) return baseDuration;
+    const cleanWord = wordStr.replace(/[.,!?।\-\s]/g, '');
+    const lengthRatio = Math.max(0.5, Math.min(cleanWord.length / 5, 2.5));
+    return baseDuration * lengthRatio;
+  }, [targetWPM]);
+
   useEffect(() => {
-    let intervalId;
+    let timeoutId;
     if (isGuidedReading && activeWordIndex < totalWords) {
-      const msPerWord = 60000 / targetWPM;
-      intervalId = setInterval(() => {
+      // Find the current word object from parsedText
+      let currentWordStr = "";
+      for (const line of parsedText) {
+        const found = line.wordObjects.find(w => w.globalWordIdx === activeWordIndex);
+        if (found) {
+          currentWordStr = found.word;
+          break;
+        }
+      }
+      
+      const msForCurrentWord = getWordDuration(currentWordStr);
+      
+      timeoutId = setTimeout(() => {
         setActiveWordIndex((prev) => {
-          // If we reach the end, stop
           if (prev + 1 >= totalWords) {
             setIsGuidedReading(false);
             return prev + 1;
           }
           return prev + 1;
         });
-      }, msPerWord);
+      }, msForCurrentWord);
     }
-    return () => clearInterval(intervalId);
-  }, [isGuidedReading, activeWordIndex, targetWPM, totalWords]);
+    return () => clearTimeout(timeoutId);
+  }, [isGuidedReading, activeWordIndex, targetWPM, totalWords, parsedText, getWordDuration]);
 
   const handleAddPageBookmark = () => {
     const page = parseInt(pageInput);
@@ -603,23 +622,22 @@ const StoryDisplayModal = ({
                         <div className="flex-1 text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed sm:leading-loose text-slate-800 dark:text-slate-200 py-1 flex flex-wrap gap-x-1.5 gap-y-1 sm:gap-x-2 sm:gap-y-1.5">
                           {!showPronunciation
                             ? wordObjects.map((w, i) => {
-                                const isActive =
-                                  activeWordIndex === w.globalWordIdx;
-                                const isPast =
-                                  activeWordIndex > w.globalWordIdx;
+                                const isActive = activeWordIndex === w.globalWordIdx;
+                                const isPast = activeWordIndex > w.globalWordIdx;
+                                const durationSec = isActive ? getWordDuration(w.word) / 1000 : 0;
+                                
                                 return (
-                                  <span
+                                  <SmoothWord
                                     key={i}
-                                    className={`transition-all duration-200 rounded ${
-                                      isActive
-                                        ? "bg-indigo-200 dark:bg-indigo-600 text-indigo-900 dark:text-white px-1 -mx-1 scale-105 shadow-sm z-10 font-bold"
-                                        : isPast && isGuidedReading
-                                          ? "text-slate-400 dark:text-slate-600"
-                                          : ""
-                                    }`}
-                                  >
-                                    {w.word}
-                                  </span>
+                                    wordObj={w}
+                                    isActive={isActive}
+                                    isPast={isPast && isGuidedReading}
+                                    duration={durationSec}
+                                    onClick={(idx) => {
+                                      setActiveWordIndex(idx);
+                                      if (!isGuidedReading) setIsGuidedReading(true);
+                                    }}
+                                  />
                                 );
                               })
                             : lineResults.map((result, i) => (

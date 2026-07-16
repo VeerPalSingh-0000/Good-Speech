@@ -1,11 +1,12 @@
 // src/components/views/VarnmalaView.jsx - Matching ExercisesView color template
 
-import { memo, useMemo, useCallback, useEffect } from "react";
+import { memo, useMemo, useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "../../utilities/helpers";
 import { FaPlay, FaPause, FaSave, FaCheckCircle, FaArrowLeft } from "react-icons/fa";
 import { useSpeechRecognition } from "../../hooks/useSpeechRecognition";
 import { useNavigate } from "react-router-dom";
+import ExercisesView from "./ExercisesView";
 
 // Varnmala data - memoized outside component
 const VARNMALA_DATA = {
@@ -79,6 +80,12 @@ const containerVariants = {
 const itemVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0.5, ease: "easeInOut" } },
+};
+
+const tabVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, staggerChildren: 0.08 } },
+  exit: { opacity: 0, y: -10, transition: { duration: 0.3 } }
 };
 
 const letterVariants = {
@@ -324,7 +331,10 @@ const VarnmalaView = ({
   startVarnmalaTimer,
   pauseVarnmalaTimer,
   stopVarnmalaTimer,
+  embedded = false,
+  ...commonProps // to pass to ExercisesView
 }) => {
+  const [activeTab, setActiveTab] = useState('swar');
   const {
     isListening,
     startListening,
@@ -367,16 +377,77 @@ const VarnmalaView = ({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-10"
+      className={embedded ? "space-y-6 pb-4" : "space-y-10"}
     >
-      <motion.div variants={itemVariants} className="w-full flex justify-start">
+      {!embedded && (
+        <motion.div variants={itemVariants} className="w-full flex justify-start">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors btn-gamified"
+          >
+            <FaArrowLeft />
+          </button>
+        </motion.div>
+      )}
+
+      {!embedded && (
+        <motion.div variants={itemVariants} className="text-center space-y-3 -mt-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm font-medium">
+            <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+            Alphabet & Sounds
+          </div>
+          <h2 className="text-4xl font-display font-extrabold text-slate-800 dark:text-white">
+            Varnmala & Swar
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-display">
+            Practice your pronunciation and consistency.
+          </p>
+        </motion.div>
+      )}
+
+      {/* Tabs */}
+      <div className="flex overflow-x-auto hide-scrollbar gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-full max-w-md mx-auto shadow-inner">
         <button
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors btn-gamified"
+          onClick={() => setActiveTab('swar')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'swar'
+            ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
         >
-          <FaArrowLeft />
+          Swar Practice
         </button>
-      </motion.div>
+        <button
+          onClick={() => setActiveTab('alphabet')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'alphabet'
+            ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+        >
+          Varnmala
+        </button>
+      </div>
+
+      {activeTab === 'swar' && (
+        <motion.div
+          key="swar-tab"
+          variants={tabVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          <ExercisesView embedded={true} {...commonProps} />
+        </motion.div>
+      )}
+
+      {activeTab === 'alphabet' && (
+        <motion.div
+          key="alphabet-tab"
+          variants={tabVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="space-y-10"
+        >
 
       <motion.div variants={itemVariants} className="text-center space-y-3 -mt-4">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm font-medium">
@@ -416,11 +487,10 @@ const VarnmalaView = ({
               aria-label="Start Varnmala Practice"
               onClick={handleStart}
               disabled={varnmalaTimer.isRunning}
-              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
-                varnmalaTimer.isRunning
+              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${varnmalaTimer.isRunning
                   ? "bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50"
                   : "bg-gradient-to-br from-emerald-500 to-green-600 hover:shadow-emerald-500/40 hover:scale-105"
-              }`}
+                }`}
               whileTap={{ scale: 0.95 }}
             >
               <FaPlay className="ml-0.5" />
@@ -431,11 +501,10 @@ const VarnmalaView = ({
               aria-label="Pause Varnmala Practice"
               onClick={handlePause}
               disabled={!varnmalaTimer.isRunning}
-              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
-                !varnmalaTimer.isRunning
+              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${!varnmalaTimer.isRunning
                   ? "bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50"
                   : "bg-gradient-to-br from-amber-500 to-orange-600 hover:shadow-amber-500/40 hover:scale-105"
-              }`}
+                }`}
               whileTap={{ scale: 0.95 }}
             >
               <FaPause />
@@ -446,11 +515,10 @@ const VarnmalaView = ({
               aria-label="Save Practice Session"
               onClick={handleRecord}
               disabled={varnmalaTimer.time === 0}
-              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${
-                varnmalaTimer.time === 0
+              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${varnmalaTimer.time === 0
                   ? "bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50"
                   : "bg-gradient-to-br from-purple-500 to-pink-600 hover:shadow-purple-500/40 hover:scale-105"
-              }`}
+                }`}
               whileTap={{ scale: 0.95 }}
             >
               <FaSave />
@@ -489,6 +557,8 @@ const VarnmalaView = ({
           </div>
         </div>
       </motion.div>
+      </motion.div>
+      )}
     </motion.div>
   );
 };

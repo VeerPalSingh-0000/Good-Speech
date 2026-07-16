@@ -24,7 +24,7 @@ const StoriesView = ({
   storyBookmarks = [],
   lineBookmarks = {},
   userSettings,
-  onSelectStory = () => {},
+  onSelectStory = () => { },
   onToggleStoryBookmark = () =>
     console.error(
       "onToggleStoryBookmark function was not passed to StoriesView.",

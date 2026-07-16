@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
   // Render children only after the initial auth check is complete
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

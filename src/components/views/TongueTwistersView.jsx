@@ -172,21 +172,19 @@ const TongueTwistersView = () => {
       <motion.div variants={itemVariants} className="flex justify-center gap-4">
         <button
           onClick={() => handleLanguageSwitch("en")}
-          className={`px-6 py-2 rounded-full font-bold transition-all btn-gamified ${
-            language === "en"
+          className={`px-6 py-2 rounded-full font-bold transition-all btn-gamified ${language === "en"
               ? "bg-blue-500 text-white"
               : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-          }`}
+            }`}
         >
           English
         </button>
         <button
           onClick={() => handleLanguageSwitch("hi")}
-          className={`px-6 py-2 rounded-full font-bold transition-all btn-gamified ${
-            language === "hi"
+          className={`px-6 py-2 rounded-full font-bold transition-all btn-gamified ${language === "hi"
               ? "bg-purple-500 text-white"
               : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-          }`}
+            }`}
         >
           हिंदी (Hindi)
         </button>
@@ -198,15 +196,13 @@ const TongueTwistersView = () => {
           <button
             key={t.id}
             onClick={() => setSelectedTwister(t)}
-            className={`min-w-[160px] snap-center p-4 rounded-2xl border-b-4 text-left transition-all flex-shrink-0 ${
-              selectedTwister.id === t.id
+            className={`min-w-[160px] snap-center p-4 rounded-2xl border-b-4 text-left transition-all flex-shrink-0 ${selectedTwister.id === t.id
                 ? "bg-white dark:bg-slate-800 border-blue-500 shadow-md"
                 : "bg-slate-100 dark:bg-slate-800/60 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700"
-            }`}
+              }`}
           >
-            <p className={`font-bold text-sm ${
-              selectedTwister.id === t.id ? "text-blue-500" : "text-slate-500 dark:text-slate-400"
-            }`}>
+            <p className={`font-bold text-sm ${selectedTwister.id === t.id ? "text-blue-500" : "text-slate-500 dark:text-slate-400"
+              }`}>
               {t.difficulty}
             </p>
             <p className="text-xs text-slate-400 mt-1">{t.focus}</p>
@@ -216,20 +212,19 @@ const TongueTwistersView = () => {
 
       {/* MAIN PLAYER */}
       <motion.div variants={itemVariants} className="bg-white dark:bg-slate-800 rounded-3xl border-b-4 border-slate-200 dark:border-slate-700 shadow-xl p-6 md:p-10 space-y-10">
-        
+
         {/* WORD DISPLAY */}
         <div className="text-center min-h-[160px] flex items-center justify-center">
           <div className="flex flex-wrap justify-center gap-x-3 gap-y-4 text-3xl md:text-5xl font-extrabold font-display leading-tight">
             {words.map((word, index) => (
               <span
                 key={index}
-                className={`transition-all duration-200 rounded-lg px-2 ${
-                  currentWordIndex === index
+                className={`transition-all duration-200 rounded-lg px-2 ${currentWordIndex === index
                     ? "text-blue-500 scale-110 bg-blue-50 dark:bg-blue-900/20"
                     : currentWordIndex > index || (!isPlaying && currentWordIndex === -1)
                       ? "text-slate-800 dark:text-white"
                       : "text-slate-300 dark:text-slate-600"
-                }`}
+                  }`}
               >
                 {word}
               </span>

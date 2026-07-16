@@ -6,15 +6,35 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlay, FaPause, FaRedo, FaCheck } from 'react-icons/fa';
 
 const ActivityTimer = memo(({ 
+  id,
   durationMinutes, 
   onComplete, 
+  onUndo,
   isCompleted = false,
   accentColor = 'indigo',
   size = 'md' // 'sm' | 'md' | 'lg'
 }) => {
   const totalSeconds = durationMinutes * 60;
-  const [timeLeft, setTimeLeft] = useState(totalSeconds);
-  const [isRunning, setIsRunning] = useState(false);
+  
+  // Persist timer state across navigation
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (!id) return totalSeconds;
+    const saved = sessionStorage.getItem(`timer-${id}-timeLeft`);
+    const savedTime = sessionStorage.getItem(`timer-${id}-lastTick`);
+    const wasRunning = sessionStorage.getItem(`timer-${id}-isRunning`) === 'true';
+    
+    if (saved !== null && savedTime !== null) {
+      const elapsedSinceSaved = wasRunning ? Math.floor((Date.now() - parseInt(savedTime)) / 1000) : 0;
+      return Math.max(0, parseInt(saved) - elapsedSinceSaved);
+    }
+    return totalSeconds;
+  });
+
+  const [isRunning, setIsRunning] = useState(() => {
+    if (!id) return false;
+    return sessionStorage.getItem(`timer-${id}-isRunning`) === 'true';
+  });
+  
   const [hasFinished, setHasFinished] = useState(isCompleted);
   const intervalRef = useRef(null);
 
@@ -37,39 +57,64 @@ const ActivityTimer = memo(({
             setIsRunning(false);
             setHasFinished(true);
             onComplete?.();
+            if (id) {
+              sessionStorage.removeItem(`timer-${id}-timeLeft`);
+              sessionStorage.removeItem(`timer-${id}-lastTick`);
+              sessionStorage.removeItem(`timer-${id}-isRunning`);
+            }
             return 0;
+          }
+          if (id) {
+            sessionStorage.setItem(`timer-${id}-timeLeft`, prev - 1);
+            sessionStorage.setItem(`timer-${id}-lastTick`, Date.now());
           }
           return prev - 1;
         });
       }, 1000);
+    } else if (id && !isRunning) {
+      sessionStorage.setItem(`timer-${id}-isRunning`, 'false');
+      sessionStorage.setItem(`timer-${id}-timeLeft`, timeLeft);
+      sessionStorage.setItem(`timer-${id}-lastTick`, Date.now());
     }
     return () => clearInterval(intervalRef.current);
-  }, [isRunning, timeLeft, onComplete]);
+  }, [isRunning, timeLeft, onComplete, id]);
 
   const handleStart = useCallback(() => {
     if (hasFinished) return;
     setIsRunning(true);
-  }, [hasFinished]);
+    if (id) sessionStorage.setItem(`timer-${id}-isRunning`, 'true');
+  }, [hasFinished, id]);
 
   const handlePause = useCallback(() => {
     setIsRunning(false);
     clearInterval(intervalRef.current);
-  }, []);
+    if (id) sessionStorage.setItem(`timer-${id}-isRunning`, 'false');
+  }, [id]);
 
   const handleReset = useCallback(() => {
     setIsRunning(false);
     setHasFinished(false);
     setTimeLeft(totalSeconds);
     clearInterval(intervalRef.current);
-  }, [totalSeconds]);
+    if (id) {
+      sessionStorage.removeItem(`timer-${id}-timeLeft`);
+      sessionStorage.removeItem(`timer-${id}-lastTick`);
+      sessionStorage.removeItem(`timer-${id}-isRunning`);
+    }
+  }, [totalSeconds, id]);
 
   const handleMarkDone = useCallback(() => {
     setIsRunning(false);
     setHasFinished(true);
     setTimeLeft(0);
     clearInterval(intervalRef.current);
+    if (id) {
+      sessionStorage.removeItem(`timer-${id}-timeLeft`);
+      sessionStorage.removeItem(`timer-${id}-lastTick`);
+      sessionStorage.removeItem(`timer-${id}-isRunning`);
+    }
     onComplete?.();
-  }, [onComplete]);
+  }, [onComplete, id]);
 
   const formatTimerDisplay = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -183,13 +228,16 @@ const ActivityTimer = memo(({
           </>
         )}
 
-        {hasFinished && !isCompleted && (
+        {hasFinished && (
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={handleReset}
+            onClick={() => {
+              handleReset();
+              onUndo?.();
+            }}
             className={`px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium flex items-center gap-1.5`}
           >
-            <FaRedo className="text-[10px]" /> Restart
+            <FaRedo className="text-[10px]" /> {isCompleted ? 'Redo Task' : 'Restart'}
           </motion.button>
         )}
       </div>

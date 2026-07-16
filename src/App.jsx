@@ -1,6 +1,6 @@
 // src/App.jsx
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import LoadingScreen from './components/ui/LoadingScreen.jsx';
 import './App.css';
@@ -11,6 +11,14 @@ const AuthPage = lazy(() => import('./pages/AuthPage.jsx'));
 function App() {
   // 1. Get 'logout' from the AuthContext
   const { currentUser, loading, logout } = useAuth();
+  const [minLoadingDone, setMinLoadingDone] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinLoadingDone(true);
+    }, 1200); // Ensures the loading screen shows for at least 1.2s
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -20,7 +28,9 @@ function App() {
     }
   };
 
-  if (loading) {
+  const isAppLoading = loading || !minLoadingDone;
+
+  if (isAppLoading) {
     return <LoadingScreen />;
   }
 
