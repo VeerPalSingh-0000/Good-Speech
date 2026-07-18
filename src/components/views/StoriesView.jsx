@@ -184,33 +184,51 @@ const StoriesView = ({
     const currentIndex = filteredStories.findIndex(
       (s) => s.id === currentStory?.id,
     );
+    
+    // If the current story is a random 15-minute story (not in the main list)
+    if (currentIndex === -1) {
+      // Determine language and fetch another random one!
+      const isHindi = currentStory?.language?.includes("Hindi") || currentStory?.language?.includes("hi");
+      handleLanguageSelect(isHindi ? "hi" : "en");
+      return;
+    }
+
     const nextIndex = (currentIndex + 1) % filteredStories.length;
     setCurrentStory(filteredStories[nextIndex]);
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8 sm:space-y-12 max-w-7xl mx-auto pb-24 sm:pb-20">
       {/* Header - Your Story Library */}
-      <div className="w-full flex justify-start px-4 sm:px-0">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors btn-gamified"
-        >
-          <FaArrowLeft />
-        </button>
-      </div>
-      <div className="text-center -mt-8">
-        <h2 className="text-4xl md:text-5xl font-display font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          📚 Your Story Library
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-display">
-          Browse and read from your collection of stories
-        </p>
+      <div className="relative pt-6 pb-4 sm:pt-10 sm:pb-8">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-3xl pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 to-transparent dark:from-purple-500/5 blur-3xl rounded-full"></div>
+        </div>
+        
+        <div className="w-full flex justify-start px-4 sm:px-0 relative z-10">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-purple-600 hover:scale-105 active:scale-95 transition-all"
+          >
+            <FaArrowLeft />
+          </button>
+        </div>
+        <div className="text-center mt-2 relative z-10 px-4">
+          <div className="inline-flex items-center justify-center p-3 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl mb-4 shadow-sm border border-white/50 dark:border-white/5">
+            <span className="text-4xl">📚</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-black tracking-tight text-slate-900 dark:text-white">
+            Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-400">Story Library</span>
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-4 text-base md:text-lg font-medium max-w-2xl mx-auto">
+            Discover a world of imagination. Choose a story, start your timer, and improve your reading fluency.
+          </p>
+        </div>
       </div>
 
       {/* SECTION 1: Story Library AT TOP */}
       {stories.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-10">
           {/* Timer Display */}
           <StoryTimer
             storyTimer={storyTimer}

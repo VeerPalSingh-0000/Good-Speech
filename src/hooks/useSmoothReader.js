@@ -21,11 +21,18 @@ export const useSmoothReader = (words = [], targetWPM = 60) => {
     
     if (!wordStr) return baseDuration;
 
+    // Add fixed time for punctuation pauses (in seconds)
+    let pauseDuration = 0;
+    if (wordStr.includes(',') || wordStr.includes(';')) pauseDuration = 0.6;
+    if (wordStr.includes('.') || wordStr.includes('!') || wordStr.includes('?') || wordStr.includes('।') || wordStr.includes('|') || wordStr.includes('॥')) pauseDuration = 1.2;
+
     // Remove punctuation for length calculation
-    const cleanWord = wordStr.replace(/[.,!?।\-\s]/g, '');
-    const lengthRatio = Math.max(0.5, Math.min(cleanWord.length / AVERAGE_WORD_LENGTH, 2.5));
+    const cleanWord = wordStr.replace(/[.,!?।|॥\-\s]/g, '');
     
-    return baseDuration * lengthRatio;
+    // Softer length scaling so short words aren't rushed
+    const lengthRatio = Math.max(0.4, 0.6 + (cleanWord.length * 0.08)); 
+    
+    return (baseDuration * lengthRatio) + pauseDuration;
   }, [targetWPM]);
 
   const stop = useCallback(() => {

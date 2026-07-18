@@ -2,50 +2,11 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FaSpinner } from "react-icons/fa";
 
-// Primary languages shown initially
-const PRIMARY_LANGUAGES = [
-  { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "hi", label: "हिंदी (Hindi)", flag: "🇮🇳" },
-];
-
-// All available languages (for future expansion)
-const ALL_LANGUAGES = [
-  { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "hi", label: "हिंदी (Hindi)", flag: "🇮🇳" },
-  { code: "es", label: "Español (Spanish)", flag: "🇪🇸" },
-  { code: "fr", label: "Français (French)", flag: "🇫🇷" },
-  { code: "de", label: "Deutsch (German)", flag: "🇩🇪" },
-  { code: "it", label: "Italiano (Italian)", flag: "🇮🇹" },
-  { code: "pt", label: "Português (Portuguese)", flag: "🇵🇹" },
-  { code: "ja", label: "日本語 (Japanese)", flag: "🇯🇵" },
-  { code: "zh", label: "中文 (Chinese)", flag: "🇨🇳" },
-  { code: "ko", label: "한국어 (Korean)", flag: "🇰🇷" },
-  { code: "ru", label: "Русский (Russian)", flag: "🇷🇺" },
-  { code: "ar", label: "العربية (Arabic)", flag: "🇸🇦" },
-  { code: "ta", label: "தமிழ் (Tamil)", flag: "🇮🇳" },
-  { code: "te", label: "తెలుగు (Telugu)", flag: "🇮🇳" },
-  { code: "kn", label: "ಕನ್ನಡ (Kannada)", flag: "🇮🇳" },
-  { code: "ml", label: "മലയാളം (Malayalam)", flag: "🇮🇳" },
-  { code: "bn", label: "বাংলা (Bengali)", flag: "🇧🇩" },
-  { code: "pa", label: "ਪੰਜਾਬੀ (Punjabi)", flag: "🇮🇳" },
-  { code: "gu", label: "ગુજરાતી (Gujarati)", flag: "🇮🇳" },
-  { code: "mr", label: "मराठी (Marathi)", flag: "🇮🇳" },
-  { code: "th", label: "ไทย (Thai)", flag: "🇹🇭" },
-  { code: "vi", label: "Tiếng Việt (Vietnamese)", flag: "🇻🇳" },
-  { code: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
-  { code: "pl", label: "Polski (Polish)", flag: "🇵🇱" },
-  { code: "tr", label: "Türkçe (Turkish)", flag: "🇹🇷" },
-  { code: "nl", label: "Nederlands (Dutch)", flag: "🇳🇱" },
-  { code: "sv", label: "Svenska (Swedish)", flag: "🇸🇪" },
-  { code: "da", label: "Dansk (Danish)", flag: "🇩🇰" },
-  { code: "fi", label: "Suomi (Finnish)", flag: "🇫🇮" },
-  { code: "no", label: "Norsk (Norwegian)", flag: "🇳🇴" },
-];
-
 const LanguageSelector = ({ onSelectLanguage, isLoading = false }) => {
   const [selectedLang, setSelectedLang] = useState("");
 
   const handleSelect = async (langCode) => {
+    if (isLoading) return;
     setSelectedLang(langCode);
     await onSelectLanguage(langCode);
   };
@@ -54,35 +15,57 @@ const LanguageSelector = ({ onSelectLanguage, isLoading = false }) => {
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
+      className="space-y-6"
     >
       <div>
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-          15-Minute Stories
+          Discover a Random Story
         </h2>
         <p className="text-slate-600 dark:text-slate-400">
-          Select your language to get started
+          Select your language for a 15-minute guided reading experience
         </p>
       </div>
 
-      <div className="flex gap-3">
-        <select
-          value={selectedLang}
-          onChange={(e) => handleSelect(e.target.value)}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* English Card */}
+        <button
+          onClick={() => handleSelect("en")}
           disabled={isLoading}
-          className="flex-1 px-4 py-3 rounded-lg border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative overflow-hidden group flex flex-row sm:flex-col items-center justify-start sm:justify-center p-5 sm:p-8 gap-4 sm:gap-0 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-800 rounded-3xl text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-80 disabled:cursor-not-allowed border border-white/10 text-left sm:text-center"
         >
-          <option value="">Select a language...</option>
-          {PRIMARY_LANGUAGES.map((lang) => (
-            <option key={lang.code} value={lang.code}>
-              {lang.flag} {lang.label}
-            </option>
-          ))}
-        </select>
+          <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full blur-2xl -mr-8 -mt-8 sm:-mr-10 sm:-mt-10 group-hover:bg-white/20 transition-colors"></div>
+          <span className="text-4xl sm:text-5xl sm:mb-4 group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-md">🇺🇸</span>
+          <div className="flex-1">
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight">English</h3>
+            <p className="text-blue-100/90 text-xs sm:text-sm mt-1 sm:mt-2 font-medium">Random 15-min classic</p>
+          </div>
+          
+          {isLoading && selectedLang === "en" && (
+            <div className="absolute inset-0 bg-indigo-900/40 backdrop-blur-[2px] flex items-center justify-center">
+              <FaSpinner className="animate-spin text-3xl sm:text-4xl text-white drop-shadow-lg" />
+            </div>
+          )}
+        </button>
 
-        {selectedLang && isLoading && (
-          <FaSpinner className="animate-spin text-slate-400 text-2xl" />
-        )}
+        {/* Hindi Card */}
+        <button
+          onClick={() => handleSelect("hi")}
+          disabled={isLoading}
+          className="relative overflow-hidden group flex flex-row sm:flex-col items-center justify-start sm:justify-center p-5 sm:p-8 gap-4 sm:gap-0 bg-gradient-to-br from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-700 rounded-3xl text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/20 active:scale-[0.98] disabled:opacity-80 disabled:cursor-not-allowed border border-white/10 text-left sm:text-center"
+        >
+          <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-full blur-2xl -mr-8 -mt-8 sm:-mr-10 sm:-mt-10 group-hover:bg-white/20 transition-colors"></div>
+          <span className="text-4xl sm:text-5xl sm:mb-4 group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-md">🇮🇳</span>
+          <div className="flex-1">
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight">हिंदी (Hindi)</h3>
+            <p className="text-orange-100/90 text-xs sm:text-sm mt-1 sm:mt-2 font-medium">१५ मिनट की कहानी</p>
+          </div>
+          
+          {isLoading && selectedLang === "hi" && (
+            <div className="absolute inset-0 bg-orange-900/40 backdrop-blur-[2px] flex items-center justify-center">
+              <FaSpinner className="animate-spin text-3xl sm:text-4xl text-white drop-shadow-lg" />
+            </div>
+          )}
+        </button>
       </div>
     </motion.div>
   );

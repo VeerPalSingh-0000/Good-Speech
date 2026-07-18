@@ -150,16 +150,34 @@ const StoryDisplayModal = ({
     const textToParse = story.pdfUrl ? pdfPageText : textContent;
     if (!textToParse) return [];
     let globalWordIdx = 0;
-    return textToParse
-      .split("\n")
-      .filter((line) => line.trim() !== "")
-      .map((line, lineIdx) => {
-        const words = line.split(" ");
+
+    // Normalize text formatting:
+    // 1. Remove carriage returns
+    // 2. Fix hyphenated line breaks
+    // 3. Separate into paragraphs (double newlines)
+    // 4. Unwrap single newlines within paragraphs into spaces
+    let normalizedText = textToParse;
+    if (!story.pdfUrl) {
+      normalizedText = textToParse
+        .replace(/\r/g, "")
+        .replace(/-\n/g, "")
+        .split(/\n\n+/)
+        .map(p => p.replace(/\n/g, " ").trim())
+        .join("\n\n");
+    }
+
+    return normalizedText
+      // Separate punctuation into distinct word blocks for guided reading
+      .replace(/([.,!?।|॥]+)/g, ' $1 ')
+      .split(/\n\n+/) // Split by paragraphs, not lines!
+      .filter((paragraph) => paragraph.trim() !== "")
+      .map((paragraph, lineIdx) => {
+        const words = paragraph.split(/\s+/).filter(w => w.trim() !== "");
         const wordObjects = words.map((word) => ({
           word,
           globalWordIdx: globalWordIdx++,
         }));
-        return { line, wordObjects, lineIdx };
+        return { line: paragraph, wordObjects, lineIdx };
       });
   }, [textContent, pdfPageText, story.pdfUrl]);
 
@@ -171,9 +189,18 @@ const StoryDisplayModal = ({
   const getWordDuration = useCallback((wordStr) => {
     const baseDuration = 60000 / (targetWPM || 60); 
     if (!wordStr) return baseDuration;
-    const cleanWord = wordStr.replace(/[.,!?।\-\s]/g, '');
-    const lengthRatio = Math.max(0.5, Math.min(cleanWord.length / 5, 2.5));
-    return baseDuration * lengthRatio;
+    
+    // Add fixed time for punctuation pauses (in ms)
+    let pauseDuration = 0;
+    if (wordStr.includes(',') || wordStr.includes(';')) pauseDuration = 600;
+    if (wordStr.includes('.') || wordStr.includes('!') || wordStr.includes('?') || wordStr.includes('।') || wordStr.includes('|') || wordStr.includes('॥')) pauseDuration = 1200;
+
+    const cleanWord = wordStr.replace(/[.,!?।|॥\-\s]/g, '');
+    
+    // Softer length scaling so short words aren't rushed (especially in Hindi where char count is lower)
+    const lengthRatio = Math.max(0.4, 0.6 + (cleanWord.length * 0.08)); 
+    
+    return (baseDuration * lengthRatio) + pauseDuration;
   }, [targetWPM]);
 
   useEffect(() => {
@@ -386,190 +413,273 @@ const StoryDisplayModal = ({
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative bg-slate-50 dark:bg-[#0a0a0a] flex flex-col min-h-0">
-          {story.pdfUrl && !isGuidedReading ? (
-            <>
-              {/* Floating Modern PDF PDF Toolbar & Page Navigation */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 w-[90%] sm:w-auto max-w-2xl transition-all duration-300 opacity-40 hover:opacity-100 focus-within:opacity-100 hover:translate-y-[-4px]">
-                {/* Bookmarks Menu */}
-                <AnimatePresence>
-                  {(showMobileBookmarks || window.innerWidth >= 640) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="flex sm:flex items-center flex-wrap sm:flex-nowrap justify-center gap-3 p-3 sm:p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl shadow-xl rounded-2xl sm:rounded-full border border-white/20 dark:border-slate-700/50 w-full sm:w-auto overflow-hidden sm:overflow-x-auto scrollbar-hide mb-1"
-                    >
-                      <div className="flex items-center gap-2 flex-1 sm:flex-none justify-center">
-                        <span className="text-xs font-semibold px-2 dark:text-slate-300 whitespace-nowrap">
-                          Bookmarks:
-                        </span>
-                        <input
-                          type="number"
-                          min="1"
-                          max={numPages || undefined}
-                          value={pageInput}
-                          onChange={(e) => setPageInput(e.target.value)}
-                          placeholder="pg"
-                          className="w-16 px-3 py-1.5 text-xs text-center border border-slate-200 dark:border-slate-600 rounded-full bg-slate-50 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                        <button
-                          onClick={handleAddPageBookmark}
-                          className="px-4 py-1.5 text-xs bg-purple-600 text-white rounded-full font-medium hover:bg-purple-700 shadow-sm transition-colors"
-                        >
-                          Add
-                        </button>
-                      </div>
+          {story.pdfUrl ? (
+            <div className={`flex flex-col lg:flex-row h-full w-full`}>
+              {/* PDF Container - takes full width when not guided reading, half width when guided reading */}
+              <div
+                className={`relative flex-shrink-0 transition-all duration-500 ease-in-out ${
+                  isGuidedReading
+                    ? "h-[40vh] lg:h-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800"
+                    : "h-full w-full"
+                }`}
+              >
+                {/* Floating Modern PDF Toolbar & Page Navigation */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 w-[90%] sm:w-auto max-w-2xl transition-all duration-300 opacity-40 hover:opacity-100 focus-within:opacity-100 hover:translate-y-[-4px]">
+                  {/* Bookmarks Menu */}
+                  <AnimatePresence>
+                    {(showMobileBookmarks || window.innerWidth >= 640) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="flex sm:flex items-center flex-wrap sm:flex-nowrap justify-center gap-3 p-3 sm:p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl shadow-xl rounded-2xl sm:rounded-full border border-white/20 dark:border-slate-700/50 w-full sm:w-auto overflow-hidden sm:overflow-x-auto scrollbar-hide mb-1"
+                      >
+                        <div className="flex items-center gap-2 flex-1 sm:flex-none justify-center">
+                          <button
+                            onClick={() => onToggleLineBookmark(story.id, currentPage)}
+                            className={`flex items-center gap-2 px-4 py-1.5 text-xs rounded-full font-medium shadow-sm transition-all ${
+                              lineBookmarks.includes(currentPage)
+                                ? "bg-purple-600 text-white hover:bg-purple-700"
+                                : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-400"
+                            }`}
+                          >
+                            {lineBookmarks.includes(currentPage) ? (
+                              <FaBookmark className="text-sm" />
+                            ) : (
+                              <FaRegBookmark className="text-sm" />
+                            )}
+                            <span className="whitespace-nowrap">
+                              {lineBookmarks.includes(currentPage) ? "Saved Page" : "Save Page"} {currentPage}
+                            </span>
+                          </button>
+                        </div>
 
-                      <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-600 mx-1 shrink-0"></div>
-                      <div className="sm:hidden w-full h-px bg-slate-200 dark:bg-slate-600/50 opacity-50 my-1"></div>
+                        <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-600 mx-1 shrink-0"></div>
+                        <div className="sm:hidden w-full h-px bg-slate-200 dark:bg-slate-600/50 opacity-50 my-1"></div>
 
-                      <div className="flex flex-wrap items-center justify-center gap-2 px-1 w-full sm:w-auto max-h-24 sm:max-h-none overflow-y-auto sm:overflow-visible">
-                        {lineBookmarks.length === 0 && (
-                          <span className="text-xs text-slate-400 italic px-2 py-1">
-                            No saved pages
-                          </span>
-                        )}
-                        {lineBookmarks.map((page) => {
-                          if (typeof page !== "number") return null;
-                          return (
-                            <button
-                              key={page}
-                              onClick={() => handleJumpToPage(page)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-full text-xs hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all shadow-sm"
-                            >
-                              <FaBookmark className="text-purple-500 text-[10px]" />
-                              <span className="dark:text-slate-200 font-medium">
-                                {page}
-                              </span>
-                              <span
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onToggleLineBookmark(story.id, page);
-                                }}
-                                className="ml-1 text-slate-400 hover:text-red-500 text-sm font-bold"
+                        <div className="flex flex-wrap items-center justify-center gap-2 px-1 w-full sm:w-auto max-h-24 sm:max-h-none overflow-y-auto sm:overflow-visible">
+                          {lineBookmarks.length === 0 && (
+                            <span className="text-xs text-slate-400 italic px-2 py-1">
+                              No saved pages
+                            </span>
+                          )}
+                          {lineBookmarks.map((page) => {
+                            if (typeof page !== "number") return null;
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => handleJumpToPage(page)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-full text-xs hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all shadow-sm"
                               >
-                                &times;
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Page Navigation */}
-                <div className="flex items-center justify-center gap-2 sm:gap-4 px-3 sm:px-6 py-2.5 bg-black/80 dark:bg-black/90 backdrop-blur-xl shadow-2xl rounded-full border border-white/10 text-white w-fit mx-auto">
-                  {/* Mobile Menu Toggle */}
-                  <button
-                    onClick={() => setShowMobileBookmarks(!showMobileBookmarks)}
-                    className={`sm:hidden p-2 rounded-full transition-all ${
-                      showMobileBookmarks
-                        ? "bg-purple-600/40 text-purple-300"
-                        : "hover:bg-white/20 text-white/80"
-                    }`}
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d={
-                          showMobileBookmarks
-                            ? "M6 18L18 6M6 6l12 12"
-                            : "M4 6h16M4 12h16M4 18h16"
-                        }
-                      />
-                    </svg>
-                  </button>
-                  <div className="sm:hidden w-px h-5 bg-white/20 shrink-0 mx-1"></div>
-
-                  <button
-                    onClick={goToPrevPage}
-                    disabled={currentPage <= 1}
-                    className="p-2 rounded-full hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                  >
-                    <FaChevronLeft size={14} />
-                  </button>
-                  <span className="text-sm font-medium tracking-wide flex items-center justify-center gap-2 min-w-[100px] text-center">
-                    <span className="hidden sm:inline text-white/80">Page</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max={numPages || undefined}
-                      value={currentPage}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (
-                          !isNaN(val) &&
-                          val >= 1 &&
-                          (!numPages || val <= numPages)
-                        ) {
-                          handleJumpToPage(val);
-                        }
-                      }}
-                      className="w-12 text-center bg-white/10 border border-white/10 rounded px-1 py-1 focus:outline-none focus:bg-white/20 focus:border-white/30 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                    {numPages && (
-                      <span className="text-white/60">/ {numPages}</span>
+                                <FaBookmark className="text-purple-500 text-[10px]" />
+                                <span className="dark:text-slate-200 font-medium">
+                                  {page}
+                                </span>
+                                <span
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleLineBookmark(story.id, page);
+                                  }}
+                                  className="ml-1 text-slate-400 hover:text-red-500 text-sm font-bold"
+                                >
+                                  &times;
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
                     )}
-                  </span>
-                  <button
-                    onClick={goToNextPage}
-                    disabled={numPages && currentPage >= numPages}
-                    className="p-2 rounded-full hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                  </AnimatePresence>
+
+                  {/* Page Navigation */}
+                  <div className="flex items-center justify-center gap-2 sm:gap-4 px-3 sm:px-6 py-2.5 bg-black/80 dark:bg-black/90 backdrop-blur-xl shadow-2xl rounded-full border border-white/10 text-white w-fit mx-auto">
+                    {/* Mobile Menu Toggle */}
+                    <button
+                      onClick={() => setShowMobileBookmarks(!showMobileBookmarks)}
+                      className={`sm:hidden p-2 rounded-full transition-all ${
+                        showMobileBookmarks
+                          ? "bg-purple-600/40 text-purple-300"
+                          : "hover:bg-white/20 text-white/80"
+                      }`}
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d={
+                            showMobileBookmarks
+                              ? "M6 18L18 6M6 6l12 12"
+                              : "M4 6h16M4 12h16M4 18h16"
+                          }
+                        />
+                      </svg>
+                    </button>
+                    <div className="sm:hidden w-px h-5 bg-white/20 shrink-0 mx-1"></div>
+
+                    <button
+                      onClick={goToPrevPage}
+                      disabled={currentPage <= 1}
+                      className="p-2 rounded-full hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                    >
+                      <FaChevronLeft size={14} />
+                    </button>
+                    <span className="text-sm font-medium tracking-wide flex items-center justify-center gap-2 min-w-[100px] text-center">
+                      <span className="hidden sm:inline text-white/80">Page</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={numPages || undefined}
+                        value={currentPage}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (
+                            !isNaN(val) &&
+                            val >= 1 &&
+                            (!numPages || val <= numPages)
+                          ) {
+                            handleJumpToPage(val);
+                          }
+                        }}
+                        className="w-12 text-center bg-white/10 border border-white/10 rounded px-1 py-1 focus:outline-none focus:bg-white/20 focus:border-white/30 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      {numPages && (
+                        <span className="text-white/60">/ {numPages}</span>
+                      )}
+                    </span>
+                    <button
+                      onClick={goToNextPage}
+                      disabled={numPages && currentPage >= numPages}
+                      className="p-2 rounded-full hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                    >
+                      <FaChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* PDF Renderer */}
+                <div
+                  ref={containerRef}
+                  className="h-full w-full overflow-y-auto flex justify-center bg-slate-100 dark:bg-slate-900 pb-32"
+                >
+                  {pdfLoading && (
+                    <div className="flex flex-col items-center justify-center gap-3 py-16">
+                      <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">
+                        Loading PDF...
+                      </p>
+                    </div>
+                  )}
+                  {pdfError && (
+                    <div className="flex flex-col items-center justify-center gap-3 py-16">
+                      <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
+                      <p className="text-red-400 text-sm">Failed to load PDF</p>
+                      <button
+                        onClick={() => window.open(story.pdfUrl, "_blank")}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700"
+                      >
+                        Open in new tab
+                      </button>
+                    </div>
+                  )}
+                  <Document
+                    file={story.pdfUrl}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={onDocumentLoadError}
+                    loading=""
                   >
-                    <FaChevronRight size={14} />
-                  </button>
+                    <Page
+                      pageNumber={currentPage}
+                      width={isGuidedReading ? (window.innerWidth < 1024 ? window.innerWidth : window.innerWidth / 2 - 20) : Math.min(containerWidth, containerHeight / pdfAspectRatio)}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                      onLoadSuccess={onPageLoadSuccess}
+                    />
+                  </Document>
                 </div>
               </div>
 
-              {/* PDF Renderer */}
-              <div
-                ref={containerRef}
-                className="flex-1 h-full w-full overflow-y-auto flex justify-center bg-slate-50 dark:bg-[#0a0a0a] pb-32"
-              >
-                {pdfLoading && (
-                  <div className="flex flex-col items-center justify-center gap-3 py-16">
-                    <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">
-                      Loading PDF...
-                    </p>
+              {/* Guided Reading Text - only visible when isGuidedReading is true */}
+              {isGuidedReading && (
+                <div className="flex-1 overflow-y-auto h-full p-4 sm:p-6 md:p-8 lg:p-10 w-full lg:w-1/2">
+                  <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
+                    {!textLoading &&
+                      !textError &&
+                      parsedText.length > 0 &&
+                      parsedText.map((lineObj) => {
+                        const { line, wordObjects, lineIdx } = lineObj;
+                        const isLineBookmarked = lineBookmarks.includes(lineIdx);
+                        const lineResults = showPronunciation
+                          ? compareToTarget(line)
+                          : [];
+
+                        return (
+                          <div
+                            key={lineIdx}
+                            className="flex items-stretch gap-3 sm:gap-5 group relative"
+                          >
+                            <div
+                              role="button"
+                              onClick={() =>
+                                onToggleLineBookmark(story.id, lineIdx)
+                              }
+                              className={`w-1.5 sm:w-2 rounded-full flex-shrink-0 cursor-pointer transition-all duration-300 ${
+                                isLineBookmarked
+                                  ? "bg-purple-600"
+                                  : "bg-slate-300 dark:bg-slate-600 hover:bg-purple-300"
+                              }`}
+                              title={
+                                isLineBookmarked
+                                  ? "Remove bookmark"
+                                  : "Add bookmark"
+                              }
+                            />
+                            <div className="flex-1 text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed sm:leading-loose text-slate-800 dark:text-slate-200 py-1 flex flex-wrap gap-x-1.5 gap-y-1 sm:gap-x-2 sm:gap-y-1.5">
+                              {!showPronunciation
+                                ? wordObjects.map((w, i) => {
+                                    const isActive = activeWordIndex === w.globalWordIdx;
+                                    const isPast = activeWordIndex > w.globalWordIdx;
+                                    const durationSec = isActive ? getWordDuration(w.word) / 1000 : 0;
+                                    
+                                    return (
+                                      <SmoothWord
+                                        key={i}
+                                        wordObj={w}
+                                        isActive={isActive}
+                                        isPast={isPast && isGuidedReading}
+                                        duration={durationSec}
+                                        onClick={(idx) => {
+                                          setActiveWordIndex(idx);
+                                          if (!isGuidedReading) setIsGuidedReading(true);
+                                        }}
+                                      />
+                                    );
+                                  })
+                                : lineResults.map((result, i) => (
+                                    <span
+                                      key={i}
+                                      className={`transition-colors duration-300 ${result.isCorrect ? "text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-900/40 rounded px-1" : ""}`}
+                                    >
+                                      {result.word}
+                                    </span>
+                                  ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    {parsedText.length === 0 && (
+                       <div className="text-slate-500 text-center py-10">No readable text found on this page.</div>
+                    )}
                   </div>
-                )}
-                {pdfError && (
-                  <div className="flex flex-col items-center justify-center gap-3 py-16">
-                    <i className="fas fa-exclamation-triangle text-3xl text-red-400" />
-                    <p className="text-red-400 text-sm">Failed to load PDF</p>
-                    <button
-                      onClick={() => window.open(story.pdfUrl, "_blank")}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700"
-                    >
-                      Open in new tab
-                    </button>
-                  </div>
-                )}
-                <Document
-                  file={story.pdfUrl}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  onLoadError={onDocumentLoadError}
-                  loading=""
-                >
-                  <Page
-                    pageNumber={currentPage}
-                    width={Math.min(containerWidth, containerHeight / pdfAspectRatio)}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                    onLoadSuccess={onPageLoadSuccess}
-                  />
-                </Document>
-              </div>
-            </>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="overflow-y-auto h-full p-4 sm:p-6 md:p-8 lg:p-10 w-full">
               <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
@@ -681,6 +791,7 @@ const StoryDisplayModal = ({
 
               <button
                 onClick={() => {
+                  if (story.pdfUrl && !pdfPageText.trim()) return;
                   if (!isGuidedReading) {
                     if (
                       activeWordIndex >= totalWords ||
@@ -695,10 +806,18 @@ const StoryDisplayModal = ({
                     setIsGuidedReading(false);
                   }
                 }}
-                className={`px-4 py-1.5 font-bold rounded-lg transition-all flex items-center gap-2 text-sm shadow-sm ${isGuidedReading ? "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-400" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}
+                disabled={story.pdfUrl && !pdfPageText.trim()}
+                title={story.pdfUrl && !pdfPageText.trim() ? "Text extraction is not available for this scanned page" : ""}
+                className={`px-4 py-1.5 font-bold rounded-lg transition-all flex items-center gap-2 text-sm shadow-sm ${
+                  (story.pdfUrl && !pdfPageText.trim())
+                    ? "bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400"
+                    : isGuidedReading
+                      ? "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-400"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700"
+                }`}
               >
                 {isGuidedReading ? <FaStop size={12} /> : <FaPlay size={12} />}
-                {isGuidedReading ? "Stop Guide" : "Start Guided Reading"}
+                {story.pdfUrl && !pdfPageText.trim() ? "Text Not Available" : isGuidedReading ? "Stop Guide" : "Start Guided Reading"}
               </button>
 
               {activeWordIndex > -1 && (
