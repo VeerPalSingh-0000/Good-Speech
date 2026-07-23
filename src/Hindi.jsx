@@ -24,6 +24,7 @@ const EducationView = lazy(() => import('./components/views/EducationView'));
 const OnboardingView = lazy(() => import('./components/views/OnboardingView'));
 const ProgramView = lazy(() => import('./components/views/ProgramView'));
 const DayDetailView = lazy(() => import('./components/views/DayDetailView'));
+const EasyOnsetView = lazy(() => import('./components/views/EasyOnsetView'));
 import { useHindiRecords } from './hooks/useHindiRecords';
 import { useHindiTimers } from './hooks/useHindiTimers';
 import { allStories } from './data/stories/index';
@@ -69,12 +70,11 @@ const Hindi = ({ user, onLogout }) => {
     { key: "program", label: "Program", icon: "fas fa-calendar-check" },
     { key: "varnmala", label: "Varnmala & Swar", icon: "fas fa-list" },
     { key: "stories", label: "Stories", icon: "fas fa-book" },
+    { key: "easy-onset", label: "Easy Onset", icon: "fas fa-feather-alt" },
     { key: "breathing", label: "Breathing", icon: "fas fa-wind" },
     { key: "twisters", label: "Twisters", icon: "fas fa-layer-group" },
     { key: "records", label: "My Records", icon: "fas fa-compact-disc" },
-    { key: "learn", label: "Learn", icon: "fas fa-graduation-cap" },
-    { key: "history", label: "Analytics", icon: "fas fa-chart-line" },
-    { key: "profile", label: "Profile", icon: "fas fa-user-circle" }
+    { key: "learn", label: "Learn", icon: "fas fa-graduation-cap" }
   ], []);
 
   const getCurrentView = useCallback(() => {
@@ -136,6 +136,7 @@ const Hindi = ({ user, onLogout }) => {
                   <Route path="/program/day/:dayNumber" element={<PageTransition><DayDetailView userSettings={userSettings} updateUserSettings={updateUserSettings} setCurrentView={handleNavigation} /></PageTransition>} />
                   <Route path="/varnmala" element={<PageTransition><VarnmalaView {...commonProps} showVarnmala={showVarnmala} startVarnmalaTimer={handleStartVarnmala} stopVarnmalaTimer={handleStopVarnmala} /></PageTransition>} />
                   <Route path="/stories" element={<PageTransition><StoriesView {...commonProps} userSettings={userSettings} stories={allStories} storyBookmarks={storyBookmarks} lineBookmarks={lineBookmarks} onToggleStoryBookmark={toggleStoryBookmark} onToggleLineBookmark={toggleLineBookmark} /></PageTransition>} />
+                  <Route path="/easy-onset" element={<PageTransition><EasyOnsetView {...commonProps} /></PageTransition>} />
                   <Route path="/breathing" element={<PageTransition><BreathingView /></PageTransition>} />
                   <Route path="/twisters" element={<PageTransition><TongueTwistersView /></PageTransition>} />
                   <Route path="/mirror" element={<PageTransition><MirrorView /></PageTransition>} />

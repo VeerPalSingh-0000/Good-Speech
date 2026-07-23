@@ -2,7 +2,7 @@
 
 import React, { useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
-import { FaFire, FaCalendarCheck, FaArrowRight, FaCheckCircle, FaClock } from 'react-icons/fa';
+import { FaFire, FaCalendarCheck, FaArrowRight, FaCheckCircle, FaClock, FaFeatherAlt } from 'react-icons/fa';
 
 // Get time-based greeting
 const getGreeting = () => {
@@ -91,6 +91,8 @@ const HomeView = ({ user, records, setCurrentView, userSettings }) => {
         </div>
       </motion.div>
 
+
+
       {/* 30-Day Program CTA - The Main Focus */}
       {(() => {
         const prog = userSettings?.programProgress || { currentDay: 1, completedDays: {} };
@@ -140,27 +142,42 @@ const HomeView = ({ user, records, setCurrentView, userSettings }) => {
         );
       })()}
 
-      {/* Sleek Horizontal Banner for Today's Time */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between p-5 rounded-[2rem] bg-white dark:bg-slate-800 border-2 border-b-[6px] border-slate-200 dark:border-slate-700 relative overflow-hidden group btn-gamified cursor-default">
-         <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-sky-400 to-blue-500 rounded-l-3xl" />
-         
-         {/* Subtle background glow */}
-         <div className="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500" />
-         
-         <div className="flex items-center gap-4 relative z-10 pl-2">
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center border-2 border-blue-200 dark:border-blue-800">
-               <FaClock size={20} />
-            </div>
-            <div>
-               <h3 className="text-sm font-display font-bold text-slate-800 dark:text-white tracking-wide">Today's Focus</h3>
-               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Time spent practicing</p>
-            </div>
-         </div>
-         
-         <div className="flex items-baseline gap-1 relative z-10 pr-2 font-display">
-            <span className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">{todayStats.timeMins}</span>
-            <span className="text-sm font-bold text-slate-400 dark:text-slate-500">min</span>
-         </div>
+
+
+      {/* Practice Roadmap & Expectations Card */}
+      <motion.div
+        variants={itemVariants}
+        onClick={() => setCurrentView('education')}
+        className="cursor-pointer p-6 rounded-[2rem] bg-slate-900/90 border border-slate-800 text-white shadow-xl hover:border-emerald-500/50 transition-all group relative overflow-hidden"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Recovery Timeline
+            </span>
+            <span className="text-[10px] font-bold text-slate-400">Think in Months, Not Days</span>
+          </div>
+          <FaArrowRight className="text-slate-400 group-hover:translate-x-1 transition-transform text-xs" />
+        </div>
+
+        <h3 className="text-lg font-display font-extrabold text-white mb-3">
+          100-Day Commitment Rule 🎯
+        </h3>
+
+        <div className="grid grid-cols-3 gap-2 text-center font-display">
+          <div className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80">
+            <span className="text-xs font-black text-sky-400 block">100 Days</span>
+            <span className="text-[10px] text-slate-300 font-medium">Build Habit</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80">
+            <span className="text-xs font-black text-indigo-400 block">6 Months</span>
+            <span className="text-[10px] text-slate-300 font-medium">Strong Skills</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80">
+            <span className="text-xs font-black text-emerald-400 block">1 Year+</span>
+            <span className="text-[10px] text-slate-300 font-medium">Real-Life Mastery</span>
+          </div>
+        </div>
       </motion.div>
 
     </motion.div>

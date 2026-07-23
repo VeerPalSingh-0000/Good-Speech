@@ -15,6 +15,8 @@ import {
   FaMicrophone,
   FaStop,
   FaPlay,
+  FaEye,
+  FaEyeSlash,
 } from "react-icons/fa";
 import { Document, Page, pdfjs } from "react-pdf";
 import kru2uni from "@anthro-ai/krutidev-unicode";
@@ -68,6 +70,7 @@ const StoryDisplayModal = ({
   const [containerWidth, setContainerWidth] = useState(600);
   const [containerHeight, setContainerHeight] = useState(800);
   const [showMobileBookmarks, setShowMobileBookmarks] = useState(false);
+  const [showPdfView, setShowPdfView] = useState(true);
 
   // Guided Reading State
   const [isGuidedReading, setIsGuidedReading] = useState(false);
@@ -350,6 +353,26 @@ const StoryDisplayModal = ({
 
           {/* Actions */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {story.pdfUrl && (
+              <button
+                onClick={() => {
+                  const nextShow = !showPdfView;
+                  setShowPdfView(nextShow);
+                  if (!nextShow && !isGuidedReading) {
+                    setIsGuidedReading(true);
+                  }
+                }}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-semibold text-xs sm:text-sm transition-all shadow-sm flex items-center gap-2 border ${
+                  !showPdfView
+                    ? "bg-purple-600 border-purple-500 text-white hover:bg-purple-700 shadow-purple-500/20"
+                    : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+                title={showPdfView ? "Hide PDF to focus on reading text" : "Show original PDF layout"}
+              >
+                {showPdfView ? <FaEyeSlash className="text-xs sm:text-sm" /> : <FaEye className="text-xs sm:text-sm" />}
+                <span>{showPdfView ? "Hide PDF" : "Show PDF"}</span>
+              </button>
+            )}
             {story.difficulty && (
               <span
                 className={`hidden sm:inline-flex px-3 py-1 rounded-full font-semibold text-xs ${
@@ -418,6 +441,8 @@ const StoryDisplayModal = ({
               {/* PDF Container - takes full width when not guided reading, half width when guided reading */}
               <div
                 className={`relative flex-shrink-0 transition-all duration-500 ease-in-out ${
+                  !showPdfView && isGuidedReading ? "hidden" : ""
+                } ${
                   isGuidedReading
                     ? "h-[40vh] lg:h-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800"
                     : "h-full w-full"
@@ -607,7 +632,7 @@ const StoryDisplayModal = ({
 
               {/* Guided Reading Text - only visible when isGuidedReading is true */}
               {isGuidedReading && (
-                <div className="flex-1 overflow-y-auto h-full p-4 sm:p-6 md:p-8 lg:p-10 w-full lg:w-1/2">
+                <div className={`flex-1 overflow-y-auto h-full p-4 sm:p-6 md:p-8 lg:p-10 w-full ${showPdfView ? 'lg:w-1/2' : 'lg:w-full'}`}>
                   <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
                     {!textLoading &&
                       !textError &&
@@ -770,23 +795,64 @@ const StoryDisplayModal = ({
         <div className="flex flex-col border-t border-slate-200 dark:border-slate-700 shrink-0">
           {/* Guided Reading Controls */}
           <div className="px-4 py-3 bg-slate-100 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                <label className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Speed:
-                </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider hidden sm:inline mr-1">
+                  Speed
+                </span>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setTargetWPM((w) => Math.max(20, w - 5))}
+                    className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-semibold text-[11px] active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
+                    title="Decrease 5 WPM"
+                  >
+                    -5
+                  </button>
+                  <button
+                    onClick={() => setTargetWPM((w) => Math.max(20, w - 1))}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-bold text-xs active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
+                    title="Decrease 1 WPM"
+                  >
+                    -1
+                  </button>
+                </div>
+
                 <input
                   type="range"
                   min="20"
                   max="150"
-                  step="5"
+                  step="1"
                   value={targetWPM}
                   onChange={(e) => setTargetWPM(parseInt(e.target.value) || recommendedWPM)}
-                  className="w-20 sm:w-28 accent-indigo-500 cursor-pointer"
+                  className="w-16 sm:w-28 accent-indigo-600 cursor-pointer"
                 />
-                <span className="text-[10px] sm:text-xs font-bold text-indigo-600 dark:text-indigo-400 w-12 text-right">
-                  {targetWPM} WPM
-                </span>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setTargetWPM((w) => Math.min(150, w + 1))}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-bold text-xs active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
+                    title="Increase 1 WPM"
+                  >
+                    +1
+                  </button>
+                  <button
+                    onClick={() => setTargetWPM((w) => Math.min(150, w + 5))}
+                    className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-semibold text-[11px] active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
+                    title="Increase 5 WPM"
+                  >
+                    +5
+                  </button>
+                </div>
+
+                <div className="flex flex-col items-center justify-center px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800/50 rounded-lg min-w-[50px]">
+                  <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 leading-tight">
+                    {targetWPM}
+                  </span>
+                  <span className="text-[9px] font-bold text-indigo-400 dark:text-indigo-300 leading-none">
+                    WPM
+                  </span>
+                </div>
               </div>
 
               <button
@@ -801,9 +867,11 @@ const StoryDisplayModal = ({
                       setTargetWPM(recommendedWPM);
                     }
                     setIsGuidedReading(true);
+                    setShowPdfView(true);
                     setShowPronunciation(false); // Turn off mic if using guided reading
                   } else {
                     setIsGuidedReading(false);
+                    setShowPdfView(true);
                   }
                 }}
                 disabled={story.pdfUrl && !pdfPageText.trim()}

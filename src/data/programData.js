@@ -11,6 +11,7 @@ export const ACTIVITY_TYPES = {
   LOUD_READING: 'loudReading',
   TONGUE_TWISTERS: 'tongueTwisters',
   SPEAKING: 'speaking',
+  EASY_ONSET: 'easyOnset',
 };
 
 // Week themes with colors
@@ -155,6 +156,17 @@ const buildDay = (dayNum, weekNum, config) => {
         linkedView: '/varnmala',
       },
       {
+        id: `day${dayNum}-easy-onset`,
+        type: ACTIVITY_TYPES.EASY_ONSET,
+        title: 'आसान शुरुआत (Easy Onset)',
+        titleEn: 'Easy Onset (Syllable Stretching)',
+        icon: 'fas fa-feather-alt',
+        duration: 5,
+        instructions: 'हर शब्द के पहले अक्षर को हल्का सा खींचें (जैसे a..a.. apple)।',
+        instructionsEn: 'Gently stretch the first syllable of EVERY word without tension.',
+        linkedView: '/easy-onset',
+      },
+      {
         id: `day${dayNum}-reading`,
         type: ACTIVITY_TYPES.READING,
         title: 'नियंत्रित गति से पढ़ना',
@@ -184,9 +196,9 @@ const buildDay = (dayNum, weekNum, config) => {
         title: 'जीभ के व्यायाम (Agility Cool-Down)',
         titleEn: 'Agility Cool-Down (Tongue Twisters)',
         icon: 'fas fa-layer-group',
-        duration: 4,
-        instructions: 'गति मायने नहीं रखती। पूर्ण स्पष्टता और हल्के होंठों के मूवमेंट पर ध्यान दें।',
-        instructionsEn: 'Speed does NOT matter. Focus purely on absolute clarity and effortless lip movements.',
+        duration: 5,
+        instructions: 'धीमी, शांत और स्पष्ट गति से 1-2 ट्विस्टर बोलें। गति से ज़्यादा सहजता पर ध्यान दें।',
+        instructionsEn: 'Practice 1–2 twisters slowly for 5 mins. Focus strictly on slow, relaxed, and clear speech over speed.',
         linkedView: '/twisters',
       },
     ],
@@ -234,13 +246,30 @@ const buildPhase1Days = () => {
   return days;
 };
 
+// Helper to dynamically build days for later phases
+const buildPhaseDays = (startDay, endDay, weeks) => {
+  const days = [];
+  for (let d = startDay; d <= endDay; d++) {
+    const week = weeks.find(w => d >= w.dayRange[0] && d <= w.dayRange[1]);
+    const weekId = week ? week.id : Math.ceil(d / 7);
+    const sentences = BREATHING_SENTENCES.week4[d % BREATHING_SENTENCES.week4.length];
+    const prompt = SPEAKING_PROMPTS.week4[d % SPEAKING_PROMPTS.week4.length];
+    
+    days.push(buildDay(d, weekId, {
+      breathingSentences: sentences,
+      speakingPrompt: prompt
+    }));
+  }
+  return days;
+};
+
 // Main program data export
 export const PROGRAM_DATA = {
   phases: [
     {
       id: 1,
-      title: 'Foundation',
-      titleHi: 'नींव',
+      title: 'Foundation (Days 1–30)',
+      titleHi: 'नींव (दिन 1–30)',
       description: 'Build control over your speech muscles, breathing, and rhythm.',
       descriptionHi: 'अपनी बोली की मांसपेशियों, श्वास और लय पर नियंत्रण बनाएँ।',
       totalDays: 30,
@@ -256,6 +285,8 @@ export const PROGRAM_DATA = {
           emoji: '🌿',
           color: 'emerald',
           dayRange: [1, 7],
+          tabLabel: 'Week 1',
+          tabShortLabel: 'W1',
         },
         {
           id: 2,
@@ -268,6 +299,8 @@ export const PROGRAM_DATA = {
           emoji: '🔵',
           color: 'blue',
           dayRange: [8, 14],
+          tabLabel: 'Week 2',
+          tabShortLabel: 'W2',
         },
         {
           id: 3,
@@ -280,6 +313,8 @@ export const PROGRAM_DATA = {
           emoji: '🟣',
           color: 'purple',
           dayRange: [15, 21],
+          tabLabel: 'Week 3',
+          tabShortLabel: 'W3',
         },
         {
           id: 4,
@@ -292,14 +327,68 @@ export const PROGRAM_DATA = {
           emoji: '🔴',
           color: 'rose',
           dayRange: [22, 30],
+          tabLabel: 'Week 4',
+          tabShortLabel: 'W4',
         },
       ],
       days: buildPhase1Days(),
     },
-    // Future phases can be added here:
-    // { id: 2, title: 'Intermediate', ... },
-    // { id: 3, title: 'Advanced', ... },
-    // { id: 4, title: 'Mastery', ... },
+    {
+      id: 2,
+      title: 'Block Control (Days 31–60)',
+      titleHi: 'ब्लॉक नियंत्रण (दिन 31–60)',
+      description: 'Manage speech blocks with greater comfort, desensitization & easy onset.',
+      descriptionHi: 'सहजता और आसान ऑनसेट के साथ स्पीच ब्लॉक को नियंत्रित करें।',
+      totalDays: 30,
+      weeks: [
+        { id: 5, title: 'Block Desensitization', titleHi: 'ब्लॉक विसंवेदीकरण', goal: 'Release physical tension during blocks', rule: 'Breathe through the block without forcing', emoji: '🟢', color: 'emerald', dayRange: [31, 37], tabLabel: 'Week 5', tabShortLabel: 'W5' },
+        { id: 6, title: 'Prolongation & Glide', titleHi: 'प्रोलोंगेशन और ग्लाइड', goal: 'Stretch first sounds smoothly', rule: 'Glide softly into vowels', emoji: '🔵', color: 'blue', dayRange: [38, 44], tabLabel: 'Week 6', tabShortLabel: 'W6' },
+        { id: 7, title: 'Controlled Conversations', titleHi: 'नियंत्रित बातचीत', goal: 'Practice controlled speech in daily calls', rule: 'Maintain 60 WPM pace', emoji: '🟣', color: 'purple', dayRange: [45, 52], tabLabel: 'Week 7', tabShortLabel: 'W7' },
+        { id: 8, title: 'Resilience & Flow', titleHi: 'लचीलापन और प्रवाह', goal: 'Handle unexpected speech blocks calmly', rule: 'Focus on communication clarity', emoji: '🔴', color: 'rose', dayRange: [53, 60], tabLabel: 'Week 8', tabShortLabel: 'W8' },
+      ],
+      get days() { return buildPhaseDays(31, 60, this.weeks); }
+    },
+    {
+      id: 3,
+      title: '100-Day Habit (Days 61–100)',
+      titleHi: '100-दिन की आदत (दिन 61–100)',
+      description: 'Establish permanent daily speech habits & spontaneous fluency.',
+      descriptionHi: 'स्थायी दैनिक भाषण की आदतें और सहज प्रवाह स्थापित करें।',
+      totalDays: 40,
+      weeks: [
+        { id: 9, title: 'Voluntary Stuttering', titleHi: 'ऐच्छिक हकलाना', goal: 'Reduce speech anxiety and fear of blocks', rule: 'Control the block consciously', emoji: '🟢', color: 'emerald', dayRange: [61, 70], tabLabel: 'Days 61-70', tabShortLabel: '61-70' },
+        { id: 10, title: 'Public Speaking Practice', titleHi: 'सार्वजनिक भाषण अभ्यास', goal: 'Speak in front of groups with confidence', rule: 'Use diaphragmatic breathing before starting', emoji: '🔵', color: 'blue', dayRange: [71, 80], tabLabel: 'Days 71-80', tabShortLabel: '71-80' },
+        { id: 11, title: 'High-Pressure Situations', titleHi: 'उच्च दबाव वाली स्थितियां', goal: 'Maintain techniques during interviews/meetings', rule: 'Take deliberate pauses', emoji: '🟣', color: 'purple', dayRange: [81, 90], tabLabel: 'Days 81-90', tabShortLabel: '81-90' },
+        { id: 12, title: '100-Day Habit Mastery', titleHi: '100-दिन आदत मास्टर', goal: 'Lock in permanent daily practice routine', rule: 'Speech control is now your second nature', emoji: '🔴', color: 'rose', dayRange: [91, 100], tabLabel: 'Days 91-100', tabShortLabel: '91-100' },
+      ],
+      get days() { return buildPhaseDays(61, 100, this.weeks); }
+    },
+    {
+      id: 4,
+      title: 'Skill Mastery (Months 3–6)',
+      titleHi: 'कौशल मास्टर (माह 3–6)',
+      description: 'Develop stronger speech-management skills & social communication confidence.',
+      descriptionHi: 'मजबूत भाषण प्रबंधन कौशल और सामाजिक संचार आत्मविश्वास विकसित करें।',
+      totalDays: 90,
+      weeks: [
+        { id: 13, title: 'Month 4 Integration', titleHi: 'महीना 4 एकीकरण', goal: 'Speak freely in all social environments', rule: 'Embrace natural pauses', emoji: '🟢', color: 'emerald', dayRange: [101, 130], tabLabel: 'Month 4', tabShortLabel: 'M4' },
+        { id: 14, title: 'Month 5 Communication', titleHi: 'महीना 5 संचार', goal: 'Deliver presentations with low throat tension', rule: 'Focus on clear message delivery', emoji: '🔵', color: 'blue', dayRange: [131, 160], tabLabel: 'Month 5', tabShortLabel: 'M5' },
+        { id: 15, title: '6-Month Milestone', titleHi: '6-महीने का मील का पत्थर', goal: 'Consolidate speech-management confidence', rule: 'Manage speech fluctuations effortlessly', emoji: '🟣', color: 'purple', dayRange: [161, 190], tabLabel: 'Month 6', tabShortLabel: 'M6' }
+      ],
+      get days() { return buildPhaseDays(101, 190, this.weeks); }
+    },
+    {
+      id: 5,
+      title: 'Life Fluency (1 Year+)',
+      titleHi: 'लाइफ फ़्लूएंसी (1 वर्ष+)',
+      description: 'Maintain and generalize skills to all real-life situations with lifetime control.',
+      descriptionHi: 'आजीवन नियंत्रण के साथ सभी वास्तविक परिस्थितियों में कौशलों को बनाए रखें।',
+      totalDays: 175,
+      weeks: [
+        { id: 16, title: 'Real-World Generalization', titleHi: 'वास्तविक दुनिया में सामान्यीकरण', goal: 'Apply speech control in all life scenarios', rule: 'Focus on connection, not perfection', emoji: '⭐', color: 'emerald', dayRange: [191, 365], tabLabel: 'Months 7-12', tabShortLabel: 'M7-12' }
+      ],
+      get days() { return buildPhaseDays(191, 365, this.weeks); }
+    }
   ],
 };
 
@@ -337,6 +426,14 @@ export const EXPECTED_RESULTS = [
   { day: 14, result: 'Less hesitation', resultHi: 'कम हिचकिचाहट', icon: '💪' },
   { day: 21, result: 'Improved confidence', resultHi: 'बेहतर आत्मविश्वास', icon: '⭐' },
   { day: 30, result: 'Noticeable fluency improvement', resultHi: 'ध्यान देने योग्य प्रवाह सुधार', icon: '🏆' },
+];
+
+// Long-term recovery timeline (Months over Days strategy)
+export const RECOVERY_TIMELINE = [
+  { timeframe: 'First 30 Days', milestone: 'Build consistency, control tension & breathing.', badge: 'Habit Base', icon: '🌱' },
+  { timeframe: '60–100 Days', milestone: 'Manage speech blocks with greater comfort & ease.', badge: 'Block Control', icon: '🎯' },
+  { timeframe: '6 Months', milestone: 'Develop stronger speech-management skills & confidence.', badge: 'Skill Mastery', icon: '⚡' },
+  { timeframe: '1 Year+', milestone: 'Maintain & generalize skills to real-life situations.', badge: 'Life Fluency', icon: '🏆' },
 ];
 
 // Principle

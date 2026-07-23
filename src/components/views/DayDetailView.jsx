@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   FaArrowLeft, FaArrowRight, FaCheckCircle, FaPlay, FaClock,
   FaWind, FaBookOpen, FaLayerGroup, FaComments, FaUser,
-  FaChevronDown, FaChevronUp, FaExternalLinkAlt
+  FaChevronDown, FaChevronUp, FaExternalLinkAlt, FaFeatherAlt
 } from 'react-icons/fa';
 import confetti from 'canvas-confetti';
 import { getDayData, getWeekForDay, getDayTotalDuration, GOLDEN_HABITS } from '../../data/programData';
@@ -29,6 +29,7 @@ const activityIcons = {
   reading: FaBookOpen,
   tongueTwisters: FaLayerGroup,
   speaking: FaComments,
+  easyOnset: FaFeatherAlt,
 };
 
 // Week color maps for styling

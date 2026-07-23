@@ -8,7 +8,7 @@ import {
   FaCalendarCheck, FaLock, FaCheckCircle, FaPlay, FaClock,
   FaTrophy, FaStar, FaArrowRight, FaQuoteLeft
 } from 'react-icons/fa';
-import { PROGRAM_DATA, GOLDEN_HABITS, EXPECTED_RESULTS, FINAL_PRINCIPLE, getDayTotalDuration, getWeekForDay } from '../../data/programData';
+import { PROGRAM_DATA, GOLDEN_HABITS, EXPECTED_RESULTS, RECOVERY_TIMELINE, FINAL_PRINCIPLE, getDayTotalDuration, getWeekForDay } from '../../data/programData';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -131,7 +131,8 @@ HabitCard.displayName = 'HabitCard';
 
 const ProgramView = ({ userSettings, updateUserSettings }) => {
   const navigate = useNavigate();
-  const phase = PROGRAM_DATA.phases[0]; // Phase 1 for now
+  const [selectedPhaseId, setSelectedPhaseId] = useState(1);
+  const phase = PROGRAM_DATA.phases.find(p => p.id === selectedPhaseId) || PROGRAM_DATA.phases[0];
 
   const programProgress = userSettings?.programProgress || {
     currentDay: 1,
@@ -149,14 +150,14 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
 
   const [activeWeek, setActiveWeek] = useState(currentWeek);
 
-  // Overall progress
+  // Overall progress for Phase 1
   const totalCompleted = Object.values(completedDays).filter(d => !!d.completedAt).length;
-  const overallProgress = Math.round((totalCompleted / phase.totalDays) * 100);
+  const overallProgress = Math.round((totalCompleted / PROGRAM_DATA.phases[0].totalDays) * 100);
 
   // Get days for active week
-  const weekData = phase.weeks.find(w => w.id === activeWeek);
+  const weekData = phase.weeks.find(w => w.id === activeWeek) || phase.weeks[0];
   const weekDays = useMemo(() => {
-    if (!weekData) return [];
+    if (!weekData || !phase.days) return [];
     return phase.days.filter(d => d.day >= weekData.dayRange[0] && d.day <= weekData.dayRange[1]);
   }, [activeWeek, weekData, phase.days]);
 
@@ -166,7 +167,6 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
   }, [totalCompleted]);
 
   const handleStartDay = useCallback((dayNumber) => {
-    // Initialize start date if first time
     if (!programProgress.startDate) {
       updateUserSettings({
         programProgress: {
@@ -261,6 +261,36 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
         </motion.div>
       )}
 
+      {/* Phase Switcher Tabs */}
+      <motion.div variants={itemVariants} className="space-y-2">
+        <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 px-1">
+          <span>PROGRAM RECOVERY PHASES:</span>
+          <span>Commit to 100+ Days</span>
+        </div>
+        <div className="flex overflow-x-auto gap-2 pb-1 scrollbar-hide">
+          {PROGRAM_DATA.phases.map((p) => {
+            const isSelected = selectedPhaseId === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => {
+                  setSelectedPhaseId(p.id);
+                  if (p.weeks.length > 0) setActiveWeek(p.weeks[0].id);
+                }}
+                className={`py-3 px-4 rounded-2xl font-display font-extrabold text-xs whitespace-nowrap transition-all duration-200 border flex items-center gap-2 shrink-0 ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 border-indigo-400 text-white shadow-lg shadow-indigo-600/30 scale-[1.02]'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Phase {p.id}: {p.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </motion.div>
+
       {/* Week Tabs */}
       <motion.div variants={itemVariants}>
         <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto">
@@ -276,8 +306,8 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
                 }`}
               >
                 <span>{week.emoji}</span>
-                <span className="hidden sm:inline">Week {week.id}</span>
-                <span className="sm:hidden">W{week.id}</span>
+                <span className="hidden sm:inline">{week.tabLabel || `Week ${week.id}`}</span>
+                <span className="sm:hidden">{week.tabShortLabel || `W${week.id}`}</span>
               </button>
             );
           })}
@@ -358,10 +388,14 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
       </motion.div>
 
       {/* Expected Results */}
-      <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-          <FaTrophy className="text-amber-500" /> Expected Results
-        </h3>
+      <motion.div variants={itemVariants} className="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+        <div>
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <FaTrophy className="text-amber-500" /> Expected Phase 1 Milestones
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Short-term progress milestones for your first 30 days.</p>
+        </div>
+
         <div className="flex flex-wrap gap-4">
           {EXPECTED_RESULTS.map(r => (
             <div key={r.day}
@@ -379,6 +413,49 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
               {totalCompleted >= r.day && <FaCheckCircle className="text-emerald-500 text-sm ml-1" />}
             </div>
           ))}
+        </div>
+      </motion.div>
+
+      {/* Long-Term Recovery Timeline (100-Day Strategy) */}
+      <motion.div variants={itemVariants} className="p-6 sm:p-8 rounded-[2rem] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border border-indigo-800/80 shadow-2xl space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              Long-Term Speech Roadmap
+            </span>
+            <h3 className="text-xl font-display font-black text-white mt-2">
+              Beyond 30 Days: Realistic Recovery Timeline
+            </h3>
+            <p className="text-xs text-slate-300 mt-1">
+              Stammering improvement is measured in <strong className="text-sky-300">months rather than days</strong>. Commit to at least 100 days of consistent practice.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {RECOVERY_TIMELINE.map((item, idx) => (
+            <div key={idx} className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">{item.icon}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">
+                  {item.badge}
+                </span>
+              </div>
+              <h4 className="font-display font-extrabold text-sm text-sky-300">
+                {item.timeframe}
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                {item.milestone}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 flex items-center gap-3">
+          <span className="text-lg shrink-0">💡</span>
+          <span>
+            <strong className="text-white">Core Commitment:</strong> 100 days → Establish habit | 6 months → Build stronger skills | 1 year → Real-life mastery.
+          </span>
         </div>
       </motion.div>
     </motion.div>

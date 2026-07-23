@@ -26,12 +26,25 @@ const EducationView = () => {
       a: "Stress triggers the 'fight or flight' response, which increases muscle tension, including the muscles in your vocal cords and diaphragm. Tiredness reduces cognitive resources available to employ fluency techniques smoothly."
     },
     {
-      q: "Is it okay to tell people I stammer?",
-      a: "Yes! 'Voluntary stuttering' or simply disclosing that you stammer often relieves the enormous pressure of trying to hide it, which ironically can make you more fluent."
+      q: "How long should I practice before expecting meaningful improvement?",
+      a: "Think in terms of months rather than days! Commit to at least 100 days of consistent practice to establish the habit. You may notice small improvements in the first 30 days, feel more comfortable managing blocks by 60–100 days, build stronger speech skills by 6 months, and generalize them to real life over 1 year."
+    },
+    {
+      q: "Is self-practice enough or should I see a speech therapist?",
+      a: "If your stammering is significant, combining your daily self-practice with a speech therapist specializing in stuttering is generally more effective than relying on self-practice alone."
     }
   ];
 
   const ARTICLES = [
+    {
+      id: 3,
+      tag: "Roadmap",
+      tagColor: "emerald",
+      icon: "fas fa-road",
+      title: "Realistic Stammering Practice Timeline & Expectations",
+      preview: "Improvement happens in months, not days. Discover the 100-Day Habit rule and realistic milestones for long-term speech control.",
+      content: "When practicing speech therapy techniques, it is essential to set realistic expectations. Stammering recovery is a long-term journey measured in months rather than days.\n\n• First 30 Days: Build consistency and learn to control muscle tension and breathing. You may notice small improvements in specific low-pressure situations.\n• 60–100 Days: You begin feeling more comfortable with your speech and become better at managing blocks through daily practice.\n• 6 Months: With regular practice and appropriate therapy, many people develop stronger speech-management skills and greater communication confidence.\n• 1 Year+: Long-term improvement is consolidated. Stammering can still fluctuate, but the goal is better communication and reduced struggle, not necessarily eliminating every single stammer.\n\nKey Strategy:\n- 100 Days → Establish the habit\n- 6 Months → Build stronger speech skills\n- 1 Year → Maintain and generalize skills to real-life situations\n\nFor significant stammering, combine your daily practice with a speech therapist specializing in stuttering for maximum progress."
+    },
     {
       id: 1,
       tag: "Science",

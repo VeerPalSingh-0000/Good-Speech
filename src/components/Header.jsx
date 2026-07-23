@@ -78,37 +78,95 @@ const Header = ({ user, onLogout, currentView, setCurrentView, navItems = [] }) 
                 />
               </div>
 
-              {/* Desktop Profile */}
-              <div className="hidden xl:block relative">
+              {/* Desktop / Tablet Profile Menu */}
+              <div className="hidden sm:block relative">
                 {profileMenuOpen && <div className="fixed inset-0 z-10" onClick={() => setProfileMenuOpen(false)} />}
                 
                 <button 
                   aria-label="Toggle Profile Menu"
                   aria-expanded={profileMenuOpen}
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className={`flex items-center gap-2 p-1.5 pr-3 rounded-full transition-all border-2 ${profileMenuOpen ? 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'} btn-gamified hover:border-b-4`}
+                  className={`flex items-center gap-2.5 p-1.5 pl-2 pr-3.5 rounded-full transition-all duration-200 border ${
+                    profileMenuOpen 
+                      ? 'bg-slate-200/80 dark:bg-slate-800 border-sky-500/50 shadow-md ring-2 ring-sky-500/20' 
+                      : 'bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 shadow-sm'
+                  }`}
                 >
-                  <img src={userAvatar} alt="User" className="w-7 h-7 rounded-full" />
-                  <span className="font-medium text-xs max-w-[100px] truncate">{userName}</span>
-                  <ChevronDown size={14} className={`transition-transform ${profileMenuOpen ? 'rotate-180' : ''}`} />
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-md uppercase overflow-hidden shrink-0 ring-2 ring-white/20">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{userName.substring(0, 2).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <span className="font-display font-bold text-xs text-slate-800 dark:text-slate-100 max-w-[110px] truncate">{userName}</span>
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180 text-sky-500' : ''}`} />
                 </button>
 
                 <AnimatePresence>
                   {profileMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 8 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border-4 border-slate-200 dark:border-slate-700 overflow-hidden z-20"
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      className="absolute top-full right-0 mt-2.5 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-20"
                     >
-                      <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                        <p className="font-bold text-sm truncate">{user.displayName || "User"}</p>
-                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      {/* Premium Header Banner */}
+                      <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/80 dark:to-slate-900/80 border-b border-slate-200/80 dark:border-slate-800 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+                        <div className="flex items-center gap-3 relative z-10">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 via-blue-500 to-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-lg uppercase shrink-0 ring-2 ring-white/10">
+                            {user.photoURL ? (
+                              <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover rounded-xl" />
+                            ) : (
+                              <span>{userName.substring(0, 2).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-display font-extrabold text-sm text-slate-800 dark:text-white truncate">{user.displayName || userName}</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 font-medium">{user.email}</p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="p-2">
-                        <button onClick={handleLogout} className="w-full flex items-center gap-2 p-2 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors">
-                          <LogOut size={16} /><span>Sign Out</span>
+
+                      {/* Menu Body */}
+                      <div className="p-2 space-y-1">
+                        <button
+                          onClick={() => {
+                            setProfileMenuOpen(false);
+                            setCurrentView('profile');
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all group"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center text-xs group-hover:scale-110 transition-transform">
+                            <i className="fas fa-user-circle" />
+                          </div>
+                          <span>My Profile</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setProfileMenuOpen(false);
+                            setCurrentView('history');
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all group"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs group-hover:scale-110 transition-transform">
+                            <i className="fas fa-chart-line" />
+                          </div>
+                          <span>Analytics & Stats</span>
+                        </button>
+                      </div>
+
+                      {/* Footer / Sign Out */}
+                      <div className="p-2 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40">
+                        <button 
+                          onClick={handleLogout} 
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-display font-extrabold text-xs transition-all border border-transparent hover:border-rose-200 dark:hover:border-rose-500/20 group"
+                        >
+                          <span className="tracking-wide">Sign Out</span>
+                          <LogOut size={15} className="group-hover:translate-x-0.5 transition-transform" />
                         </button>
                       </div>
                     </motion.div>

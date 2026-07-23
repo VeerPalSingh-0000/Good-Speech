@@ -117,15 +117,15 @@ const ActivityTimer = memo(({
   }, [onComplete, id]);
 
   const formatTimerDisplay = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const secs = (seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
   };
 
   const sizeClasses = {
     sm: { ring: 'w-20 h-20', text: 'text-lg', btnSize: 'w-8 h-8 text-xs' },
-    md: { ring: 'w-28 h-28', text: 'text-2xl', btnSize: 'w-10 h-10 text-sm' },
-    lg: { ring: 'w-36 h-36', text: 'text-3xl', btnSize: 'w-12 h-12 text-base' },
+    md: { ring: 'w-28 h-28', text: 'text-3xl', btnSize: 'w-10 h-10 text-sm' },
+    lg: { ring: 'w-36 h-36', text: 'text-4xl', btnSize: 'w-12 h-12 text-base' },
   };
 
   const s = sizeClasses[size];
@@ -176,7 +176,7 @@ const ActivityTimer = memo(({
             ) : (
               <motion.span
                 key="timer"
-                className={`${s.text} font-bold font-mono tracking-wider ${
+                className={`${s.text} font-black font-display tracking-tight ${
                   isRunning ? 'text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
