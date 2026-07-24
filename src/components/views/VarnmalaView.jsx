@@ -104,7 +104,7 @@ const LetterCard = memo(({ char, category, isSpoken }) => {
   return (
     <motion.div
       variants={letterVariants}
-      whileHover={{ scale: 1.1, y: -4 }}
+      whileHover={{ scale: 1.08, y: -3 }}
       whileTap={{ scale: 0.95 }}
       className="group relative"
       tabIndex={0}
@@ -113,27 +113,35 @@ const LetterCard = memo(({ char, category, isSpoken }) => {
     >
       {/* Glow effect on hover */}
       <div
-        className={`absolute -inset-1 bg-gradient-to-r ${colors.gradient} rounded-xl blur opacity-0 group-hover:opacity-40 transition-opacity duration-300`}
+        className={`absolute -inset-1 bg-gradient-to-r ${colors.gradient} rounded-2xl blur opacity-0 group-hover:opacity-40 transition-opacity duration-300 pointer-events-none`}
       />
 
       {/* Card */}
       <div
-        className={`relative p-3 rounded-xl ${isSpoken ? "bg-emerald-50 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700" : "bg-white dark:bg-slate-800 border-slate-200/50 dark:border-slate-700/50"} border shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex items-center justify-center min-w-[3rem]`}
+        className={`relative p-3.5 sm:p-4 rounded-2xl ${
+          isSpoken
+            ? "bg-emerald-500/10 dark:bg-emerald-950/50 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 shadow-emerald-500/10"
+            : "bg-white/90 dark:bg-slate-800/90 border-slate-200/80 dark:border-slate-700/80 shadow-md hover:shadow-xl text-slate-800 dark:text-white"
+        } border backdrop-blur-xl transition-all duration-300 cursor-pointer flex items-center justify-center min-w-[3.5rem] sm:min-w-[4rem] min-h-[3.5rem] sm:min-h-[4rem]`}
       >
         {/* Top gradient accent */}
         <div
-          className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isSpoken ? "from-emerald-400 to-green-500" : colors.gradient} rounded-t-xl`}
+          className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isSpoken ? "from-emerald-400 to-green-500" : colors.gradient} rounded-t-2xl`}
         />
 
         <span
           aria-hidden="true"
-          className={`text-xl md:text-2xl font-bold ${isSpoken ? "text-emerald-600 dark:text-emerald-400" : `bg-gradient-to-br ${colors.gradient} bg-clip-text text-transparent`}`}
+          className={`text-2xl sm:text-3xl font-display font-black tracking-tight ${
+            isSpoken
+              ? "text-emerald-600 dark:text-emerald-400"
+              : `bg-gradient-to-br ${colors.gradient} bg-clip-text text-transparent`
+          }`}
         >
           {char}
         </span>
         {isSpoken && (
-          <div className="absolute -top-2 -right-2">
-            <FaCheckCircle className="text-emerald-500 text-sm bg-white rounded-full" />
+          <div className="absolute -top-1.5 -right-1.5">
+            <FaCheckCircle className="text-emerald-500 text-sm bg-white dark:bg-slate-900 rounded-full shadow-sm" />
           </div>
         )}
       </div>
@@ -145,13 +153,13 @@ LetterCard.displayName = "LetterCard";
 
 // Section Header Component
 const SectionHeader = memo(({ title, subtitle, color }) => (
-  <div className="flex items-center gap-3 mb-4">
-    <div className={`w-1.5 h-8 rounded-full bg-gradient-to-b ${color}`} />
+  <div className="flex items-center gap-3 mb-5">
+    <div className={`w-2 h-7 rounded-full bg-gradient-to-b ${color}`} />
     <div>
-      <h4 className="text-lg font-bold text-slate-800 dark:text-white">
+      <h4 className="text-lg sm:text-xl font-display font-black text-slate-900 dark:text-white tracking-tight">
         {title}
       </h4>
-      <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
+      <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{subtitle}</p>
     </div>
   </div>
 ));
@@ -174,20 +182,20 @@ const VarnmalaDisplay = memo(({ transcript }) => {
       initial="hidden"
       animate="visible"
       exit={{ opacity: 0, y: -20 }}
-      className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 shadow-xl"
+      className="relative overflow-hidden rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-2xl backdrop-blur-2xl transition-colors"
     >
       {/* Top gradient accent bar */}
       <div className="h-2 bg-gradient-to-r from-violet-500 via-cyan-500 to-pink-500" />
 
-      <div className="p-6 md:p-8 space-y-8">
+      <div className="p-6 sm:p-10 space-y-10">
         {/* Header */}
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm font-medium mb-3">
+        <div className="text-center space-y-1.5">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-500/10 dark:bg-purple-950/80 border border-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-extrabold uppercase tracking-wider">
             <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-            Hindi Alphabet
+            Hindi Alphabet • Devanagari Script
           </div>
-          <h3 className="text-3xl font-bold text-slate-800 dark:text-white">
-            Devanagari Script
+          <h3 className="text-2xl sm:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
+            Varnmala Interactive Chart
           </h3>
         </div>
 
@@ -203,7 +211,7 @@ const VarnmalaDisplay = memo(({ transcript }) => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-wrap justify-center gap-2 md:gap-3"
+            className="flex flex-wrap justify-center gap-2.5 sm:gap-3.5"
           >
             {VARNMALA_DATA.swar.map((char, index) => (
               <LetterCard
@@ -228,7 +236,7 @@ const VarnmalaDisplay = memo(({ transcript }) => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-wrap justify-center gap-2 md:gap-3"
+            className="flex flex-wrap justify-center gap-2.5 sm:gap-3.5"
           >
             {VARNMALA_DATA.vyanjan.map((char, index) => (
               <LetterCard

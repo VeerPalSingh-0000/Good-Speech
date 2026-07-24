@@ -17,6 +17,9 @@ import {
   FaPlay,
   FaEye,
   FaEyeSlash,
+  FaMinus,
+  FaPlus,
+  FaUndo,
 } from "react-icons/fa";
 import { Document, Page, pdfjs } from "react-pdf";
 import kru2uni from "@anthro-ai/krutidev-unicode";
@@ -70,7 +73,7 @@ const StoryDisplayModal = ({
   const [containerWidth, setContainerWidth] = useState(600);
   const [containerHeight, setContainerHeight] = useState(800);
   const [showMobileBookmarks, setShowMobileBookmarks] = useState(false);
-  const [showPdfView, setShowPdfView] = useState(true);
+  const [showPdfView, setShowPdfView] = useState(false);
 
   // Guided Reading State
   const [isGuidedReading, setIsGuidedReading] = useState(false);
@@ -793,30 +796,23 @@ const StoryDisplayModal = ({
         </div>
 
         <div className="flex flex-col border-t border-slate-200 dark:border-slate-700 shrink-0">
-          {/* Guided Reading Controls */}
-          <div className="px-4 py-3 bg-slate-100 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700">
+          {/* Guided Reading Speed Controls */}
+          <div className="px-4 sm:px-6 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 transition-colors">
+            
+            {/* Speed Control Pill */}
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
-                <span className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider hidden sm:inline mr-1">
+              <div className="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/90 px-3.5 py-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-inner">
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">
                   Speed
                 </span>
 
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setTargetWPM((w) => Math.max(20, w - 5))}
-                    className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-semibold text-[11px] active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
-                    title="Decrease 5 WPM"
-                  >
-                    -5
-                  </button>
-                  <button
-                    onClick={() => setTargetWPM((w) => Math.max(20, w - 1))}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-bold text-xs active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
-                    title="Decrease 1 WPM"
-                  >
-                    -1
-                  </button>
-                </div>
+                <button
+                  onClick={() => setTargetWPM((w) => Math.max(20, w - 5))}
+                  className="w-7 h-7 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 text-slate-700 dark:text-slate-200 transition-all font-bold text-xs shadow-sm active:scale-95 border border-slate-200 dark:border-slate-600"
+                  title="Decrease WPM (-5)"
+                >
+                  <FaMinus size={9} />
+                </button>
 
                 <input
                   type="range"
@@ -825,67 +821,55 @@ const StoryDisplayModal = ({
                   step="1"
                   value={targetWPM}
                   onChange={(e) => setTargetWPM(parseInt(e.target.value) || recommendedWPM)}
-                  className="w-16 sm:w-28 accent-indigo-600 cursor-pointer"
+                  className="w-20 sm:w-32 accent-purple-600 cursor-pointer h-1.5 rounded-lg bg-slate-200 dark:bg-slate-700"
                 />
 
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setTargetWPM((w) => Math.min(150, w + 1))}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-bold text-xs active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
-                    title="Increase 1 WPM"
-                  >
-                    +1
-                  </button>
-                  <button
-                    onClick={() => setTargetWPM((w) => Math.min(150, w + 5))}
-                    className="hidden sm:flex w-7 h-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-semibold text-[11px] active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
-                    title="Increase 5 WPM"
-                  >
-                    +5
-                  </button>
-                </div>
+                <button
+                  onClick={() => setTargetWPM((w) => Math.min(150, w + 5))}
+                  className="w-7 h-7 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-600 text-slate-700 dark:text-slate-200 transition-all font-bold text-xs shadow-sm active:scale-95 border border-slate-200 dark:border-slate-600"
+                  title="Increase WPM (+5)"
+                >
+                  <FaPlus size={9} />
+                </button>
 
-                <div className="flex flex-col items-center justify-center px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800/50 rounded-lg min-w-[50px]">
-                  <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 leading-tight">
+                <div className="flex items-baseline gap-1 px-2.5 py-0.5 bg-purple-600/10 dark:bg-purple-950/80 border border-purple-500/20 rounded-xl">
+                  <span className="text-xs font-black text-purple-600 dark:text-purple-300 font-mono">
                     {targetWPM}
                   </span>
-                  <span className="text-[9px] font-bold text-indigo-400 dark:text-indigo-300 leading-none">
+                  <span className="text-[9px] font-bold text-purple-500 dark:text-purple-400">
                     WPM
                   </span>
                 </div>
               </div>
+            </div>
 
+            {/* Start/Stop Guide Action Buttons */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => {
                   if (story.pdfUrl && !pdfPageText.trim()) return;
                   if (!isGuidedReading) {
-                    if (
-                      activeWordIndex >= totalWords ||
-                      activeWordIndex === -1
-                    ) {
+                    if (activeWordIndex >= totalWords || activeWordIndex === -1) {
                       setActiveWordIndex(0);
                       setTargetWPM(recommendedWPM);
                     }
                     setIsGuidedReading(true);
-                    setShowPdfView(true);
-                    setShowPronunciation(false); // Turn off mic if using guided reading
+                    setShowPronunciation(false);
                   } else {
                     setIsGuidedReading(false);
-                    setShowPdfView(true);
                   }
                 }}
                 disabled={story.pdfUrl && !pdfPageText.trim()}
-                title={story.pdfUrl && !pdfPageText.trim() ? "Text extraction is not available for this scanned page" : ""}
-                className={`px-4 py-1.5 font-bold rounded-lg transition-all flex items-center gap-2 text-sm shadow-sm ${
-                  (story.pdfUrl && !pdfPageText.trim())
+                className={`px-5 py-2 font-black rounded-2xl transition-all flex items-center gap-2 text-xs shadow-md active:scale-95 ${
+                  story.pdfUrl && !pdfPageText.trim()
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400"
                     : isGuidedReading
-                      ? "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-400"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700"
+                      ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/30"
+                      : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/30"
                 }`}
               >
-                {isGuidedReading ? <FaStop size={12} /> : <FaPlay size={12} />}
-                {story.pdfUrl && !pdfPageText.trim() ? "Text Not Available" : isGuidedReading ? "Stop Guide" : "Start Guided Reading"}
+                {isGuidedReading ? <FaStop size={11} /> : <FaPlay size={11} />}
+                <span>{story.pdfUrl && !pdfPageText.trim() ? "Text Not Available" : isGuidedReading ? "Stop Guide" : "Start Guide"}</span>
               </button>
 
               {activeWordIndex > -1 && (
@@ -894,9 +878,9 @@ const StoryDisplayModal = ({
                     setIsGuidedReading(false);
                     setActiveWordIndex(-1);
                   }}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline"
+                  className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors flex items-center gap-1"
                 >
-                  Reset
+                  <FaUndo size={10} /> Reset
                 </button>
               )}
             </div>

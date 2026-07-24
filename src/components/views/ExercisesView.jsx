@@ -52,37 +52,31 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
   }, [records, sound]);
 
   const isActive = timer?.isRunning || false;
-  const baseTime = timer?.time || 0; // The starting time provided by the parent
+  const baseTime = timer?.time || 0;
 
   // Performance optimized visual timer loop
   useEffect(() => {
     if (isActive) {
-      // Record the exact millisecond the timer started, offset by any existing time
-      // Assuming parent `time` is in deciseconds (100ms units) based on the original 600 max cap
       startTimeRef.current = performance.now() - (baseTime * 100); 
 
       const animateTimer = (currentTime) => {
         const elapsedMs = currentTime - startTimeRef.current;
-        const currentTimerValue = Math.floor(elapsedMs / 100); // Convert back to your 100ms unit scale
+        const currentTimerValue = Math.floor(elapsedMs / 100);
         
-        // Directly update the DOM text
         if (timeDisplayRef.current) {
           timeDisplayRef.current.textContent = formatTime(currentTimerValue);
         }
 
-        // Directly update the SVG circle
         if (progressCircleRef.current) {
-          const progress = Math.min(currentTimerValue / 600, 1); // Cap at 60 seconds
+          const progress = Math.min(currentTimerValue / 600, 1);
           progressCircleRef.current.style.strokeDasharray = `${progress * 339} 339`;
         }
 
-        // Request next frame
         requestRef.current = requestAnimationFrame(animateTimer);
       };
 
       requestRef.current = requestAnimationFrame(animateTimer);
     } else {
-      // When stopped, ensure UI reflects the final static time
       if (timeDisplayRef.current) timeDisplayRef.current.textContent = formatTime(baseTime);
       if (progressCircleRef.current) {
         const progress = Math.min(baseTime / 600, 1);
@@ -101,114 +95,117 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
     <motion.div
       variants={itemVariants}
       className="group relative"
-      whileHover={{ y: -6 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
-      <div className={`absolute -inset-1 bg-gradient-to-r ${colors.gradient} rounded-3xl blur-lg opacity-0 group-hover:opacity-40 transition-opacity duration-300`} />
+      <div className={`absolute -inset-1 bg-gradient-to-r ${colors.gradient} rounded-3xl blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300 pointer-events-none`} />
 
-      <div className={`relative overflow-hidden rounded-3xl bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 shadow-xl ${isActive ? colors.glow + ' shadow-2xl' : ''} transition-all duration-300`}>
-        <div className={`h-2 bg-gradient-to-r ${colors.gradient}`} />
+      <div className={`relative overflow-hidden rounded-3xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xl backdrop-blur-xl ${isActive ? colors.glow + ' shadow-2xl ring-2 ring-purple-500/30' : ''} transition-all duration-300`}>
+        <div className={`h-1.5 bg-gradient-to-r ${colors.gradient}`} />
 
-        <div className="p-6 space-y-5">
-          <div className="relative flex items-center justify-center">
-            <div className={`absolute w-28 h-28 rounded-full bg-gradient-to-br ${colors.gradient} opacity-10 blur-xl`} />
+        <div className="p-5 space-y-4">
+          {/* Main Sound Title */}
+          <div className="relative flex items-center justify-center pt-1">
+            <div className={`absolute w-20 h-20 rounded-full bg-gradient-to-br ${colors.gradient} opacity-15 blur-xl`} />
             <motion.div
-              className={`relative p-5 text-7xl font-bold bg-gradient-to-br ${colors.gradient} bg-clip-text text-transparent`}
-              animate={isActive ? { scale: [1, 1.05, 1] } : {}}
-              transition={{ duration: 0.5, repeat: isActive ? Infinity : 0 }}
+              className={`relative text-5xl font-display font-black bg-gradient-to-br ${colors.gradient} bg-clip-text text-transparent drop-shadow-sm`}
+              animate={isActive ? { scale: [1, 1.06, 1] } : {}}
+              transition={{ duration: 0.6, repeat: isActive ? Infinity : 0 }}
             >
               {sound}
             </motion.div>
           </div>
 
-          <div className="flex justify-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700/50 text-xs font-medium">
-              <FaFire className="text-orange-500" />
+          {/* Stats Bar */}
+          <div className="flex justify-center gap-2">
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+              <FaFire className="text-amber-500 text-xs" />
               <span>{stats.sessions} sessions</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700/50 text-xs font-medium">
-              <FaTrophy className="text-yellow-500" />
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+              <FaTrophy className="text-amber-400 text-xs" />
               <span>{stats.bestTime}</span>
             </div>
           </div>
 
-          <div className="relative w-40 h-40 mx-auto">
+          {/* Compact Timer Arc */}
+          <div className="relative w-32 h-32 mx-auto">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
               <circle
                 cx="60" cy="60" r="54"
                 fill="none"
-                strokeWidth="6"
-                className="text-slate-200 dark:text-slate-700"
+                strokeWidth="7"
+                className="text-slate-200 dark:text-slate-800"
                 stroke="currentColor"
               />
               <circle
                 ref={progressCircleRef}
                 cx="60" cy="60" r="54"
                 fill="none"
-                strokeWidth="6"
+                strokeWidth="7"
                 strokeLinecap="round"
                 className={`${colors.bg}`}
                 stroke="currentColor"
-                // Removed React state driven dasharray; handled by requestAnimationFrame now
                 style={{ transition: isActive ? 'none' : 'stroke-dasharray 0.3s ease' }} 
               />
             </svg>
 
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span 
                 ref={timeDisplayRef}
                 aria-live="polite" 
-                className={`text-2xl font-bold font-mono tracking-wider ${isActive ? 'text-slate-800 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}
+                className={`text-xl font-black font-mono tracking-wider ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}
               >
                 {formatTime(baseTime)}
               </span>
               {isActive && (
-                <span className="text-[10px] text-green-500 font-medium flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[9px] font-extrabold text-emerald-500 flex items-center gap-1 mt-0.5">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                   Recording
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex justify-center gap-3">
+          {/* Compact Controls */}
+          <div className="flex justify-center gap-2.5 pt-1">
             <motion.button
               aria-label={`Start practice for ${sound}`}
               onClick={handleStart}
               disabled={isActive}
-              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${isActive
-                ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50'
-                : 'bg-gradient-to-br from-emerald-500 to-green-600 hover:shadow-emerald-500/40 hover:scale-105'
+              className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-md transition-all ${isActive
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-br from-emerald-500 to-teal-600 hover:shadow-emerald-500/30 hover:scale-105 active:scale-95'
                 }`}
               whileTap={{ scale: 0.95 }}
             >
-              <FaPlay className="ml-0.5" />
+              <FaPlay size={11} className="ml-0.5" />
             </motion.button>
 
             <motion.button
               aria-label={`Pause practice for ${sound}`}
               onClick={() => handleStop(false)}
               disabled={!isActive}
-              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${!isActive
-                ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50'
-                : 'bg-gradient-to-br from-amber-500 to-orange-600 hover:shadow-amber-500/40 hover:scale-105'
+              className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-md transition-all ${!isActive
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-br from-amber-500 to-orange-600 hover:shadow-amber-500/30 hover:scale-105 active:scale-95'
                 }`}
               whileTap={{ scale: 0.95 }}
             >
-              <FaPause />
+              <FaPause size={11} />
             </motion.button>
 
             <motion.button
               aria-label={`Save practice record for ${sound}`}
               onClick={() => handleStop(true)}
               disabled={baseTime === 0 && !isActive}
-              className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-medium shadow-lg transition-all ${baseTime === 0 && !isActive
-                ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed opacity-50'
-                : `bg-gradient-to-br ${colors.gradient} hover:scale-105`
+              className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-md transition-all ${baseTime === 0 && !isActive
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50'
+                : `bg-gradient-to-br ${colors.gradient} hover:scale-105 active:scale-95`
                 }`}
               whileTap={{ scale: 0.95 }}
             >
-              <FaSave />
+              <FaSave size={11} />
             </motion.button>
           </div>
         </div>
@@ -216,11 +213,9 @@ const SoundPracticeCard = memo(({ sound, timer, records, onStart, onStop }) => {
     </motion.div>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison to prevent re-renders unless essential props change
   return (
     prevProps.sound === nextProps.sound &&
     prevProps.timer?.isRunning === nextProps.timer?.isRunning &&
-    // Only re-render if the timer stops/starts, ignore the high-speed number updates
     (prevProps.timer?.isRunning || prevProps.timer?.time === nextProps.timer?.time) &&
     prevProps.records === nextProps.records
   );
@@ -243,13 +238,13 @@ const ExercisesView = ({ user, records = {}, soundTimers = {}, startSoundTimer, 
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className={embedded ? "space-y-6 pb-4" : "space-y-10"}
+        className={embedded ? "space-y-6 pb-4" : "space-y-8 max-w-4xl mx-auto px-3 sm:px-6 pb-12"}
       >
         {!embedded && (
           <div className="w-full flex justify-start">
             <button
               onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors btn-gamified"
+              className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
             >
               <FaArrowLeft />
             </button>
@@ -257,69 +252,65 @@ const ExercisesView = ({ user, records = {}, soundTimers = {}, startSoundTimer, 
         )}
         
         {!embedded && (
-          <motion.div variants={itemVariants} className="text-center space-y-3 -mt-4">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-sm font-medium">
+          <motion.div variants={itemVariants} className="text-center space-y-2 -mt-2">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-500/10 dark:bg-purple-950/80 border border-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-extrabold uppercase tracking-wider">
               <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-              Sound Practice
+              Sound Precision & Sustained Phonation
             </div>
-            <h2 className="text-4xl font-display font-extrabold text-slate-800 dark:text-white">
-              Sound Practice
+            <h2 className="text-3xl sm:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
+              Swar & Sound Exercises
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-display">
-              Practice your vowel and consonant sounds with precision timing. Build muscle memory and improve your fluency.
-            </p>
           </motion.div>
         )}
 
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-full max-w-md mx-auto shadow-inner">
+        {/* Segmented Control Pill */}
+        <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 w-full max-w-xs mx-auto shadow-inner text-xs font-extrabold">
           <button
             onClick={() => setActiveTab('vowels')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'vowels'
-              ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            className={`flex-1 py-2 rounded-xl transition-all ${activeTab === 'vowels'
+              ? 'bg-purple-600 text-white shadow-sm font-black'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
           >
-            Vowels
+            Vowels (Swar)
           </button>
           <button
             onClick={() => setActiveTab('consonants')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'consonants'
-              ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            className={`flex-1 py-2 rounded-xl transition-all ${activeTab === 'consonants'
+              ? 'bg-purple-600 text-white shadow-sm font-black'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
           >
             Consonants
           </button>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-4 lg:gap-5">
+        {/* Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 max-w-4xl mx-auto">
           {currentSounds.map(sound => (
-            <div key={sound} className="w-full sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] xl:w-[calc(25%-15px)] max-w-[320px]">
-              <SoundPracticeCard
-                sound={sound}
-                timer={soundTimers?.[sound] || { time: 0, isRunning: false }}
-                records={records}
-                onStart={startSoundTimer}
-                onStop={stopSoundTimer}
-              />
-            </div>
+            <SoundPracticeCard
+              key={sound}
+              sound={sound}
+              timer={soundTimers?.[sound] || { time: 0, isRunning: false }}
+              records={records}
+              onStart={startSoundTimer}
+              onStop={stopSoundTimer}
+            />
           ))}
         </div>
 
+        {/* Tip Banner */}
         <motion.div
           variants={itemVariants}
-          className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200/50 dark:border-purple-700/50"
+          className="p-5 rounded-2xl bg-white/80 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-white shadow-md backdrop-blur-xl max-w-4xl mx-auto"
         >
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-lg flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-300 flex items-center justify-center text-base shrink-0 font-bold">
               💡
             </div>
-            <div>
-              <h4 className="font-bold text-slate-800 dark:text-white mb-1">Pro Tip</h4>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Focus on one sound at a time. Try to hold each vowel sound for at least 5 seconds while maintaining a steady, clear tone. Practice daily for best results!
-              </p>
-            </div>
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong className="text-slate-900 dark:text-white">Pro Tip:</strong> Hold each vowel sound steadily for 5+ seconds with relaxed airflow to build vocal cord stability and speech control.
+            </p>
           </div>
         </motion.div>
       </motion.div>

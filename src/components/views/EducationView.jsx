@@ -111,8 +111,17 @@ const EducationView = () => {
           <div className="flex flex-col gap-6">
             {ARTICLES.map((article) => {
               const isExpanded = expandedArticle === article.id;
-              // Generate dynamic tailwind classes based on tagColor (assuming 'indigo' and 'fuchsia' as used above)
-              const colorClasses = {
+              // Dynamic tailwind classes based on tagColor with safe fallback
+              const colorMap = {
+                emerald: {
+                  bg: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-500',
+                  border: 'border-emerald-200 dark:border-emerald-500/40',
+                  text: 'text-emerald-600 dark:text-emerald-400',
+                  hoverText: 'group-hover:text-emerald-500 dark:group-hover:text-emerald-400',
+                  hoverBorder: 'hover:border-emerald-300 dark:hover:border-emerald-500',
+                  hoverShadow: 'hover:shadow-emerald-500/20',
+                  btnBg: 'bg-emerald-500 hover:bg-emerald-400 border-emerald-600',
+                },
                 indigo: {
                   bg: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-500',
                   border: 'border-indigo-200 dark:border-indigo-500/40',
@@ -131,7 +140,8 @@ const EducationView = () => {
                   hoverShadow: 'hover:shadow-fuchsia-500/20',
                   btnBg: 'bg-fuchsia-500 hover:bg-fuchsia-400 border-fuchsia-600',
                 }
-              }[article.tagColor];
+              };
+              const colorClasses = colorMap[article.tagColor] || colorMap.indigo;
 
               return (
                 <div

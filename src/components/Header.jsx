@@ -53,7 +53,7 @@ const Header = ({ user, onLogout, currentView, setCurrentView, navItems = [] }) 
 
   return (
     <>
-      <header className={`sticky top-0 z-40 w-full transition-all duration-200 ${scrolled ? 'bg-white dark:bg-slate-900 shadow-sm border-b-4 border-slate-200 dark:border-slate-800' : 'bg-slate-50 dark:bg-[#0f172a] border-b-4 border-transparent'}`}>
+      <header className={`sticky top-0 z-40 w-full transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm border-b border-slate-200/80 dark:border-slate-800/80' : 'bg-transparent border-b border-transparent'}`}>
         
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">

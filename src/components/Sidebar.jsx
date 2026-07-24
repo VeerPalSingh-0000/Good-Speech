@@ -17,7 +17,7 @@ const Sidebar = ({ currentView, setCurrentView, navItems }) => {
   }, [isSecondaryActive]);
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 overflow-y-auto z-40">
+    <aside className="hidden lg:flex flex-col w-64 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-r border-slate-200/80 dark:border-slate-800/80 h-screen sticky top-0 overflow-y-auto z-40">
       <div className="p-6">
         {/* Brand Logo */}
         <div className="flex items-center gap-3 mb-8">
@@ -125,12 +125,12 @@ const Sidebar = ({ currentView, setCurrentView, navItems }) => {
         </div>
       </div>
 
-      <div className="mt-auto p-6 border-t border-slate-100 dark:border-slate-800">
-        <div className="bg-slate-100 dark:bg-slate-800/50 rounded-[2rem] p-5 border-b-4 border-slate-200 dark:border-slate-700">
-          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Status</p>
+      <div className="mt-auto p-4 border-t border-slate-100 dark:border-slate-800/80">
+        <div className="bg-slate-100/80 dark:bg-slate-800/40 backdrop-blur-md rounded-2xl p-3.5 border border-slate-200/80 dark:border-slate-800">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Status</p>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Ready to Practice</span>
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Ready to Practice</span>
           </div>
         </div>
       </div>
