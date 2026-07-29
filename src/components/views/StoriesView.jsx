@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaBookmark, FaBookOpen, FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import BackButton from "../ui/BackButton";
 import { useAudioRecorder } from "../../hooks/useAudioRecorder";
 import CategoryCard from "./stories/CategoryCard";
 import StoryCard from "./stories/StoryCard";
@@ -206,12 +207,7 @@ const StoriesView = ({
         </div>
         
         <div className="w-full flex justify-start px-4 sm:px-0 relative z-10">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-purple-600 hover:scale-105 active:scale-95 transition-all"
-          >
-            <FaArrowLeft />
-          </button>
+          <BackButton />
         </div>
         <div className="text-center mt-2 relative z-10 px-4">
           <div className="inline-flex items-center justify-center p-3 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl mb-4 shadow-sm border border-white/50 dark:border-white/5">

@@ -196,9 +196,9 @@ const buildDay = (dayNum, weekNum, config) => {
         title: 'जीभ के व्यायाम (Agility Cool-Down)',
         titleEn: 'Agility Cool-Down (Tongue Twisters)',
         icon: 'fas fa-layer-group',
-        duration: 5,
+        duration: 3,
         instructions: 'धीमी, शांत और स्पष्ट गति से 1-2 ट्विस्टर बोलें। गति से ज़्यादा सहजता पर ध्यान दें।',
-        instructionsEn: 'Practice 1–2 twisters slowly for 5 mins. Focus strictly on slow, relaxed, and clear speech over speed.',
+        instructionsEn: 'Practice 1–2 twisters slowly for 3 mins. Focus strictly on slow, relaxed, and clear speech over speed.',
         linkedView: '/twisters',
       },
     ],
@@ -443,21 +443,35 @@ export const FINAL_PRINCIPLE = {
 };
 
 // Helper to get a specific day's data
-export const getDayData = (dayNumber, phaseId = 1) => {
-  const phase = PROGRAM_DATA.phases.find(p => p.id === phaseId);
-  if (!phase) return null;
-  return phase.days.find(d => d.day === dayNumber) || null;
+export const getDayData = (dayNumber, phaseId = null) => {
+  if (phaseId !== null) {
+    const phase = PROGRAM_DATA.phases.find(p => p.id === phaseId);
+    if (!phase) return null;
+    return phase.days.find(d => d.day === dayNumber) || null;
+  }
+  for (const phase of PROGRAM_DATA.phases) {
+    const day = phase.days.find(d => d.day === dayNumber);
+    if (day) return day;
+  }
+  return null;
 };
 
 // Helper to get the week for a given day
-export const getWeekForDay = (dayNumber, phaseId = 1) => {
-  const phase = PROGRAM_DATA.phases.find(p => p.id === phaseId);
-  if (!phase) return null;
-  return phase.weeks.find(w => dayNumber >= w.dayRange[0] && dayNumber <= w.dayRange[1]) || null;
+export const getWeekForDay = (dayNumber, phaseId = null) => {
+  if (phaseId !== null) {
+    const phase = PROGRAM_DATA.phases.find(p => p.id === phaseId);
+    if (!phase) return null;
+    return phase.weeks.find(w => dayNumber >= w.dayRange[0] && dayNumber <= w.dayRange[1]) || null;
+  }
+  for (const phase of PROGRAM_DATA.phases) {
+    const week = phase.weeks.find(w => dayNumber >= w.dayRange[0] && dayNumber <= w.dayRange[1]);
+    if (week) return week;
+  }
+  return null;
 };
 
 // Get total duration for a day (sum of all activity durations)
-export const getDayTotalDuration = (dayNumber, phaseId = 1) => {
+export const getDayTotalDuration = (dayNumber, phaseId = null) => {
   const day = getDayData(dayNumber, phaseId);
   if (!day) return 0;
   return day.activities.reduce((sum, a) => sum + a.duration, 0);

@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useSpeechRecognition } from "../../hooks/useSpeechRecognition";
+import BackButton from "../ui/BackButton";
 
 // Exact 5 English and 5 Hindi Tongue Twisters as recommended for speech therapy
 const TONGUE_TWISTERS = {
@@ -175,12 +176,7 @@ const TongueTwistersView = () => {
       
       {/* Top Navigation Bar */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-2 border border-slate-700/80 backdrop-blur-xl transition-all"
-        >
-          <FaArrowLeft /> Back
-        </button>
+        <BackButton />
 
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-950/80 border border-blue-800/80 text-blue-400 text-xs font-black uppercase tracking-wider shadow-lg">
           <FaClock className="text-sky-400 animate-pulse" />

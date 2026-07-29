@@ -12,6 +12,7 @@ import {
 import confetti from 'canvas-confetti';
 import { getDayData, getWeekForDay, getDayTotalDuration, GOLDEN_HABITS } from '../../data/programData';
 import ActivityTimer from '../ui/ActivityTimer';
+import BackButton from '../ui/BackButton';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -391,12 +392,7 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
 
       {/* Back Button + Header */}
       <motion.div variants={itemVariants} className="flex items-center gap-3">
-        <button
-          onClick={handleGoBack}
-          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-        >
-          <FaArrowLeft />
-        </button>
+        <BackButton onClick={handleGoBack} />
         <div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             {weekData.emoji} Week {weekData.id}: {weekData.title}
@@ -505,20 +501,24 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
       {/* Navigation */}
       <motion.div variants={itemVariants} className="flex items-center justify-between pt-2 pb-8">
         {dayNum > 1 ? (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02, x: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate(`/program/day/${dayNum - 1}`)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-sm font-bold border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all shadow-sm"
           >
-            <FaArrowLeft className="text-xs" /> Day {dayNum - 1}
-          </button>
+            <FaArrowLeft className="text-xs group-hover:-translate-x-0.5 transition-transform duration-300" /> Day {dayNum - 1}
+          </motion.button>
         ) : <div />}
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleGoBack}
-          className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          className="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
         >
           📋 Program Overview
-        </button>
+        </motion.button>
 
         {dayNum < 30 ? (
           <button

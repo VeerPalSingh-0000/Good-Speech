@@ -20,6 +20,8 @@ import {
   FaMinus,
   FaPlus,
   FaUndo,
+  FaClock,
+  FaPause,
 } from "react-icons/fa";
 import { Document, Page, pdfjs } from "react-pdf";
 import kru2uni from "@anthro-ai/krutidev-unicode";
@@ -74,6 +76,11 @@ const StoryDisplayModal = ({
   const [containerHeight, setContainerHeight] = useState(800);
   const [showMobileBookmarks, setShowMobileBookmarks] = useState(false);
   const [showPdfView, setShowPdfView] = useState(false);
+  const currentPageRef = useRef(currentPage);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
 
   // Guided Reading State
   const [isGuidedReading, setIsGuidedReading] = useState(false);
@@ -81,6 +88,26 @@ const StoryDisplayModal = ({
   const [activeWordIndex, setActiveWordIndex] = useState(-1);
   const [pdfPageText, setPdfPageText] = useState("");
   const [pdfAspectRatio, setPdfAspectRatio] = useState(1.414); // Default to A4 portrait
+  const [hasResumed, setHasResumed] = useState(false);
+  const [resumeNotice, setResumeNotice] = useState("");
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  useEffect(() => {
+    let intervalId;
+    if (isTimerRunning) {
+      intervalId = setInterval(() => {
+        setTimerSeconds((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [isTimerRunning]);
+
+  const formatTimerTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const {
     isListening,
@@ -191,6 +218,8 @@ const StoryDisplayModal = ({
     return parsedText.reduce((acc, line) => acc + line.wordObjects.length, 0);
   }, [parsedText]);
 
+  const paragraphRefs = useRef({});
+
   // Guided Reading Timer Logic
   const getWordDuration = useCallback((wordStr) => {
     const baseDuration = 60000 / (targetWPM || 60); 
@@ -209,9 +238,18 @@ const StoryDisplayModal = ({
     return (baseDuration * lengthRatio) + pauseDuration;
   }, [targetWPM]);
 
+  // Reset PDF text and active word index on page change to prevent double-page jump race conditions
+  useEffect(() => {
+    if (story.pdfUrl) {
+      setPdfPageText("");
+      setActiveWordIndex(0);
+    }
+  }, [currentPage, story.pdfUrl]);
+
   useEffect(() => {
     let timeoutId;
-    if (isGuidedReading && activeWordIndex < totalWords) {
+    const isPdfLoading = story.pdfUrl && !pdfPageText;
+    if (isGuidedReading && activeWordIndex < totalWords && totalWords > 0 && !isPdfLoading) {
       // Find the current word object from parsedText
       let currentWordStr = "";
       for (const line of parsedText) {
@@ -235,7 +273,98 @@ const StoryDisplayModal = ({
       }, msForCurrentWord);
     }
     return () => clearTimeout(timeoutId);
-  }, [isGuidedReading, activeWordIndex, targetWPM, totalWords, parsedText, getWordDuration]);
+  }, [isGuidedReading, activeWordIndex, targetWPM, totalWords, parsedText, getWordDuration, story.pdfUrl, numPages, currentPage, pdfPageText]);
+
+  const isInitialMount = useRef(true);
+
+  // Auto-load saved reading progress ONLY ONCE when opening story
+  useEffect(() => {
+    if (!isInitialMount.current || !story.id) return;
+    isInitialMount.current = false;
+
+    try {
+      const stored = localStorage.getItem("good_speech_story_progress");
+      if (stored) {
+        const progressMap = JSON.parse(stored);
+        const savedData = progressMap[story.id];
+        if (savedData) {
+          if (savedData.page && story.pdfUrl && savedData.page > 1) {
+            setCurrentPage(savedData.page);
+          }
+          if (typeof savedData.activeWordIndex === "number" && savedData.activeWordIndex > 0) {
+            setActiveWordIndex(savedData.activeWordIndex);
+            setResumeNotice(`📍 Auto-resumed from where you left off`);
+          } else if (savedData.page && story.pdfUrl && savedData.page > 1) {
+            setResumeNotice(`📍 Auto-resumed from Page ${savedData.page}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error loading story progress:", e);
+    }
+  }, [story.id, story.pdfUrl]);
+
+  // Auto-save reading progress automatically as user reads or timer runs
+  useEffect(() => {
+    if (!story.id) return;
+    if (activeWordIndex <= 0 && currentPage <= 1) return;
+
+    try {
+      const stored = localStorage.getItem("good_speech_story_progress") || "{}";
+      const progressMap = JSON.parse(stored);
+      progressMap[story.id] = {
+        page: currentPage,
+        activeWordIndex: activeWordIndex > 0 ? activeWordIndex : 0,
+        updatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem("good_speech_story_progress", JSON.stringify(progressMap));
+    } catch (e) {
+      console.error("Error saving story progress:", e);
+    }
+  }, [story.id, currentPage, activeWordIndex]);
+
+  // Auto-bookmark current page whenever user or guided reading timer changes page
+  useEffect(() => {
+    if (!story.id || !story.pdfUrl || currentPage <= 0) return;
+    if (typeof onToggleLineBookmark === "function") {
+      if (!lineBookmarks.includes(currentPage)) {
+        onToggleLineBookmark(story.id, currentPage);
+      }
+    }
+  }, [currentPage, story.id, story.pdfUrl, lineBookmarks, onToggleLineBookmark]);
+
+  // Auto-dismiss resume notice toast after 4 seconds
+  useEffect(() => {
+    if (resumeNotice) {
+      const t = setTimeout(() => setResumeNotice(""), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [resumeNotice]);
+
+  // Auto scroll to restored active word position safely
+  useEffect(() => {
+    if (activeWordIndex > 0 && parsedText.length > 0 && !hasResumed) {
+      setHasResumed(true);
+      const targetLine = parsedText.find((l) =>
+        l.wordObjects.some((w) => w.globalWordIdx === activeWordIndex)
+      );
+      if (targetLine && paragraphRefs.current[targetLine.lineIdx]) {
+        setTimeout(() => {
+          try {
+            const el = paragraphRefs.current[targetLine.lineIdx];
+            if (el && typeof el.scrollIntoView === "function") {
+              el.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+            }
+          } catch (e) {
+            console.warn("Auto scroll error:", e);
+          }
+        }, 400);
+      }
+    }
+  }, [activeWordIndex, parsedText, hasResumed]);
 
   const handleAddPageBookmark = () => {
     const page = parseInt(pageInput);
@@ -268,6 +397,9 @@ const StoryDisplayModal = ({
       }
 
       const textContentObj = await page.getTextContent();
+      
+      // Prevent race conditions: if page changed while extracting text, discard
+      if (page.pageNumber !== currentPageRef.current) return;
       const textItems = textContentObj.items;
       let text = "";
       let lastY = null;
@@ -389,6 +521,15 @@ const StoryDisplayModal = ({
                 {story.difficulty}
               </span>
             )}
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 dark:bg-purple-900/40 border border-purple-500/30 text-purple-600 dark:text-purple-300 font-mono font-bold text-xs sm:text-sm shadow-sm">
+              <span className="relative flex h-2 w-2">
+                {isTimerRunning && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                )}
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isTimerRunning ? 'bg-purple-500' : 'bg-slate-400'}`}></span>
+              </span>
+              <span>⏱️ {formatTimerTime(timerSeconds)}</span>
+            </div>
             {onToggleBookmark && (
               <button
                 onClick={(e) => {
@@ -453,72 +594,7 @@ const StoryDisplayModal = ({
               >
                 {/* Floating Modern PDF Toolbar & Page Navigation */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 w-[90%] sm:w-auto max-w-2xl transition-all duration-300 opacity-40 hover:opacity-100 focus-within:opacity-100 hover:translate-y-[-4px]">
-                  {/* Bookmarks Menu */}
-                  <AnimatePresence>
-                    {(showMobileBookmarks || window.innerWidth >= 640) && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="flex sm:flex items-center flex-wrap sm:flex-nowrap justify-center gap-3 p-3 sm:p-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl shadow-xl rounded-2xl sm:rounded-full border border-white/20 dark:border-slate-700/50 w-full sm:w-auto overflow-hidden sm:overflow-x-auto scrollbar-hide mb-1"
-                      >
-                        <div className="flex items-center gap-2 flex-1 sm:flex-none justify-center">
-                          <button
-                            onClick={() => onToggleLineBookmark(story.id, currentPage)}
-                            className={`flex items-center gap-2 px-4 py-1.5 text-xs rounded-full font-medium shadow-sm transition-all ${
-                              lineBookmarks.includes(currentPage)
-                                ? "bg-purple-600 text-white hover:bg-purple-700"
-                                : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-400"
-                            }`}
-                          >
-                            {lineBookmarks.includes(currentPage) ? (
-                              <FaBookmark className="text-sm" />
-                            ) : (
-                              <FaRegBookmark className="text-sm" />
-                            )}
-                            <span className="whitespace-nowrap">
-                              {lineBookmarks.includes(currentPage) ? "Saved Page" : "Save Page"} {currentPage}
-                            </span>
-                          </button>
-                        </div>
-
-                        <div className="hidden sm:block w-px h-5 bg-slate-200 dark:bg-slate-600 mx-1 shrink-0"></div>
-                        <div className="sm:hidden w-full h-px bg-slate-200 dark:bg-slate-600/50 opacity-50 my-1"></div>
-
-                        <div className="flex flex-wrap items-center justify-center gap-2 px-1 w-full sm:w-auto max-h-24 sm:max-h-none overflow-y-auto sm:overflow-visible">
-                          {lineBookmarks.length === 0 && (
-                            <span className="text-xs text-slate-400 italic px-2 py-1">
-                              No saved pages
-                            </span>
-                          )}
-                          {lineBookmarks.map((page) => {
-                            if (typeof page !== "number") return null;
-                            return (
-                              <button
-                                key={page}
-                                onClick={() => handleJumpToPage(page)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-full text-xs hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all shadow-sm"
-                              >
-                                <FaBookmark className="text-purple-500 text-[10px]" />
-                                <span className="dark:text-slate-200 font-medium">
-                                  {page}
-                                </span>
-                                <span
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onToggleLineBookmark(story.id, page);
-                                  }}
-                                  className="ml-1 text-slate-400 hover:text-red-500 text-sm font-bold"
-                                >
-                                  &times;
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {/* Bookmarks Menu removed as per auto-save feature */}
 
                   {/* Page Navigation */}
                   <div className="flex items-center justify-center gap-2 sm:gap-4 px-3 sm:px-6 py-2.5 bg-black/80 dark:bg-black/90 backdrop-blur-xl shadow-2xl rounded-full border border-white/10 text-white w-fit mx-auto">
@@ -637,12 +713,22 @@ const StoryDisplayModal = ({
               {isGuidedReading && (
                 <div className={`flex-1 overflow-y-auto h-full p-4 sm:p-6 md:p-8 lg:p-10 w-full ${showPdfView ? 'lg:w-1/2' : 'lg:w-full'}`}>
                   <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 md:space-y-10">
+                    {resumeNotice && (
+                      <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl mb-4 shadow-lg shadow-purple-600/20 text-xs font-bold transition-all">
+                        <div className="flex items-center gap-2">
+                          <FaBookmark className="text-amber-300" />
+                          <span>{resumeNotice}</span>
+                        </div>
+                        <button onClick={() => setResumeNotice("")} className="opacity-80 hover:opacity-100 font-black text-sm">
+                          ✕
+                        </button>
+                      </div>
+                    )}
                     {!textLoading &&
                       !textError &&
                       parsedText.length > 0 &&
                       parsedText.map((lineObj) => {
                         const { line, wordObjects, lineIdx } = lineObj;
-                        const isLineBookmarked = lineBookmarks.includes(lineIdx);
                         const lineResults = showPronunciation
                           ? compareToTarget(line)
                           : [];
@@ -650,24 +736,12 @@ const StoryDisplayModal = ({
                         return (
                           <div
                             key={lineIdx}
-                            className="flex items-stretch gap-3 sm:gap-5 group relative"
+                            ref={(el) => {
+                              if (el) paragraphRefs.current[lineIdx] = el;
+                              else delete paragraphRefs.current[lineIdx];
+                            }}
+                            className="group relative flex flex-col sm:flex-row items-start gap-3 sm:gap-4 p-4 rounded-2xl transition-all duration-300 bg-white/40 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 hover:border-purple-300 dark:hover:border-purple-800/60"
                           >
-                            <div
-                              role="button"
-                              onClick={() =>
-                                onToggleLineBookmark(story.id, lineIdx)
-                              }
-                              className={`w-1.5 sm:w-2 rounded-full flex-shrink-0 cursor-pointer transition-all duration-300 ${
-                                isLineBookmarked
-                                  ? "bg-purple-600"
-                                  : "bg-slate-300 dark:bg-slate-600 hover:bg-purple-300"
-                              }`}
-                              title={
-                                isLineBookmarked
-                                  ? "Remove bookmark"
-                                  : "Add bookmark"
-                              }
-                            />
                             <div className="flex-1 text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed sm:leading-loose text-slate-800 dark:text-slate-200 py-1 flex flex-wrap gap-x-1.5 gap-y-1 sm:gap-x-2 sm:gap-y-1.5">
                               {!showPronunciation
                                 ? wordObjects.map((w, i) => {
@@ -727,11 +801,21 @@ const StoryDisplayModal = ({
                     </p>
                   </div>
                 )}
+                {resumeNotice && (
+                  <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl mb-4 shadow-lg shadow-purple-600/20 text-xs font-bold transition-all">
+                    <div className="flex items-center gap-2">
+                      <FaBookmark className="text-amber-300" />
+                      <span>{resumeNotice}</span>
+                    </div>
+                    <button onClick={() => setResumeNotice("")} className="opacity-80 hover:opacity-100 font-black text-sm">
+                      ✕
+                    </button>
+                  </div>
+                )}
                 {!textLoading &&
                   !textError &&
                   parsedText.map((lineObj) => {
                     const { line, wordObjects, lineIdx } = lineObj;
-                    const isLineBookmarked = lineBookmarks.includes(lineIdx);
                     const lineResults = showPronunciation
                       ? compareToTarget(line)
                       : [];
@@ -739,24 +823,12 @@ const StoryDisplayModal = ({
                     return (
                       <div
                         key={lineIdx}
-                        className="flex items-stretch gap-3 sm:gap-5 group relative"
+                        ref={(el) => {
+                          if (el) paragraphRefs.current[lineIdx] = el;
+                          else delete paragraphRefs.current[lineIdx];
+                        }}
+                        className="group relative flex flex-col sm:flex-row items-start gap-3 sm:gap-4 p-4 rounded-2xl transition-all duration-300 bg-white/40 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 hover:border-purple-300 dark:hover:border-purple-800/60"
                       >
-                        <div
-                          role="button"
-                          onClick={() =>
-                            onToggleLineBookmark(story.id, lineIdx)
-                          }
-                          className={`w-1.5 sm:w-2 rounded-full flex-shrink-0 cursor-pointer transition-all duration-300 ${
-                            isLineBookmarked
-                              ? "bg-purple-600"
-                              : "bg-slate-300 dark:bg-slate-600 hover:bg-purple-300"
-                          }`}
-                          title={
-                            isLineBookmarked
-                              ? "Remove bookmark"
-                              : "Add bookmark"
-                          }
-                        />
                         <div className="flex-1 text-xl sm:text-2xl md:text-3xl font-medium leading-relaxed sm:leading-loose text-slate-800 dark:text-slate-200 py-1 flex flex-wrap gap-x-1.5 gap-y-1 sm:gap-x-2 sm:gap-y-1.5">
                           {!showPronunciation
                             ? wordObjects.map((w, i) => {
@@ -843,8 +915,38 @@ const StoryDisplayModal = ({
               </div>
             </div>
 
-            {/* Start/Stop Guide Action Buttons */}
+            {/* Start/Stop Guide Action Buttons & Timer Controls */}
             <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-mono font-extrabold text-xs sm:text-sm min-w-[55px]">
+                  <FaClock className="text-purple-500 shrink-0" size={12} />
+                  <span>{formatTimerTime(timerSeconds)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsTimerRunning((prev) => !prev)}
+                  className={`p-1.5 rounded-xl transition-all shadow-sm ${
+                    isTimerRunning
+                      ? "bg-amber-500 text-white hover:bg-amber-600"
+                      : "bg-purple-600 text-white hover:bg-purple-700"
+                  }`}
+                  title={isTimerRunning ? "Pause Timer" : "Start Timer"}
+                >
+                  {isTimerRunning ? <FaPause size={10} /> : <FaPlay size={10} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTimerSeconds(0);
+                    setIsTimerRunning(false);
+                  }}
+                  className="p-1.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors"
+                  title="Reset Timer"
+                >
+                  <FaUndo size={10} />
+                </button>
+              </div>
+
               <button
                 onClick={() => {
                   if (story.pdfUrl && !pdfPageText.trim()) return;
@@ -854,9 +956,11 @@ const StoryDisplayModal = ({
                       setTargetWPM(recommendedWPM);
                     }
                     setIsGuidedReading(true);
+                    setIsTimerRunning(true);
                     setShowPronunciation(false);
                   } else {
                     setIsGuidedReading(false);
+                    setIsTimerRunning(false);
                   }
                 }}
                 disabled={story.pdfUrl && !pdfPageText.trim()}

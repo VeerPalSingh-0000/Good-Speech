@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   FaPlay,
   FaPause,
@@ -24,6 +25,7 @@ import {
 } from 'react-icons/fa';
 
 import { getFilteredItems, generateRandomProceduralItem } from '../../data/easyOnsetData';
+import BackButton from '../ui/BackButton';
 
 // Progressive Practice Data (Level Info)
 const PRACTICE_DATA = [
@@ -44,6 +46,7 @@ const PRACTICE_DATA = [
 ];
 
 const EasyOnsetView = ({ user, records, showNotification, saveToFirebase }) => {
+  const navigate = useNavigate();
   // Setup Config state (Default English 'en')
   const [selectedLang, setSelectedLang] = useState('en'); // 'en' | 'hi'
   const [selectedLevelIdx, setSelectedLevelIdx] = useState(0);
@@ -181,6 +184,11 @@ const EasyOnsetView = ({ user, records, showNotification, saveToFirebase }) => {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto px-3 sm:px-6 pb-16">
+      {/* Top Navigation Bar */}
+      <div className="flex items-center justify-between pt-1">
+        <BackButton />
+      </div>
+
       {/* ==============================================
           SCREEN 1: SETUP SCREEN (PREMIUM GLASS & LIGHT/DARK SYSTEM)
       ============================================== */}
@@ -262,12 +270,14 @@ const EasyOnsetView = ({ user, records, showNotification, saveToFirebase }) => {
           {/* Top Session Control Bar */}
           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl text-slate-900 dark:text-white p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl dark:shadow-2xl flex items-center justify-between transition-colors">
             <div className="flex items-center gap-2">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02, x: -2 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setScreen('setup')}
-                className="text-xs font-extrabold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 px-3.5 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-800"
+                className="group text-xs font-extrabold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700/80"
               >
-                <FaArrowLeft /> Exit
-              </button>
+                <FaArrowLeft className="group-hover:-translate-x-0.5 transition-transform duration-300" /> Exit
+              </motion.button>
               <button
                 onClick={() => {
                   setScreen('complete');

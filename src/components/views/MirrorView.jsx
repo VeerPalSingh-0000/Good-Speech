@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FaUser, FaCamera, FaVideoSlash, FaArrowLeft } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import BackButton from "../ui/BackButton";
 
 export default function MirrorView() {
   const videoRef = useRef(null);
@@ -43,12 +44,7 @@ export default function MirrorView() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-        >
-          <FaArrowLeft />
-        </button>
+        <BackButton />
         <div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <FaUser className="text-teal-500" />
