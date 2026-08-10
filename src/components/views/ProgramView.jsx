@@ -3,12 +3,12 @@
 
 import React, { useState, useMemo, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   FaCalendarCheck, FaLock, FaCheckCircle, FaPlay, FaClock,
   FaTrophy, FaStar, FaArrowRight, FaQuoteLeft
 } from 'react-icons/fa';
-import { PROGRAM_DATA, GOLDEN_HABITS, EXPECTED_RESULTS, RECOVERY_TIMELINE, FINAL_PRINCIPLE, getDayTotalDuration, getWeekForDay } from '../../data/programData';
+import { PROGRAM_DATA, GOLDEN_HABITS, EXPECTED_RESULTS, RECOVERY_TIMELINE, FINAL_PRINCIPLE, getDayTotalDuration, getWeekForDay, getPhaseForDay, getMaxProgramDays, getDayData } from '../../data/programData';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -131,8 +131,7 @@ HabitCard.displayName = 'HabitCard';
 
 const ProgramView = ({ userSettings, updateUserSettings }) => {
   const navigate = useNavigate();
-  const [selectedPhaseId, setSelectedPhaseId] = useState(1);
-  const phase = PROGRAM_DATA.phases.find(p => p.id === selectedPhaseId) || PROGRAM_DATA.phases[0];
+  const location = useLocation();
 
   const programProgress = userSettings?.programProgress || {
     currentDay: 1,
@@ -142,17 +141,46 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
 
   const { currentDay, completedDays } = programProgress;
 
-  // Determine which week tab to show based on current day
-  const currentWeek = useMemo(() => {
-    const w = getWeekForDay(currentDay);
-    return w?.id || 1;
-  }, [currentDay]);
+  // Determine initial phase ID (from location state or active currentDay)
+  const initialPhaseId = useMemo(() => {
+    if (location.state?.phaseId) return location.state.phaseId;
+    const p = getPhaseForDay(currentDay);
+    return p?.id || 1;
+  }, [location.state, currentDay]);
 
-  const [activeWeek, setActiveWeek] = useState(currentWeek);
+  const [selectedPhaseId, setSelectedPhaseId] = useState(initialPhaseId);
 
-  // Overall progress for Phase 1
+  // Sync selected phase if location state changes
+  React.useEffect(() => {
+    if (location.state?.phaseId) {
+      setSelectedPhaseId(location.state.phaseId);
+    }
+  }, [location.state]);
+
+  const phase = PROGRAM_DATA.phases.find(p => p.id === selectedPhaseId) || PROGRAM_DATA.phases[0];
+
+  // Determine initial week tab for selected phase
+  const defaultWeekId = useMemo(() => {
+    const w = phase.weeks.find(w => currentDay >= w.dayRange[0] && currentDay <= w.dayRange[1]);
+    return w ? w.id : (phase.weeks[0]?.id || 1);
+  }, [phase, currentDay]);
+
+  const [activeWeek, setActiveWeek] = useState(defaultWeekId);
+
+  // Ensure activeWeek belongs to currently selected phase
+  React.useEffect(() => {
+    if (!phase.weeks.some(w => w.id === activeWeek)) {
+      const w = phase.weeks.find(w => currentDay >= w.dayRange[0] && currentDay <= w.dayRange[1]);
+      setActiveWeek(w ? w.id : (phase.weeks[0]?.id || 1));
+    }
+  }, [selectedPhaseId, phase, currentDay, activeWeek]);
+
+  // Overall and phase progress calculation
+  const maxProgramDays = useMemo(() => getMaxProgramDays(), []);
   const totalCompleted = Object.values(completedDays).filter(d => !!d.completedAt).length;
-  const overallProgress = Math.round((totalCompleted / PROGRAM_DATA.phases[0].totalDays) * 100);
+  const phaseCompleted = phase.days ? phase.days.filter(d => !!completedDays[d.day]?.completedAt).length : 0;
+  const phaseProgress = Math.round((phaseCompleted / phase.totalDays) * 100);
+  const overallProgress = Math.min(100, Math.round((totalCompleted / maxProgramDays) * 100));
 
   // Get days for active week
   const weekData = phase.weeks.find(w => w.id === activeWeek) || phase.weeks[0];
@@ -205,7 +233,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
             {/* Current status */}
             <div className="mt-4 flex items-center gap-4 flex-wrap justify-center md:justify-start">
               <div className="px-3 py-1.5 rounded-full bg-slate-800 text-xs font-medium">
-                📅 Day <span className="text-indigo-400 font-bold">{currentDay}</span> of {phase.totalDays}
+                📅 Current Day: <span className="text-indigo-400 font-bold">Day {currentDay}</span>
               </div>
               <div className="px-3 py-1.5 rounded-full bg-slate-800 text-xs font-medium">
                 ✅ <span className="text-emerald-400 font-bold">{totalCompleted}</span> completed
@@ -228,14 +256,14 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-3xl font-black">{overallProgress}%</span>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider">Complete</span>
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider">Overall</span>
             </div>
           </div>
         </div>
       </motion.div>
 
       {/* Start Today CTA */}
-      {currentDay <= phase.totalDays && (
+      {currentDay <= maxProgramDays && (
         <motion.div variants={itemVariants}>
           <button
             onClick={() => handleStartDay(currentDay)}
@@ -250,7 +278,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
                   Start Day {currentDay} Practice
                 </h3>
                 <p className="text-indigo-200 text-sm mt-1">
-                  {getDayTotalDuration(currentDay)} minutes • {PROGRAM_DATA.phases[0].days.find(d => d.day === currentDay)?.activities.length || 4} activities
+                  {getDayTotalDuration(currentDay)} minutes • {getDayData(currentDay)?.activities?.length || 6} activities
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-1 transition-transform">
@@ -295,7 +323,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
       <motion.div variants={itemVariants}>
         <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto">
           {phase.weeks.map(week => {
-            const colors = weekColors[week.color];
+            const colors = weekColors[week.color] || weekColors.emerald;
             const isActive = activeWeek === week.id;
             return (
               <button
@@ -318,7 +346,7 @@ const ProgramView = ({ userSettings, updateUserSettings }) => {
       {weekData && (
         <motion.div
           variants={itemVariants}
-          className={`p-5 rounded-2xl border ${weekColors[weekData.color].card} bg-white dark:bg-slate-800 shadow-sm`}
+          className={`p-5 rounded-2xl border ${(weekColors[weekData.color] || weekColors.emerald).card} bg-white dark:bg-slate-800 shadow-sm`}
         >
           <div className="flex items-start gap-4">
             <span className="text-3xl">{weekData.emoji}</span>

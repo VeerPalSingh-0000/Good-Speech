@@ -79,6 +79,46 @@ const BREATHING_SENTENCES = {
     ["मैं अपनी बोलने की क्षमता पर गर्व करता हूँ और आगे बढ़ता रहूँगा"],
     ["हर दिन एक नया मौका है कि हम कल से बेहतर बनें"],
   ],
+  // Week 5 (Phase 2): Block Desensitization & Voluntary Tension Release
+  week5: [
+    ["अगर रुकावट आए तो घबराएँ नहीं, सांस लेकर सहज रहें"],
+    ["मैं जानबूझकर हल्का सा अटक कर शांति से आगे बढ़ता हूँ"],
+    ["बोलने में कोई तनाव नहीं है, श्वास एकदम हल्की है"],
+    ["जब भी ब्लॉक बने, 2 सेकंड रुकें और दोबारा श्वास लें"],
+    ["हर शब्द को दबाव के बिना बोलना मेरा लक्ष्य है"],
+    ["हकलाना कोई कमी नहीं है, बस एक आदत है जिसे बदलना है"],
+    ["शांत मन से बोला गया हर शब्द प्रभाव छोड़ता है"],
+  ],
+  // Week 6 (Phase 2): Prolongation & Gentle Sound Glide
+  week6: [
+    ["स्वरों को खिंचते हुए सहजता से अगले शब्द पर जाएं"],
+    ["पहला अक्षर लम्बा और मुलायम बोलें, बिना किसी ज़ोर के"],
+    ["आअाज का अभ्यास मुझे और अधिक निडर बना रहा है"],
+    ["हर वाक्य की शुरुआत एक धीमी श्वास के साथ करें"],
+    ["शब्दों का प्रवाह नदी की तरह निरंतर और शांत है"],
+    ["बोलने की गति मेरी अपनी पसंद है, कोई जल्दबाज़ी नहीं"],
+    ["मैं अपनी आवाज़ की लय का आनंद ले रहा हूँ"],
+  ],
+  // Week 7 (Phase 2): Controlled Conversation & Phone Practice
+  week7: [
+    ["हेलो, मैं अपने अभ्यास के सिलसिले में आपसे बात कर रहा हूँ"],
+    ["फ़ोन पर बात करते समय मैं अपनी गति नियंत्रित रखता हूँ"],
+    ["बाज़ार में या दुकान पर बोलते समय आत्मविश्वास बना रहता है"],
+    ["किसी से भी सवाल पूछते समय पहले मन में श्वास लें"],
+    ["मैं अपनी बात पूरी स्पष्टता और ठहराव के साथ कहूँगा"],
+    ["दूसरों की प्रतिक्रिया से बेपरवाह होकर अपनी लय बनाए रखें"],
+    ["हर बातचीत मेरे लिए एक नया सीखने का अवसर है"],
+  ],
+  // Week 8 (Phase 2): Resilience, Flow & Self-Correction
+  week8: [
+    ["रुकावट आने पर स्वयं को तुरंत शांत करना मेरी शक्ति है"],
+    ["गलतियों से घबराने के बजाय मैं आसानी से रीसेट करता हूँ"],
+    ["लंबी बातचीत में भी मेरी श्वास संतुलित रहती है"],
+    ["आज मैं सार्वजनिक रूप से आत्मविश्वास से अपनी राय रखूँगा"],
+    ["प्रवाह का अर्थ बिना रुके बोलना नहीं, बल्कि तनावमुक्त बोलना है"],
+    ["मैं अपनी बोलने की हर सफलता का जश्न मनाता हूँ"],
+    ["60 दिनों का यह निरंतर अभ्यास मेरी पहचान बदल रहा है"],
+  ],
 };
 
 // Speaking prompts for mirror/real-life practice
@@ -120,6 +160,42 @@ const SPEAKING_PROMPTS = {
     { hindi: "किसी भी विषय पर 5 मिनट बिना रुके बोलिए", english: "Speak for 5 minutes non-stop" },
     { hindi: "अपनी उपलब्धियों को दूसरों के साथ साझा कीजिए", english: "Share your achievements" },
     { hindi: "आत्मविश्वास से किसी भी बातचीत में भाग लीजिए", english: "Confidently join any conversation" },
+  ],
+  week5: [
+    { hindi: "जानबूझकर हल्का हकलाकर (Voluntary Stutter) वाक्य पूरा कीजिए", english: "Practice voluntary stuttering comfortably in front of a mirror" },
+    { hindi: "ब्लॉक आने पर 3 सेकंड रुककर गहरी श्वास लें", english: "Pause 3 sec during a simulated block & breathe smoothly" },
+    { hindi: "अपनी किसी कमजोरी के बारे में बिना झिझक 2 मिनट बोलिए", english: "Speak freely for 2 mins about an obstacle you faced" },
+    { hindi: "शीशे में देखते हुए गले के तनाव को ढीला महसूस कीजिए", english: "Look in the mirror and conscious relax throat muscles" },
+    { hindi: "किसी दोस्त को फ़ोन करके अपना अभ्यास लक्ष्य बताएं", english: "Call a friend and explain your speech practice goals" },
+    { hindi: "दुकानदार से जानबूझकर धीरे और रुककर बात कीजिए", english: "Talk to a shopkeeper with deliberate slow pacing" },
+    { hindi: "आज के अभ्यास से आपने क्या सीखा बताइए", english: "Summarize today's progress and lessons learned" },
+  ],
+  week6: [
+    { hindi: "हर शब्द के पहले स्वर को 2 सेकंड खींचकर बोलिए", english: "Stretch the initial sound of every sentence for 2 seconds" },
+    { hindi: "अपनी पसंदीदा पुस्तक का एक पैरा सॉफ्ट ऑनसेट से पढ़ें", english: "Read a paragraph using ultra-soft easy onset" },
+    { hindi: "किसी अनजान व्यक्ति से रास्ता पूछने का नाटक कीजिए", english: "Roleplay asking a stranger for street directions" },
+    { hindi: "गहरी श्वास लेकर स्वर अ-इ-उ का लंबा उच्चारण करें", english: "Hold long relaxed vowel sounds with full diaphragmatic breath" },
+    { hindi: "फ़ोन पर ऑनलाइन ऑर्डर देने का अभ्यास कीजिए", english: "Simulate placing a food or grocery order over the phone" },
+    { hindi: "किसी कठिन शब्द को प्रोलोंगेशन तकनीक से बोलें", english: "Glide through a difficult word using prolongation technique" },
+    { hindi: "आईने के सामने 3 मिनट तक सहज गति से बोलें", english: "Speak at a relaxed smooth pace in front of mirror for 3 mins" },
+  ],
+  week7: [
+    { hindi: "फ़ोन पर किसी कस्टमर केयर या दोस्त से 3 मिनट बात करें", english: "Conduct a 3-minute real or practice phone call calmly" },
+    { hindi: "दुकान पर जाकर किसी वस्तु के बारे में विस्तार से पूछें", english: "Inquire about product details at a local store" },
+    { hindi: "किसी मित्र के साथ चाय/कॉफ़ी पर 5 मिनट संवाद करें", english: "Have a 5-minute relaxed conversation over coffee" },
+    { hindi: "अपने काम या पढ़ाई के बारे में 2 मिनट की प्रस्तुति दें", english: "Give a 2-minute presentation about your work or studies" },
+    { hindi: "बातचीत में बीच-बीच में 2 सेकंड का विराम (Pause) लें", english: "Practice inserting deliberate 2-second pauses while talking" },
+    { hindi: "किसी पारिवारिक चर्चा में बिना डरे अपना पक्ष रखें", english: "Express your opinions clearly in a family discussion" },
+    { hindi: "आज दिन भर की 3 सफल बातचीतों के बारे में बताएं", english: "Recount 3 successful conversation experiences from today" },
+  ],
+  week8: [
+    { hindi: "किसी ग्रुप चर्चा में आत्मविश्वास के साथ 3 मिनट बोलें", english: "Participate in a group discussion for 3 minutes confidently" },
+    { hindi: "अचानक आए ब्लॉक को बिना घबराए रीसेट करके आगे बढ़ें", english: "Recover immediately and smoothly from an unexpected speech block" },
+    { hindi: "अपने 60 दिन के भाषण सुधार यात्रा का वर्णन करें", english: "Deliver a speech reflecting on your 60-day recovery journey" },
+    { hindi: "अनजान व्यक्ति से किसी विषय पर विचार-विमर्श करें", english: "Initiate a short casual debate/discussion with a acquaintance" },
+    { hindi: "बिना किसी तनाव के 5 मिनट तक निरंतर प्रवाहमयी बोलें", english: "Speak continuously for 5 minutes focusing purely on relaxation" },
+    { hindi: "सकारात्मक अफ़र्मेशन (Affirmations) ज़ोर से बोलें", english: "Recite positive speech confidence affirmations aloud" },
+    { hindi: "भविष्य की बातचीत की चुनौतियों के लिए स्वयं को तैयार करें", english: "Prepare yourself mentally for upcoming high-pressure talks" },
   ],
 };
 
@@ -252,12 +328,13 @@ const buildPhaseDays = (startDay, endDay, weeks) => {
   for (let d = startDay; d <= endDay; d++) {
     const week = weeks.find(w => d >= w.dayRange[0] && d <= w.dayRange[1]);
     const weekId = week ? week.id : Math.ceil(d / 7);
-    const sentences = BREATHING_SENTENCES.week4[d % BREATHING_SENTENCES.week4.length];
-    const prompt = SPEAKING_PROMPTS.week4[d % SPEAKING_PROMPTS.week4.length];
+    const weekSentences = BREATHING_SENTENCES[`week${weekId}`] || BREATHING_SENTENCES.week4;
+    const weekPrompts = SPEAKING_PROMPTS[`week${weekId}`] || SPEAKING_PROMPTS.week4;
+    const dayIndexInWeek = Math.abs((d - (week?.dayRange[0] || startDay))) % weekSentences.length;
     
     days.push(buildDay(d, weekId, {
-      breathingSentences: sentences,
-      speakingPrompt: prompt
+      breathingSentences: weekSentences[dayIndexInWeek],
+      speakingPrompt: weekPrompts[dayIndexInWeek]
     }));
   }
   return days;
@@ -475,4 +552,19 @@ export const getDayTotalDuration = (dayNumber, phaseId = null) => {
   const day = getDayData(dayNumber, phaseId);
   if (!day) return 0;
   return day.activities.reduce((sum, a) => sum + a.duration, 0);
+};
+
+// Helper to get phase for a given day number
+export const getPhaseForDay = (dayNumber) => {
+  for (const phase of PROGRAM_DATA.phases) {
+    if (phase.days.some(d => d.day === dayNumber)) return phase;
+  }
+  return PROGRAM_DATA.phases[0];
+};
+
+// Helper to get maximum day number across all available phases
+export const getMaxProgramDays = () => {
+  const lastPhase = PROGRAM_DATA.phases[PROGRAM_DATA.phases.length - 1];
+  if (!lastPhase || !lastPhase.days || lastPhase.days.length === 0) return 365;
+  return lastPhase.days[lastPhase.days.length - 1].day;
 };

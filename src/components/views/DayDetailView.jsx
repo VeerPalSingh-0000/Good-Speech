@@ -10,7 +10,7 @@ import {
   FaChevronDown, FaChevronUp, FaExternalLinkAlt, FaFeatherAlt
 } from 'react-icons/fa';
 import confetti from 'canvas-confetti';
-import { getDayData, getWeekForDay, getDayTotalDuration, GOLDEN_HABITS } from '../../data/programData';
+import { getDayData, getWeekForDay, getDayTotalDuration, GOLDEN_HABITS, getPhaseForDay, getMaxProgramDays } from '../../data/programData';
 import ActivityTimer from '../ui/ActivityTimer';
 import BackButton from '../ui/BackButton';
 
@@ -357,22 +357,25 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
     });
   }, [dayNum, programProgress, updateUserSettings, completedActivities]);
 
+  const maxProgramDay = useMemo(() => getMaxProgramDays(), []);
+
   const handleNavigateToView = useCallback((viewPath) => {
     navigate(viewPath);
   }, [navigate]);
 
   const handleGoBack = useCallback(() => {
-    navigate('/program');
-  }, [navigate]);
+    const dayPhase = getPhaseForDay(dayNum);
+    navigate('/program', { state: { phaseId: dayPhase?.id || 1 } });
+  }, [dayNum, navigate]);
 
   const handleNextDay = useCallback(() => {
     const nextDay = dayNum + 1;
-    if (nextDay <= 30) {
+    if (nextDay <= maxProgramDay) {
       navigate(`/program/day/${nextDay}`);
     } else {
-      navigate('/program');
+      handleGoBack();
     }
-  }, [dayNum, navigate]);
+  }, [dayNum, maxProgramDay, navigate, handleGoBack]);
 
 
 
@@ -449,14 +452,22 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
             <h3 className="text-xl font-bold">Day {dayNum} Complete!</h3>
             <p className="text-emerald-100 text-sm mt-1">Excellent! You've completed today's practice.</p>
 
-            {dayNum < 30 && (
+            <div className="mt-4 flex items-center justify-center gap-3 flex-wrap">
+              {dayNum < maxProgramDay && (
+                <button
+                  onClick={handleNextDay}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-600 text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                >
+                  Next Day (Day {dayNum + 1}) <FaArrowRight />
+                </button>
+              )}
               <button
                 onClick={handleGoBack}
-                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-emerald-600 text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700/80 hover:bg-emerald-800 text-white text-sm font-bold shadow-md transition-all"
               >
-                Return to Program <FaArrowRight />
+                📋 Program Overview
               </button>
-            )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -520,7 +531,7 @@ const DayDetailView = ({ userSettings, updateUserSettings, setCurrentView }) => 
           📋 Program Overview
         </motion.button>
 
-        {dayNum < 30 ? (
+        {dayNum < maxProgramDay ? (
           <button
             onClick={handleNextDay}
             disabled={dayNum >= programProgress.currentDay && !dayCompleted}

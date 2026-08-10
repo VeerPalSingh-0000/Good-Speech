@@ -13,6 +13,7 @@ import {
   FaPlay,
   FaGraduationCap,
 } from 'react-icons/fa';
+import { getPhaseForDay, PROGRAM_DATA } from '../../data/programData';
 
 // Get time-based greeting
 const getGreeting = () => {
@@ -129,9 +130,9 @@ const HomeView = ({ user, records, setCurrentView, userSettings }) => {
       {/* 30-Day Speech Program Hero CTA */}
       {(() => {
         const prog = userSettings?.programProgress || { currentDay: 1, completedDays: {} };
-        const completed = Object.keys(prog.completedDays).length;
-        const total = 30;
-        const pct = Math.round((completed / total) * 100);
+        const currentPhase = getPhaseForDay(prog.currentDay) || PROGRAM_DATA.phases[0];
+        const phaseCompletedCount = currentPhase.days ? currentPhase.days.filter(d => !!prog.completedDays[d.day]?.completedAt).length : 0;
+        const pct = Math.round((phaseCompletedCount / currentPhase.totalDays) * 100);
         
         return (
           <motion.div variants={itemVariants}
@@ -146,13 +147,13 @@ const HomeView = ({ user, records, setCurrentView, userSettings }) => {
               <div className="flex items-start justify-between">
                 <div className="space-y-1.5">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-xl border border-white/20 text-white text-[10px] font-extrabold uppercase tracking-wider font-display shadow-sm">
-                    <FaCalendarCheck size={10} className="text-amber-300" /> Phase 1 • 30-Day Speech Program
+                    <FaCalendarCheck size={10} className="text-amber-300" /> Phase {currentPhase.id} • {currentPhase.title}
                   </div>
                   <h3 className="text-2xl sm:text-4xl font-display font-black tracking-tight text-white drop-shadow-sm">
                     Speech Mastery Program
                   </h3>
                   <p className="text-purple-100 dark:text-slate-300 text-xs sm:text-sm font-medium">
-                    Structured daily exercises for long-term speech confidence.
+                    {currentPhase.description}
                   </p>
                 </div>
 
@@ -164,8 +165,8 @@ const HomeView = ({ user, records, setCurrentView, userSettings }) => {
               {/* Progress Box */}
               <div className="bg-black/20 backdrop-blur-xl rounded-2xl p-4 border border-white/15 space-y-2">
                 <div className="flex justify-between items-center font-display">
-                  <span className="text-xs font-black tracking-wide text-white">Day {prog.currentDay} of 30</span>
-                  <span className="text-xs font-black text-emerald-300">{pct}% Completed</span>
+                  <span className="text-xs font-black tracking-wide text-white">Day {prog.currentDay} Progress</span>
+                  <span className="text-xs font-black text-emerald-300">{pct}% Phase {currentPhase.id} Completed</span>
                 </div>
                 <div className="w-full h-2.5 bg-black/30 rounded-full overflow-hidden p-0.5 border border-white/10">
                   <motion.div 
