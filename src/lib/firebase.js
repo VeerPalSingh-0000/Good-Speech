@@ -1,5 +1,5 @@
 // firebase.js
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -41,8 +41,11 @@ if (missingConfigKeys.length > 0) {
   );
 }
 
-// Initialize Firebase
+// Initialize Firebase main app
 const app = initializeApp(firebaseConfig);
+
+// Initialize isolated secondary app instance for Google Drive OAuth requests
+const driveOAuthApp = getApps().find(a => a.name === "driveOAuthApp") || initializeApp(firebaseConfig, "driveOAuthApp");
 
 // Initialize Firebase services
 if (typeof window !== "undefined" && firebaseConfig.measurementId) {
@@ -50,6 +53,7 @@ if (typeof window !== "undefined" && firebaseConfig.measurementId) {
 }
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+export const driveAuth = getAuth(driveOAuthApp);
 export const storage = getStorage(app);
 
 // Export the app instance

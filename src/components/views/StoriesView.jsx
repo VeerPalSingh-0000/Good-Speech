@@ -15,6 +15,9 @@ import LanguageSelector from "./stories/LanguageSelector";
 import StoryFilters from "./stories/StoryFilters";
 import Mascot from "../ui/Mascot";
 import { fetchRandomStory } from "../../lib/storyApi";
+import { useAuth } from "../../contexts/AuthContext";
+import { uploadToGoogleDrive } from "../../lib/googleDrive";
+import toast from "react-hot-toast";
 
 // Components Extracted to: src/components/views/stories/
 
@@ -49,6 +52,7 @@ const StoriesView = ({
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   const [storyError, setStoryError] = useState(null);
   const navigate = useNavigate();
+  const { getGoogleDriveToken } = useAuth();
 
   const {
     isRecording,
@@ -91,6 +95,28 @@ const StoriesView = ({
   const handleStop = async (story) => {
     const audioBlob = await stopRecording();
     stopStoryTimer(story, audioBlob);
+    
+    if (audioBlob) {
+      try {
+        toast.loading("Requesting Drive permission...", { id: 'driveUpload' });
+        let token = await getGoogleDriveToken();
+        
+        toast.loading("Uploading to Google Drive...", { id: 'driveUpload' });
+        const fileName = `Story_${story?.title || 'Practice'}_${new Date().toISOString().slice(0,10)}.webm`;
+        try {
+          await uploadToGoogleDrive(audioBlob, fileName, token);
+        } catch (retryErr) {
+          console.warn("Retrying Google Drive upload with fresh token/account selection...", retryErr);
+          token = await getGoogleDriveToken(true);
+          await uploadToGoogleDrive(audioBlob, fileName, token);
+        }
+        
+        toast.success("Successfully saved to Google Drive!", { id: 'driveUpload' });
+      } catch (error) {
+        console.error("Drive upload failed:", error);
+        toast.error(error.message || "Failed to upload to Google Drive.", { id: 'driveUpload' });
+      }
+    }
   };
 
   const handleSelectStory = (story) => {

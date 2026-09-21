@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaUserCircle, FaCog, FaTrophy, FaFire, FaChartLine, FaSignOutAlt, FaShieldAlt } from 'react-icons/fa';
+import { FaUserCircle, FaCog, FaTrophy, FaFire, FaChartLine, FaSignOutAlt, FaShieldAlt, FaGoogle } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 const ProfileView = ({ user, records, onLogout, userSettings = {}, updateUserSettings = async () => {} }) => {
-  const { resetPassword, updateUserProfile } = useAuth();
+  const { resetPassword, updateUserProfile, switchGoogleDriveAccount, driveToken, driveUserEmail } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || 'Speech Learner');
   const [isEditing, setIsEditing] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(userSettings.notificationsEnabled || false);
   const [practiceTime, setPracticeTime] = useState(userSettings.practiceTime || 15);
+  const [isConnectingDrive, setIsConnectingDrive] = useState(false);
 
   useEffect(() => {
     setPushEnabled(userSettings.notificationsEnabled || false);
@@ -33,6 +34,20 @@ const ProfileView = ({ user, records, onLogout, userSettings = {}, updateUserSet
       setIsEditing(false);
     } catch (err) {
       toast.error("Failed to update profile.");
+    }
+  };
+
+  const handleSwitchDriveAccount = async () => {
+    try {
+      setIsConnectingDrive(true);
+      toast.loading("Opening Google account picker...", { id: 'drivePicker' });
+      await switchGoogleDriveAccount();
+      toast.success("Google Drive linked successfully!", { id: 'drivePicker' });
+    } catch (err) {
+      console.error("Google Drive connection error:", err);
+      toast.error(err.message || "Failed to switch Google Drive account.", { id: 'drivePicker' });
+    } finally {
+      setIsConnectingDrive(false);
     }
   };
 
@@ -168,6 +183,23 @@ const ProfileView = ({ user, records, onLogout, userSettings = {}, updateUserSet
                 <span>Change Password</span>
                 <FaShieldAlt className="text-slate-400" />
               </button>
+
+              <button 
+                onClick={handleSwitchDriveAccount} 
+                disabled={isConnectingDrive}
+                className="w-full text-left px-4 py-3 rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/50 dark:bg-sky-900/20 text-slate-700 dark:text-slate-200 hover:bg-sky-100/60 dark:hover:bg-sky-900/40 transition flex justify-between items-center group"
+              >
+                <div className="flex flex-col">
+                  <span className="font-bold text-xs text-sky-700 dark:text-sky-300">Google Drive Storage</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {driveToken 
+                      ? `Linked to ${driveUserEmail || 'Google Drive'} (Click to switch)` 
+                      : "Connect / Choose Gmail Account"}
+                  </span>
+                </div>
+                <FaGoogle className="text-sky-500 text-lg group-hover:scale-110 transition-transform" />
+              </button>
+
               <button disabled className="w-full text-left px-4 py-3 rounded-xl border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition opacity-50 cursor-not-allowed">
                 Delete Account
               </button>

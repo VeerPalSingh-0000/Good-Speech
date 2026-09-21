@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { auth } from '../lib/firebase'; // Adjust this path to your firebase.js config file
+import { auth, driveAuth } from '../lib/firebase';
 import { 
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
@@ -20,6 +20,8 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [driveToken, setDriveToken] = useState(null);
+  const [driveUserEmail, setDriveUserEmail] = useState(null);
 
   function signup(email, password) {
     return createUserWithEmailAndPassword(auth, email, password);
@@ -34,7 +36,37 @@ export function AuthProvider({ children }) {
     return signInWithPopup(auth, provider);
   }
 
+  async function getGoogleDriveToken(forceSelectAccount = false) {
+    if (driveToken && !forceSelectAccount) {
+      return driveToken;
+    }
+    const provider = new GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/drive.file');
+    // Prompt account chooser for Google Drive
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    // Use secondary driveAuth so primary app currentUser (X@gmail.com) is NEVER altered or logged out
+    const result = await signInWithPopup(driveAuth, provider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    if (credential?.accessToken) {
+      setDriveToken(credential.accessToken);
+      if (result.user?.email) {
+        setDriveUserEmail(result.user.email);
+      }
+      return credential.accessToken;
+    }
+    throw new Error("Could not obtain Google Drive access token.");
+  }
+
+  async function switchGoogleDriveAccount() {
+    setDriveToken(null);
+    setDriveUserEmail(null);
+    return await getGoogleDriveToken(true);
+  }
+
   function logout() {
+    setDriveToken(null);
     return signOut(auth);
   }
 
@@ -64,9 +96,13 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     loading,
+    driveToken,
+    driveUserEmail,
     signup,
     login,
     loginWithGoogle,
+    getGoogleDriveToken,
+    switchGoogleDriveAccount,
     logout,
     updateUserProfile,
     resetPassword
