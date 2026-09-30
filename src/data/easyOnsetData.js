@@ -4,17 +4,29 @@
 // Helper function to format Hindi Easy Onset (Stretching 1st Syllable)
 export const formatHindiOnset = (word) => {
   if (!word) return word;
-  const firstChar = Array.from(word)[0] || '';
-  return `${firstChar}..${firstChar}.. ${word}`;
+  try {
+    const segmenter = new Intl.Segmenter('hi', { granularity: 'grapheme' });
+    const segments = Array.from(segmenter.segment(word));
+    const firstChar = segments[0] ? segments[0].segment : '';
+    return `${firstChar}..${firstChar}.. ${word}`;
+  } catch (e) {
+    // Fallback if Intl.Segmenter fails
+    const firstChar = Array.from(word)[0] || '';
+    return `${firstChar}..${firstChar}.. ${word}`;
+  }
 };
 
 // Helper function to format English Easy Onset (Stretching 1st Syllable/Letter)
 export const formatEnglishOnset = (word) => {
   if (!word) return word;
-  const clean = word.replace(/[^a-zA-Z]/g, '');
-  if (!clean) return word;
-  const firstLetter = clean[0].toLowerCase();
-  return `${firstLetter}..${firstLetter}.. ${word}`;
+  const cleanMatch = word.match(/[a-zA-Z]+/);
+  if (!cleanMatch) return word;
+  
+  const alphaPart = cleanMatch[0];
+  const syllableMatch = alphaPart.match(/^[^aeiouyAEIOUY]*[aeiouyAEIOUY]+/);
+  const firstSyllable = (syllableMatch ? syllableMatch[0] : alphaPart.charAt(0)).toLowerCase();
+  
+  return `${firstSyllable}..${firstSyllable}.. ${word}`;
 };
 
 // Build word object

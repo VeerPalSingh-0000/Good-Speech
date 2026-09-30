@@ -33,7 +33,7 @@ export const SmoothWord = ({ wordObj, isActive, isPast, duration, onClick }) => 
       
       {/* Text Layer */}
       <span className={`relative z-10 transition-colors duration-300 ${
-        isActive ? 'text-indigo-900 dark:text-white font-bold' : 
+        isActive ? 'text-indigo-900 dark:text-white' : 
         isPast ? 'text-slate-800 dark:text-slate-200' : 
         'text-slate-400 dark:text-slate-500'
       }`}>

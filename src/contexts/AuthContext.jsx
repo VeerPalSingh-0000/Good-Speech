@@ -20,8 +20,9 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [driveToken, setDriveToken] = useState(null);
-  const [driveUserEmail, setDriveUserEmail] = useState(null);
+  const [driveToken, setDriveToken] = useState(() => localStorage.getItem('driveToken') || null);
+  const [driveUserEmail, setDriveUserEmail] = useState(() => localStorage.getItem('driveUserEmail') || null);
+  const [driveTokenExpiry, setDriveTokenExpiry] = useState(() => localStorage.getItem('driveTokenExpiry') || null);
 
   function signup(email, password) {
     return createUserWithEmailAndPassword(auth, email, password);
@@ -37,24 +38,36 @@ export function AuthProvider({ children }) {
   }
 
   async function getGoogleDriveToken(forceSelectAccount = false) {
-    if (driveToken && !forceSelectAccount) {
+    if (!forceSelectAccount && driveToken && driveTokenExpiry && Date.now() < parseInt(driveTokenExpiry, 10)) {
       return driveToken;
     }
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/drive.file');
-    // Prompt account chooser for Google Drive
-    provider.setCustomParameters({
-      prompt: 'select_account'
-    });
+    // Only prompt account chooser if explicitly requested
+    if (forceSelectAccount) {
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+    }
     // Use secondary driveAuth so primary app currentUser (X@gmail.com) is NEVER altered or logged out
     const result = await signInWithPopup(driveAuth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (credential?.accessToken) {
-      setDriveToken(credential.accessToken);
-      if (result.user?.email) {
-        setDriveUserEmail(result.user.email);
+      const token = credential.accessToken;
+      const email = result.user?.email;
+      const expiry = (Date.now() + 55 * 60 * 1000).toString();
+
+      setDriveToken(token);
+      localStorage.setItem('driveToken', token);
+      
+      setDriveTokenExpiry(expiry);
+      localStorage.setItem('driveTokenExpiry', expiry);
+
+      if (email) {
+        setDriveUserEmail(email);
+        localStorage.setItem('driveUserEmail', email);
       }
-      return credential.accessToken;
+      return token;
     }
     throw new Error("Could not obtain Google Drive access token.");
   }
@@ -62,11 +75,20 @@ export function AuthProvider({ children }) {
   async function switchGoogleDriveAccount() {
     setDriveToken(null);
     setDriveUserEmail(null);
+    setDriveTokenExpiry(null);
+    localStorage.removeItem('driveToken');
+    localStorage.removeItem('driveUserEmail');
+    localStorage.removeItem('driveTokenExpiry');
     return await getGoogleDriveToken(true);
   }
 
   function logout() {
     setDriveToken(null);
+    setDriveUserEmail(null);
+    setDriveTokenExpiry(null);
+    localStorage.removeItem('driveToken');
+    localStorage.removeItem('driveUserEmail');
+    localStorage.removeItem('driveTokenExpiry');
     return signOut(auth);
   }
 

@@ -766,7 +766,7 @@ const StoryDisplayModal = ({
                                 : lineResults.map((result, i) => (
                                     <span
                                       key={i}
-                                      className={`transition-colors duration-300 ${result.isCorrect ? "text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-900/40 rounded px-1" : ""}`}
+                                      className={`transition-colors duration-300 ${result.isCorrect ? "text-emerald-600 font-medium bg-emerald-50 dark:bg-emerald-900/40 rounded px-1" : ""}`}
                                     >
                                       {result.word}
                                     </span>
